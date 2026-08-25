@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema(
   {
@@ -35,18 +36,97 @@ const userSchema = new mongoose.Schema(
       minlength: [6, 'Password must be at least 6 characters'],
       select: false, // Don't return password by default in queries
     },
+    // Primary Role
     role: {
       type: String,
-      enum: ['superadmin', 'admin', 'editor', 'viewer'],
+      enum: [
+        'superadmin',
+        'admin',
+        'subadmin',
+        'maker',
+        'reviewer',
+        'approver',
+        'editor',
+        'viewer',
+      ],
       default: 'admin',
     },
+    // Administrative Metadata
+    department: {
+      type: String,
+      trim: true,
+      default: 'Indian Pharmacopoeia Commission',
+    },
+    designation: {
+      type: String,
+      trim: true,
+      default: 'Administrator',
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    notes: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    // Optional Reference to Dynamic Role Model
+    roleRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      default: null,
+    },
+    // Direct User Custom Permissions (Overrides)
+    customPermissions: [
+      {
+        type: String,
+        uppercase: true,
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,
     },
+    // Audit & Security Tracking
     lastLogin: {
       type: Date,
       default: null,
+    },
+    lastLoginIP: {
+      type: String,
+      default: null,
+    },
+    lastLoginDevice: {
+      type: String,
+      default: null,
+    },
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: {
+      type: Date,
+      default: null,
+    },
+    // Password Reset
+    passwordResetToken: {
+      type: String,
+      select: false,
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false,
+    },
+    // 2FA / OTP Readiness
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorSecret: {
+      type: String,
+      select: false,
     },
   },
   {
@@ -66,10 +146,32 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
+// Check if account is temporarily locked
+userSchema.methods.isLocked = function () {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+};
+
+// Generate crypto password reset token
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  this.passwordResetExpires = Date.now() + 60 * 60 * 1000;
+
+  return resetToken;
+};
+
 // Remove sensitive fields when converting document to JSON
 userSchema.methods.toJSON = function () {
   const userObject = this.toObject();
   delete userObject.password;
+  delete userObject.passwordResetToken;
+  delete userObject.passwordResetExpires;
+  delete userObject.twoFactorSecret;
   delete userObject.__v;
   return userObject;
 };

@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import authService from '../services/auth.service';
 
 const AuthContext = createContext(null);
+
+// 45 minutes idle inactivity timeout (in milliseconds)
+const IDLE_TIMEOUT_MS = 45 * 60 * 1000;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -10,6 +13,83 @@ export const AuthProvider = ({ children }) => {
   });
   const [token, setToken] = useState(() => localStorage.getItem('nfi_token') || null);
   const [loading, setLoading] = useState(true);
+
+  const idleTimerRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
+
+  // Logout method
+  const logout = useCallback(async (reason = null) => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      // Ignore cleanup error
+    }
+
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+    }
+
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('nfi_token');
+    localStorage.removeItem('nfi_user');
+
+    if (reason === 'inactivity') {
+      window.location.href = '/login?reason=inactivity';
+    }
+  }, []);
+
+  // Reset idle inactivity timer
+  const resetIdleTimer = useCallback(() => {
+    lastActivityRef.current = Date.now();
+
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+    }
+
+    if (token) {
+      idleTimerRef.current = setTimeout(() => {
+        console.warn('[Auth] Inactivity timeout reached (45 min). Auto-logging out.');
+        logout('inactivity');
+      }, IDLE_TIMEOUT_MS);
+    }
+  }, [token, logout]);
+
+  // Attach global user activity listeners for idle timeout tracking
+  useEffect(() => {
+    if (!token) return;
+
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
+
+    let throttleTimer = null;
+    const handleUserActivity = () => {
+      if (!throttleTimer) {
+        throttleTimer = setTimeout(() => {
+          resetIdleTimer();
+          throttleTimer = null;
+        }, 1000); // Throttled to once per second
+      }
+    };
+
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, handleUserActivity, { passive: true });
+    });
+
+    // Start idle timer
+    resetIdleTimer();
+
+    return () => {
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+      }
+      if (throttleTimer) {
+        clearTimeout(throttleTimer);
+      }
+    };
+  }, [token, resetIdleTimer]);
 
   // Validate token on mount
   useEffect(() => {
@@ -31,7 +111,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     initAuth();
-  }, []);
+  }, [logout]);
 
   const login = async (identifier, password, rememberMe) => {
     const res = await authService.login(identifier, password, rememberMe);
@@ -40,17 +120,22 @@ export const AuthProvider = ({ children }) => {
       setUser(res.user);
       localStorage.setItem('nfi_token', res.token);
       localStorage.setItem('nfi_user', JSON.stringify(res.user));
+      resetIdleTimer();
       return res;
     }
-    throw new Error('Invalid response from authentication server');
+    return res;
   };
 
-  const logout = async () => {
-    await authService.logout();
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('nfi_token');
-    localStorage.removeItem('nfi_user');
+  const changePassword = async (currentPassword, newPassword, confirmPassword) => {
+    return authService.changePassword(currentPassword, newPassword, confirmPassword);
+  };
+
+  const forgotPassword = async (identifier) => {
+    return authService.forgotPassword(identifier);
+  };
+
+  const resetPassword = async (tokenParam, password, confirmPassword) => {
+    return authService.resetPassword(tokenParam, password, confirmPassword);
   };
 
   return (
@@ -63,6 +148,9 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         logout,
+        changePassword,
+        forgotPassword,
+        resetPassword,
       }}
     >
       {children}
