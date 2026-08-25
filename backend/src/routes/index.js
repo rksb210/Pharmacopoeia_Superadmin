@@ -1,5 +1,10 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes.js';
+import rbacRoutes from './rbac.routes.js';
+import adminRoutes from './admin.routes.js';
+import subadminRoutes from './subadmin.routes.js';
+import dashboardRoutes from './dashboard.routes.js';
+import subscriberRoutes from './subscriber.routes.js';
 
 const router = Router();
 
@@ -14,5 +19,20 @@ router.get('/health', (req, res) => {
 
 // Authentication routes
 router.use('/auth', authRoutes);
+
+// Role-Based Access Control (RBAC) routes
+router.use('/rbac', rbacRoutes);
+
+// Admin Management routes
+router.use('/admins', adminRoutes);
+
+// Sub Admin Management routes
+router.use('/sub-admins', subadminRoutes);
+
+// Aggregated Dashboard routes
+router.use('/dashboard', dashboardRoutes);
+
+// Public Subscribers / Users Management routes
+router.use('/subscribers', subscriberRoutes);
 
 export default router;

@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import api from './api';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 /**
  * Authentication Service for API communication
@@ -8,44 +10,43 @@ export const authService = {
    * Log in user with identifier (email or username) and password
    */
   login: async (identifier, password, rememberMe = false) => {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ identifier, password, rememberMe }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed. Please check your credentials.');
-    }
-
-    return data;
+    return api.post('/auth/login', { identifier, password, rememberMe });
   },
 
   /**
    * Get current authenticated user profile
    */
-  getMe: async (token) => {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: 'include',
+  getMe: async (token = null) => {
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    return api.get('/auth/me', config);
+  },
+
+  /**
+   * Change password for logged in administrator
+   */
+  changePassword: async (currentPassword, newPassword, confirmPassword) => {
+    return api.post('/auth/change-password', {
+      currentPassword,
+      newPassword,
+      confirmPassword,
     });
+  },
 
-    const data = await response.json();
+  /**
+   * Request password reset token / link
+   */
+  forgotPassword: async (identifier) => {
+    return api.post('/auth/forgot-password', { identifier });
+  },
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch user profile');
-    }
-
-    return data;
+  /**
+   * Reset password using token
+   */
+  resetPassword: async (token, password, confirmPassword) => {
+    return api.post(`/auth/reset-password/${token}`, {
+      password,
+      confirmPassword,
+    });
   },
 
   /**
@@ -53,12 +54,9 @@ export const authService = {
    */
   logout: async () => {
     try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await api.post('/auth/logout');
     } catch (err) {
-      console.error('Logout error:', err);
+      console.warn('Logout API warning:', err.message);
     }
   },
 };
