@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* ----------------------------------------------------
+       NFI Brand Design Tokens (Mapped to Figma Specs)
+       ---------------------------------------------------- */
+    --color-header-bg: #E76120;
+    --color-primary-orange: #E76120;
+    --color-login-button: #FFD243;
+    --color-login-button-hover: #F5C422;
+    --color-brand-navy: #284661;
+    --color-brand-navy-dark: #1B3145;
+    
+    --banner-gradient: linear-gradient(180deg, #923000 0%, #7B5E00 100%);
+    
+    --color-text-primary: #1E293B;
+    --color-text-secondary: #64748B;
+    --color-text-muted: #94A3B8;
+    
+    --color-border-default: #E2E8F0;
+    --color-border-focus: #E76120;
+    
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* ----------------------------------------------------
+       shadcn/ui Compatible Dynamic CSS Variables
+       These allow all shadcn components (Dialogs, Tables,
+       Selects, Buttons, Inputs, Cards, etc.) to automatically
+       inherit our exact brand colors.
+       ---------------------------------------------------- */
+    --background: #FFFFFF;
+    --foreground: #1E293B;
+
+    --card: #FFFFFF;
+    --card-foreground: #1E293B;
+
+    --popover: #FFFFFF;
+    --popover-foreground: #1E293B;
+
+    /* Primary = NFI Brand Orange (#E76120) */
+    --primary: #E76120;
+    --primary-foreground: #FFFFFF;
+
+    /* Secondary = NFI Brand Navy (#284661) */
+    --secondary: #284661;
+    --secondary-foreground: #FFFFFF;
+
+    /* Accent / Action = NFI Button Yellow (#FFD243) */
+    --accent: #FFD243;
+    --accent-foreground: #1E293B;
+
+    --muted: #F1F5F9;
+    --muted-foreground: #64748B;
+
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+
+    --border: #E2E8F0;
+    --input: #E2E8F0;
+    --ring: #E76120;
+
+    --radius: 0.5rem; /* 8px */
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+    background-color: #FAFAFA;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom utility classes derived from design tokens */
+.bg-nfi-header {
+  background-color: var(--color-header-bg);
+}
+
+.bg-nfi-gradient {
+  background: var(--banner-gradient);
+}
+
+.bg-nfi-button {
+  background-color: var(--color-login-button);
+}
+
+.bg-nfi-button:hover {
+  background-color: var(--color-login-button-hover);
+}
+
+.text-nfi-navy {
+  color: var(--color-brand-navy);
+}
+
+.text-nfi-orange {
+  color: var(--color-primary-orange);
+}
+
+.border-nfi-default {
+  border-color: var(--color-border-default);
+}
