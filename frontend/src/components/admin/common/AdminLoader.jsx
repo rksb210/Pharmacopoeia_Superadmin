@@ -1,9 +1,9 @@
 import React from 'react';
 
 /**
- * Reusable Admin Spinner & Skeleton Loader Components
+ * Reusable Admin Loader & Spinner Component
  */
-export const AdminSpinner = ({ size = 'md', message = 'Loading data...' }) => {
+export const AdminLoader = ({ size = 'md', text = 'Loading data...' }) => {
   const sizeMap = {
     sm: 'w-5 h-5 border-2',
     md: 'w-8 h-8 border-3',
@@ -15,10 +15,12 @@ export const AdminSpinner = ({ size = 'md', message = 'Loading data...' }) => {
       <div
         className={`${sizeMap[size] || sizeMap.md} border-[#FFD243] border-t-[#E76120] rounded-full animate-spin`}
       />
-      {message && <p className="text-xs font-semibold text-slate-500">{message}</p>}
+      {text && <p className="text-xs font-semibold text-slate-500">{text}</p>}
     </div>
   );
 };
+
+export const AdminSpinner = AdminLoader;
 
 export const TableSkeleton = ({ rows = 5, cols = 4 }) => {
   return (
@@ -51,8 +53,4 @@ export const CardSkeleton = ({ count = 4 }) => {
   );
 };
 
-export default {
-  AdminSpinner,
-  TableSkeleton,
-  CardSkeleton,
-};
+export default AdminLoader;

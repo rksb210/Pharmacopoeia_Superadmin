@@ -7,7 +7,10 @@ import { Button } from '../ui/button';
 /**
  * Route guard ensuring only authenticated users with allowed roles can access Admin routes
  */
-export const AdminRoute = ({ children, allowedRoles = ['superadmin', 'admin', 'editor', 'viewer'] }) => {
+export const AdminRoute = ({
+  children,
+  allowedRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver', 'editor', 'viewer'],
+}) => {
   const { isAuthenticated, user, loading, logout } = useAuth();
 
   if (loading) {
