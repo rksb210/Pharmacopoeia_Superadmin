@@ -15,11 +15,12 @@ import {
 } from '../validators/feedback.validator.js';
 import { authenticate, optionalAuthenticate } from '../middlewares/auth.middleware.js';
 import { requirePermission } from '../middlewares/rbac.middleware.js';
+import { publicSubmissionLimiter } from '../middlewares/security.middleware.js';
 
 const router = Router();
 
-// Public / Subscriber Submission Endpoint (Optionally captures user if logged in)
-router.post('/submit', optionalAuthenticate, validateCreateFeedback, submitPublicFeedback);
+// Public / Subscriber Submission Endpoint (Rate Limited)
+router.post('/submit', publicSubmissionLimiter, optionalAuthenticate, validateCreateFeedback, submitPublicFeedback);
 
 // Administrative Routes (Protected)
 router.use(authenticate);

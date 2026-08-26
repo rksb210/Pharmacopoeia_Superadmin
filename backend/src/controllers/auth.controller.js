@@ -312,6 +312,13 @@ export const logout = async (req, res) => {
  */
 export const seedSuperAdmin = async (req, res, next) => {
   try {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({
+        success: false,
+        message: 'Seeding endpoint is disabled in production environment.',
+      });
+    }
+
     const existingAdmin = await User.findOne({
       $or: [{ email: 'admin@nfi.gov.in' }, { username: 'superadmin' }],
     });
@@ -319,7 +326,7 @@ export const seedSuperAdmin = async (req, res, next) => {
     if (existingAdmin) {
       return res.status(200).json({
         success: true,
-        message: 'Default Superadmin already exists.',
+        message: 'Default Superadmin already initialized.',
         user: existingAdmin,
       });
     }
@@ -335,13 +342,8 @@ export const seedSuperAdmin = async (req, res, next) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Default Superadmin user created successfully.',
+      message: 'Default Superadmin user initialized successfully.',
       user: newAdmin,
-      credentials: {
-        email: 'admin@nfi.gov.in',
-        username: 'superadmin',
-        password: 'admin123Password',
-      },
     });
   } catch (error) {
     next(error);

@@ -4,6 +4,7 @@ import Subscription from '../models/subscription.model.js';
 import Notification from '../models/notification.model.js';
 import Feedback from '../models/feedback.model.js';
 import Coupon from '../models/coupon.model.js';
+import { escapeRegex } from '../middlewares/security.middleware.js';
 
 export const crmService = {
   /**
@@ -88,7 +89,8 @@ export const crmService = {
     const query = {};
 
     if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), 'i');
+      const safeSearch = escapeRegex(search.trim());
+      const searchRegex = new RegExp(safeSearch, 'i');
       query.$or = [
         { name: searchRegex },
         { email: searchRegex },

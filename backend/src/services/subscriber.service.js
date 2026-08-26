@@ -1,5 +1,6 @@
 import Subscriber from '../models/subscriber.model.js';
 import UserType from '../models/userType.model.js';
+import { escapeRegex } from '../middlewares/security.middleware.js';
 
 export const subscriberService = {
   /**
@@ -204,7 +205,8 @@ export const subscriberService = {
 
     // Search Name, Email, Username, Phone, and Dynamic Credentials
     if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), 'i');
+      const safeSearch = escapeRegex(search.trim());
+      const searchRegex = new RegExp(safeSearch, 'i');
       query.$or = [
         { name: searchRegex },
         { email: searchRegex },
