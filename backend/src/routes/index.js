@@ -9,6 +9,10 @@ import subscriptionRoutes from './subscription.routes.js';
 import planRoutes from './plan.routes.js';
 import couponRoutes from './coupon.routes.js';
 import bulkImportRoutes from './bulkImport.routes.js';
+import notificationRoutes from './notification.routes.js';
+import feedbackRoutes from './feedback.routes.js';
+import crmRoutes from './crm.routes.js';
+import orderRoutes from './order.routes.js';
 
 const router = Router();
 
@@ -50,5 +54,17 @@ router.use('/coupons', couponRoutes);
 
 // Bulk Subscriptions Management routes
 router.use('/bulk-subscriptions', bulkImportRoutes);
+
+// Notification Campaigns & Messaging routes
+router.use('/notifications', notificationRoutes);
+
+// Feedback & Content Comments routes
+router.use('/feedback', feedbackRoutes);
+
+// Customer Relationship Management (CRM) routes
+router.use('/crm', crmRoutes);
+
+// Orders, Invoicing & Payments routes
+router.use('/orders', orderRoutes);
 
 export default router;
