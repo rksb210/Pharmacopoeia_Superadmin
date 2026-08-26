@@ -17,6 +17,10 @@ import SubscriptionsPage from './pages/admin/SubscriptionsPage';
 import PlansPage from './pages/admin/PlansPage';
 import DiscountsPage from './pages/admin/DiscountsPage';
 import BulkSubscriptionsPage from './pages/admin/BulkSubscriptionsPage';
+import NotificationsPage from './pages/admin/NotificationsPage';
+import FeedbackPage from './pages/admin/FeedbackPage';
+import CRMPage from './pages/admin/CRMPage';
+import OrdersPage from './pages/admin/OrdersPage';
 import AdminModulePlaceholderPage from './pages/admin/AdminModulePlaceholderPage';
 
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -151,38 +155,12 @@ function AppRoutes() {
         <Route path="discounts" element={<DiscountsPage />} />
         <Route path="coupons" element={<DiscountsPage />} />
         <Route path="bulk-subscription" element={<BulkSubscriptionsPage />} />
+        <Route path="orders" element={<OrdersPage />} />
 
         {/* Engagement & Support */}
-        <Route
-          path="crm"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="crm"
-              title="CRM & Leads"
-              description="Manage institutional relationships, sales inquiries, and onboarding pipelines."
-            />
-          }
-        />
-        <Route
-          path="feedback"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="feedback"
-              title="User Feedback"
-              description="Feedback, monograph amendment suggestions, and bug reports from healthcare professionals."
-            />
-          }
-        />
-        <Route
-          path="notifications"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="notifications"
-              title="Notifications"
-              description="Broadcast safety advisories, drug alerts, and portal system notifications."
-            />
-          }
-        />
+        <Route path="crm" element={<CRMPage />} />
+        <Route path="feedback" element={<FeedbackPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
 
         {/* Integrated Modules */}
         <Route

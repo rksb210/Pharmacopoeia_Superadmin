@@ -77,3 +77,32 @@ export const authorizeRoles = (...roles) => {
     next();
   };
 };
+
+/**
+ * Optional Authentication Middleware
+ * Attaches req.user if valid token provided, but doesn't block unauthenticated requests
+ */
+export const optionalAuthenticate = async (req, res, next) => {
+  try {
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+
+    if (token) {
+      const decoded = verifyToken(token);
+      if (decoded && decoded.id) {
+        const user = await User.findById(decoded.id);
+        if (user && user.isActive) {
+          req.user = user;
+        }
+      }
+    }
+  } catch (err) {
+    // Ignore error for optional auth
+  }
+  next();
+};
+
