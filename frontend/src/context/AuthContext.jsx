@@ -144,7 +144,10 @@ export const AuthProvider = ({ children }) => {
         user,
         token,
         isAuthenticated: !!user && !!token,
-        isSuperAdmin: user?.role === 'superadmin' || user?.role === 'admin',
+        isSuperAdmin: user?.role === 'superadmin',
+        isAdminUser: ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver', 'editor', 'viewer'].includes(
+          user?.role?.toLowerCase()
+        ),
         loading,
         login,
         logout,

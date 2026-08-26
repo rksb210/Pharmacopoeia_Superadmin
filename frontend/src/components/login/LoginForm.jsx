@@ -84,8 +84,10 @@ export const LoginForm = ({ onLoginSuccess }) => {
       if (onLoginSuccess) {
         onLoginSuccess(res);
       }
-      // Redirect based on role
-      if (res.user?.role === 'superadmin' || res.user?.role === 'admin') {
+      // Redirect based on administrative role
+      const adminRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver', 'editor', 'viewer'];
+      const userRole = (res.user?.role || '').toLowerCase();
+      if (adminRoles.includes(userRole)) {
         navigate('/admin/dashboard');
       } else {
         navigate('/dashboard');

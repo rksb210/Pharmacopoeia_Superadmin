@@ -43,19 +43,19 @@ const ProtectedRoute = ({ children }) => {
 
 // Public Route (redirects to admin dashboard or subscriber dashboard if logged in)
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, loading, isSuperAdmin } = useAuth();
+  const { isAuthenticated, loading, isAdminUser } = useAuth();
 
   if (loading) return null;
 
   if (isAuthenticated) {
-    return <Navigate to={isSuperAdmin ? '/admin/dashboard' : '/dashboard'} replace />;
+    return <Navigate to={isAdminUser ? '/admin/dashboard' : '/dashboard'} replace />;
   }
 
   return children;
 };
 
 function AppRoutes() {
-  const { isSuperAdmin } = useAuth();
+  const { isAuthenticated, isAdminUser } = useAuth();
 
   return (
     <Routes>
@@ -283,11 +283,21 @@ function AppRoutes() {
       {/* Root redirect based on auth */}
       <Route
         path="/"
-        element={<Navigate to={isSuperAdmin ? '/admin/dashboard' : '/dashboard'} replace />}
+        element={
+          <Navigate
+            to={isAuthenticated ? (isAdminUser ? '/admin/dashboard' : '/dashboard') : '/login'}
+            replace
+          />
+        }
       />
       <Route
         path="*"
-        element={<Navigate to={isSuperAdmin ? '/admin/dashboard' : '/dashboard'} replace />}
+        element={
+          <Navigate
+            to={isAuthenticated ? (isAdminUser ? '/admin/dashboard' : '/dashboard') : '/login'}
+            replace
+          />
+        }
       />
     </Routes>
   );
