@@ -13,6 +13,9 @@ import notificationRoutes from './notification.routes.js';
 import feedbackRoutes from './feedback.routes.js';
 import crmRoutes from './crm.routes.js';
 import orderRoutes from './order.routes.js';
+import reportRoutes from './report.routes.js';
+import auditRoutes from './audit.routes.js';
+import configRoutes from './config.routes.js';
 
 const router = Router();
 
@@ -66,5 +69,14 @@ router.use('/crm', crmRoutes);
 
 // Orders, Invoicing & Payments routes
 router.use('/orders', orderRoutes);
+
+// Reports & Analytics routes
+router.use('/reports', reportRoutes);
+
+// Centralized Audit Log routes
+router.use('/audit-logs', auditRoutes);
+
+// Application Configuration Management routes
+router.use('/config', configRoutes);
 
 export default router;

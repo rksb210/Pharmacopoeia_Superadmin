@@ -21,6 +21,9 @@ import NotificationsPage from './pages/admin/NotificationsPage';
 import FeedbackPage from './pages/admin/FeedbackPage';
 import CRMPage from './pages/admin/CRMPage';
 import OrdersPage from './pages/admin/OrdersPage';
+import ReportsPage from './pages/admin/ReportsPage';
+import AuditLogsPage from './pages/admin/AuditLogsPage';
+import SettingsPage from './pages/admin/SettingsPage';
 import AdminModulePlaceholderPage from './pages/admin/AdminModulePlaceholderPage';
 
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -185,36 +188,9 @@ function AppRoutes() {
         />
 
         {/* System & Governance */}
-        <Route
-          path="reports"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="reports"
-              title="Reports & Analytics"
-              description="Monograph utilization, subscriber retention, revenue reports, and export logs."
-            />
-          }
-        />
-        <Route
-          path="audit-logs"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="audit-logs"
-              title="Audit Logs"
-              description="Tamper-evident logs of administrative actions, role changes, and data exports."
-            />
-          }
-        />
-        <Route
-          path="settings"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="settings"
-              title="System Settings"
-              description="General portal configuration, email relays, security policies, and maintenance mode."
-            />
-          }
-        />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="audit-logs" element={<AuditLogsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       {/* Root redirect based on auth */}

@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { connectDB } from './config/db.js';
 import apiRoutes from './routes/index.js';
 import { notFound, errorHandler } from './middlewares/error.middleware.js';
+import { sanitizeNoSql, generalApiLimiter } from './middlewares/security.middleware.js';
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +30,10 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// NoSQL Injection Sanitization & API Rate Limiting
+app.use(sanitizeNoSql);
+app.use('/api', generalApiLimiter);
 
 // Mount API Routes
 app.use('/api', apiRoutes);

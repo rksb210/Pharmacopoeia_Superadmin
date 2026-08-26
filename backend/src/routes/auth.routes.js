@@ -15,15 +15,16 @@ import {
   validateResetPassword,
 } from '../validators/auth.validator.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
+import { authLimiter } from '../middlewares/security.middleware.js';
 
 const router = Router();
 
-// Public Authentication Routes
-router.post('/login', validateLogin, login);
+// Public Authentication Routes (Rate Limited)
+router.post('/login', authLimiter, validateLogin, login);
 router.post('/logout', logout);
 router.post('/seed', seedSuperAdmin);
-router.post('/forgot-password', validateForgotPassword, forgotPassword);
-router.post('/reset-password/:token', validateResetPassword, resetPassword);
+router.post('/forgot-password', authLimiter, validateForgotPassword, forgotPassword);
+router.post('/reset-password/:token', authLimiter, validateResetPassword, resetPassword);
 
 // Protected Authentication & Profile Routes
 router.get('/me', authenticate, getMe);

@@ -4,6 +4,7 @@ import Order from '../models/order.model.js';
 import Subscriber from '../models/subscriber.model.js';
 import Subscription from '../models/subscription.model.js';
 import Plan from '../models/plan.model.js';
+import { escapeRegex } from '../middlewares/security.middleware.js';
 
 export const orderService = {
   /**
@@ -291,7 +292,8 @@ export const orderService = {
     const query = {};
 
     if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), 'i');
+      const safeSearch = escapeRegex(search.trim());
+      const searchRegex = new RegExp(safeSearch, 'i');
       query.$or = [
         { orderNumber: searchRegex },
         { invoiceNumber: searchRegex },
