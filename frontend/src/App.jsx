@@ -13,6 +13,10 @@ import UsersPage from './pages/admin/UsersPage';
 import AdminsPage from './pages/admin/AdminsPage';
 import SubAdminsPage from './pages/admin/SubAdminsPage';
 import RolesPage from './pages/admin/RolesPage';
+import SubscriptionsPage from './pages/admin/SubscriptionsPage';
+import PlansPage from './pages/admin/PlansPage';
+import DiscountsPage from './pages/admin/DiscountsPage';
+import BulkSubscriptionsPage from './pages/admin/BulkSubscriptionsPage';
 import AdminModulePlaceholderPage from './pages/admin/AdminModulePlaceholderPage';
 
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -142,56 +146,11 @@ function AppRoutes() {
         />
 
         {/* Commercial & Subscriptions */}
-        <Route
-          path="subscriptions"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="subscriptions"
-              title="Subscriptions"
-              description="Monitor active individual and institutional subscription licenses."
-            />
-          }
-        />
-        <Route
-          path="plans"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="plans"
-              title="Plans & Pricing"
-              description="Configure tier pricing, seat quotas, and institutional license parameters."
-            />
-          }
-        />
-        <Route
-          path="discounts"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="discounts"
-              title="Discounts"
-              description="Promotional pricing rules, institutional rebates, and government subsidies."
-            />
-          }
-        />
-        <Route
-          path="coupons"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="coupons"
-              title="Coupons"
-              description="Generate, track, and expire discount promo codes."
-            />
-          }
-        />
-        <Route
-          path="bulk-subscription"
-          element={
-            <AdminModulePlaceholderPage
-              moduleId="bulk-subscription"
-              title="Bulk Subscription"
-              description="Enterprise license management for hospitals, universities, and state health departments."
-            />
-          }
-        />
+        <Route path="subscriptions" element={<SubscriptionsPage />} />
+        <Route path="plans" element={<PlansPage />} />
+        <Route path="discounts" element={<DiscountsPage />} />
+        <Route path="coupons" element={<DiscountsPage />} />
+        <Route path="bulk-subscription" element={<BulkSubscriptionsPage />} />
 
         {/* Engagement & Support */}
         <Route

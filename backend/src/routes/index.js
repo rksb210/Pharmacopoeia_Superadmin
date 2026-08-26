@@ -5,6 +5,10 @@ import adminRoutes from './admin.routes.js';
 import subadminRoutes from './subadmin.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import subscriberRoutes from './subscriber.routes.js';
+import subscriptionRoutes from './subscription.routes.js';
+import planRoutes from './plan.routes.js';
+import couponRoutes from './coupon.routes.js';
+import bulkImportRoutes from './bulkImport.routes.js';
 
 const router = Router();
 
@@ -34,5 +38,17 @@ router.use('/dashboard', dashboardRoutes);
 
 // Public Subscribers / Users Management routes
 router.use('/subscribers', subscriberRoutes);
+
+// Subscriptions Lifecycle Management routes
+router.use('/subscriptions', subscriptionRoutes);
+
+// Plans & Pricing Management routes
+router.use('/plans', planRoutes);
+
+// Discounts & Coupons Management routes
+router.use('/coupons', couponRoutes);
+
+// Bulk Subscriptions Management routes
+router.use('/bulk-subscriptions', bulkImportRoutes);
 
 export default router;
