@@ -1,5 +1,6 @@
 import { verifyToken } from '../utils/jwt.js';
 import User from '../models/user.model.js';
+import Subscriber from '../models/subscriber.model.js';
 
 /**
  * Authentication Middleware
@@ -34,8 +35,15 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
-    // Find user in DB
-    const user = await User.findById(decoded.id);
+    // Find user in DB (Check User model first, then Subscriber model)
+    let user = await User.findById(decoded.id);
+    if (!user) {
+      user = await Subscriber.findById(decoded.id);
+      if (user) {
+        user.role = 'subscriber';
+      }
+    }
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -46,7 +54,7 @@ export const authenticate = async (req, res, next) => {
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: 'Account has been deactivated. Please contact Superadmin.',
+        message: 'Account has been deactivated. Please contact administrator.',
       });
     }
 

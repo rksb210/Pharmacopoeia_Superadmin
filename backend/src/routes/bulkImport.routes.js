@@ -44,7 +44,7 @@ router.get('/template', downloadTemplate);
 // Upload & Pre-flight Validation
 router.post(
   '/upload',
-  requirePermission('SUBSCRIPTIONS', 'PLANS', 'ADD'),
+  requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'ADD'),
   upload.single('file'),
   uploadAndValidate
 );
@@ -52,13 +52,13 @@ router.post(
 // Confirm & Execute Batch
 router.post(
   '/confirm',
-  requirePermission('SUBSCRIPTIONS', 'PLANS', 'ADD'),
+  requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'ADD'),
   confirmImport
 );
 
 // History & Details
-router.get('/history', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getHistory);
-router.get('/:id', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getJobById);
-router.get('/:id/error-report', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), downloadErrorReport);
+router.get('/history', requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'VIEW'), getHistory);
+router.get('/:id', requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'VIEW'), getJobById);
+router.get('/:id/error-report', requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'VIEW'), downloadErrorReport);
 
 export default router;

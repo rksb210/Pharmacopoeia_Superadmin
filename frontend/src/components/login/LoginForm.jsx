@@ -181,9 +181,9 @@ export const LoginForm = ({ onLoginSuccess }) => {
           <InputField
             id="identifier"
             name="identifier"
-            label="Email or username"
+            label="Official Email address or Username"
             type="text"
-            placeholder="Enter email or username"
+            placeholder="Enter your official email or username"
             value={formData.identifier}
             onChange={handleChange}
             error={errors.identifier}

@@ -21,14 +21,14 @@ const router = Router();
 router.use(authenticate);
 
 // Stats & Listing
-router.get('/stats', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getPlansStats);
-router.get('/', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getPlans);
-router.get('/:id', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getPlanById);
-router.get('/:id/subscribers', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getPlanSubscribers);
+router.get('/stats', requirePermission('COMMERCIAL', 'PLANS', 'VIEW'), getPlansStats);
+router.get('/', requirePermission('COMMERCIAL', 'PLANS', 'VIEW'), getPlans);
+router.get('/:id', requirePermission('COMMERCIAL', 'PLANS', 'VIEW'), getPlanById);
+router.get('/:id/subscribers', requirePermission('COMMERCIAL', 'PLANS', 'VIEW'), getPlanSubscribers);
 
 // Mutations
-router.post('/', requirePermission('SUBSCRIPTIONS', 'PLANS', 'ADD'), validateCreatePlan, createPlan);
-router.put('/:id', requirePermission('SUBSCRIPTIONS', 'PLANS', 'EDIT'), validateUpdatePlan, updatePlan);
-router.patch('/:id/status', requirePermission('SUBSCRIPTIONS', 'PLANS', 'EDIT'), togglePlanStatus);
+router.post('/', requirePermission('COMMERCIAL', 'PLANS', 'ADD'), validateCreatePlan, createPlan);
+router.put('/:id', requirePermission('COMMERCIAL', 'PLANS', 'EDIT'), validateUpdatePlan, updatePlan);
+router.patch('/:id/status', requirePermission('COMMERCIAL', 'PLANS', 'EDIT'), togglePlanStatus);
 
 export default router;

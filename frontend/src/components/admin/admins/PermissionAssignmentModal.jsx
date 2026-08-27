@@ -3,6 +3,8 @@ import AdminModal from '../common/AdminModal';
 import DynamicPermissionMatrix from '../common/DynamicPermissionMatrix';
 import { ShieldCheck, AlertCircle } from 'lucide-react';
 
+import api from '../../../services/api';
+
 export const PermissionAssignmentModal = ({
   isOpen,
   onClose,
@@ -14,8 +16,25 @@ export const PermissionAssignmentModal = ({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (admin) {
-      setSelectedPermissions(admin.customPermissions || []);
+    if (admin && isOpen) {
+      if (admin.hasCustomPermissions) {
+        setSelectedPermissions(admin.customPermissions || []);
+      } else {
+        // Fetch role's baseline permissions so superadmin can start from current role grants
+        api
+          .get('/rbac/roles')
+          .then((res) => {
+            const currentRole = res.roles?.find((r) => r.code === admin.role?.toLowerCase());
+            if (currentRole && Array.isArray(currentRole.permissionCodes)) {
+              setSelectedPermissions(currentRole.permissionCodes);
+            } else {
+              setSelectedPermissions(admin.customPermissions || []);
+            }
+          })
+          .catch(() => {
+            setSelectedPermissions(admin.customPermissions || []);
+          });
+      }
       setError('');
     }
   }, [admin, isOpen]);

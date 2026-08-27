@@ -29,6 +29,7 @@ import AdminModulePlaceholderPage from './pages/admin/AdminModulePlaceholderPage
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ForbiddenPage from './pages/error/ForbiddenPage';
 import UnauthorizedPage from './pages/error/UnauthorizedPage';
+import PermissionGuard from './components/admin/common/PermissionGuard';
 
 // Protected Route Component for Public/Subscriber Portal
 const ProtectedRoute = ({ children }) => {
@@ -115,82 +116,204 @@ function AppRoutes() {
         <Route path="dashboard" element={<AdminDashboardPage />} />
 
         {/* User & Access Management */}
-        <Route path="users" element={<UsersPage />} />
-        <Route path="admins" element={<AdminsPage />} />
-        <Route path="sub-admins" element={<SubAdminsPage />} />
-        <Route path="roles" element={<RolesPage />} />
+        <Route
+          path="users"
+          element={
+            <PermissionGuard module="USERS" section="USERS" action="VIEW" pageLevel>
+              <UsersPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="admins"
+          element={
+            <PermissionGuard module="USERS" section="ADMINS" action="VIEW" pageLevel>
+              <AdminsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="sub-admins"
+          element={
+            <PermissionGuard module="USERS" section="SUBADMINS" action="VIEW" pageLevel>
+              <SubAdminsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="roles"
+          element={
+            <PermissionGuard module="USERS" section="ROLES" action="VIEW" pageLevel>
+              <RolesPage />
+            </PermissionGuard>
+          }
+        />
 
         {/* Content & Formulary */}
         <Route
           path="content"
           element={
-            <AdminModulePlaceholderPage
-              moduleId="content"
-              title="Content & Monographs"
-              description="Official Indian Pharmacopoeia drug monographs, dosage guidelines, and advisories."
-            />
+            <PermissionGuard module="CONTENT" section="MONOGRAPHS" action="VIEW" pageLevel>
+              <AdminModulePlaceholderPage
+                moduleId="content"
+                title="Content & Monographs"
+                description="Official Indian Pharmacopoeia drug monographs, dosage guidelines, and advisories."
+              />
+            </PermissionGuard>
           }
         />
         <Route
           path="content-workflow"
           element={
-            <AdminModulePlaceholderPage
-              moduleId="content-workflow"
-              title="Content Workflow"
-              description="Multi-tier editorial review, committee approvals, and publishing pipeline."
-            />
+            <PermissionGuard module="CONTENT" section="WORKFLOW" action="VIEW" pageLevel>
+              <AdminModulePlaceholderPage
+                moduleId="content-workflow"
+                title="Content Workflow"
+                description="Multi-tier editorial review, committee approvals, and publishing pipeline."
+              />
+            </PermissionGuard>
           }
         />
         <Route
           path="search-index"
           element={
-            <AdminModulePlaceholderPage
-              moduleId="search-index"
-              title="Search Index"
-              description="Formulary indexing health, synonym mappings, and search query analytics."
-            />
+            <PermissionGuard module="CONTENT" section="SEARCH_INDEX" action="VIEW" pageLevel>
+              <AdminModulePlaceholderPage
+                moduleId="search-index"
+                title="Search Index"
+                description="Formulary indexing health, synonym mappings, and search query analytics."
+              />
+            </PermissionGuard>
           }
         />
 
         {/* Commercial & Subscriptions */}
-        <Route path="subscriptions" element={<SubscriptionsPage />} />
-        <Route path="plans" element={<PlansPage />} />
-        <Route path="discounts" element={<DiscountsPage />} />
-        <Route path="coupons" element={<DiscountsPage />} />
-        <Route path="bulk-subscription" element={<BulkSubscriptionsPage />} />
-        <Route path="orders" element={<OrdersPage />} />
+        <Route
+          path="subscriptions"
+          element={
+            <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="VIEW" pageLevel>
+              <SubscriptionsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="plans"
+          element={
+            <PermissionGuard module="COMMERCIAL" section="PLANS" action="VIEW" pageLevel>
+              <PlansPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="discounts"
+          element={
+            <PermissionGuard module="COMMERCIAL" section="DISCOUNTS" action="VIEW" pageLevel>
+              <DiscountsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="coupons"
+          element={
+            <PermissionGuard module="COMMERCIAL" section="COUPONS" action="VIEW" pageLevel>
+              <DiscountsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="bulk-subscription"
+          element={
+            <PermissionGuard module="COMMERCIAL" section="BULK_SUBSCRIPTION" action="VIEW" pageLevel>
+              <BulkSubscriptionsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="orders"
+          element={
+            <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="VIEW" pageLevel>
+              <OrdersPage />
+            </PermissionGuard>
+          }
+        />
 
         {/* Engagement & Support */}
-        <Route path="crm" element={<CRMPage />} />
-        <Route path="feedback" element={<FeedbackPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
+        <Route
+          path="crm"
+          element={
+            <PermissionGuard module="ENGAGEMENT" section="CRM" action="VIEW" pageLevel>
+              <CRMPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="feedback"
+          element={
+            <PermissionGuard module="ENGAGEMENT" section="FEEDBACK" action="VIEW" pageLevel>
+              <FeedbackPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="notifications"
+          element={
+            <PermissionGuard module="ENGAGEMENT" section="NOTIFICATIONS" action="VIEW" pageLevel>
+              <NotificationsPage />
+            </PermissionGuard>
+          }
+        />
 
         {/* Integrated Modules */}
         <Route
           path="diksha"
           element={
-            <AdminModulePlaceholderPage
-              moduleId="diksha"
-              title="DIKSHA Integration"
-              description="E-learning course catalog, continuing medical education (CME), and certificates."
-            />
+            <PermissionGuard module="INTEGRATED" section="DIKSHA" action="VIEW" pageLevel>
+              <AdminModulePlaceholderPage
+                moduleId="diksha"
+                title="DIKSHA Integration"
+                description="E-learning course catalog, continuing medical education (CME), and certificates."
+              />
+            </PermissionGuard>
           }
         />
         <Route
           path="kaym"
           element={
-            <AdminModulePlaceholderPage
-              moduleId="kaym"
-              title="KAYM Module"
-              description="Know All Your Medicines (KAYM) scanner integration and patient safety library."
-            />
+            <PermissionGuard module="INTEGRATED" section="KAYM" action="VIEW" pageLevel>
+              <AdminModulePlaceholderPage
+                moduleId="kaym"
+                title="KAYM Module"
+                description="Know All Your Medicines (KAYM) scanner integration and patient safety library."
+              />
+            </PermissionGuard>
           }
         />
 
         {/* System & Governance */}
-        <Route path="reports" element={<ReportsPage />} />
-        <Route path="audit-logs" element={<AuditLogsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route
+          path="reports"
+          element={
+            <PermissionGuard module="SYSTEM" section="REPORTS" action="VIEW" pageLevel>
+              <ReportsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="audit-logs"
+          element={
+            <PermissionGuard module="SYSTEM" section="AUDIT_LOGS" action="VIEW" pageLevel>
+              <AuditLogsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <PermissionGuard module="SYSTEM" section="SETTINGS" action="VIEW" pageLevel>
+              <SettingsPage />
+            </PermissionGuard>
+          }
+        />
       </Route>
 
       {/* Root redirect based on auth */}

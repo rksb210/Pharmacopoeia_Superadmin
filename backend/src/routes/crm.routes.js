@@ -12,9 +12,9 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/stats', requirePermission('USERS', 'SUBSCRIBERS', 'VIEW'), getCRMStats);
-router.get('/customers', requirePermission('USERS', 'SUBSCRIBERS', 'VIEW'), getCustomers);
-router.get('/customers/:id/360', requirePermission('USERS', 'SUBSCRIBERS', 'VIEW'), getCustomerProfile360);
-router.post('/customers/:id/notes', requirePermission('USERS', 'SUBSCRIBERS', 'EDIT'), addCustomerNote);
+router.get('/stats', requirePermission('ENGAGEMENT', 'CRM', 'VIEW'), getCRMStats);
+router.get('/customers', requirePermission('ENGAGEMENT', 'CRM', 'VIEW'), getCustomers);
+router.get('/customers/:id/360', requirePermission('ENGAGEMENT', 'CRM', 'VIEW'), getCustomerProfile360);
+router.post('/customers/:id/notes', requirePermission('ENGAGEMENT', 'CRM', 'EDIT'), addCustomerNote);
 
 export default router;

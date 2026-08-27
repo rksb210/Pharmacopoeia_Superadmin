@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
-import { Search, CheckSquare, Square, ShieldCheck, CheckCheck, XCircle } from 'lucide-react';
+import { Search, CheckSquare, Square, ShieldCheck, CheckCheck, XCircle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 
 export const DynamicPermissionMatrix = ({
@@ -156,17 +156,43 @@ export const DynamicPermissionMatrix = ({
           if (!hasMatchingPerms) return null;
 
           const allModuleCodes = Object.values(sections).flatMap((perms) => perms.map((p) => p.code));
-          const allModuleSelected = allModuleCodes.length > 0 && allModuleCodes.every((c) => selectedPermissions.includes(c));
+          const selectedInModule = allModuleCodes.filter((c) => selectedPermissions.includes(c));
+          const hasAnyModuleSelected = selectedInModule.length > 0;
+          const allModuleSelected = allModuleCodes.length > 0 && selectedInModule.length === allModuleCodes.length;
 
           return (
             <div key={moduleName} className="border border-slate-200/80 rounded-2xl p-4 bg-white shadow-2xs space-y-3.5">
-              {/* Module Header with Toggle */}
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-[#284661] text-xs uppercase tracking-wider">
-                    {moduleName} Management
-                  </h4>
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              {/* Module Header with Master Checkbox & Sidebar Heading Visibility Status */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-slate-100 gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Master Module Checkbox */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleModule(sections)}
+                    className="flex items-center gap-2 cursor-pointer group select-none text-left"
+                    title={
+                      hasAnyModuleSelected
+                        ? 'Click to deselect all in module (hides sidebar heading for this user)'
+                        : 'Click to select all in module (enables sidebar heading for this user)'
+                    }
+                  >
+                    {allModuleSelected ? (
+                      <CheckSquare className="w-4 h-4 text-[#E76120] shrink-0" />
+                    ) : hasAnyModuleSelected ? (
+                      <CheckSquare className="w-4 h-4 text-[#284661] shrink-0" />
+                    ) : (
+                      <Square className="w-4 h-4 text-slate-300 group-hover:text-slate-500 shrink-0" />
+                    )}
+                    <h4
+                      className={`font-bold text-xs uppercase tracking-wider transition-colors ${
+                        hasAnyModuleSelected ? 'text-[#284661]' : 'text-slate-500'
+                      }`}
+                    >
+                      {moduleName} Management
+                    </h4>
+                  </button>
+
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">
                     {Object.keys(sections).length} Sections
                   </Badge>
                 </div>
@@ -174,9 +200,9 @@ export const DynamicPermissionMatrix = ({
                 <button
                   type="button"
                   onClick={() => handleToggleModule(sections)}
-                  className="text-[11px] font-bold text-[#E76120] hover:underline cursor-pointer"
+                  className="text-[11px] font-bold text-[#E76120] hover:underline cursor-pointer self-end sm:self-auto"
                 >
-                  {allModuleSelected ? 'Deselect Module' : 'Select All in Module'}
+                  {hasAnyModuleSelected ? 'Deselect Module' : 'Select All in Module'}
                 </button>
               </div>
 

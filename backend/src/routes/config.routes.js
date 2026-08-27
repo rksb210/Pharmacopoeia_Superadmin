@@ -16,8 +16,8 @@ router.get('/public', getPublicConfig);
 // Protected administrative configuration endpoints
 router.use(authenticate);
 
-router.get('/', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), getFullConfig);
-router.put('/', requirePermission('SETTINGS', 'SYSTEM', 'EDIT'), updateConfig);
-router.post('/restore/:version', requirePermission('SETTINGS', 'SYSTEM', 'EDIT'), restoreConfigVersion);
+router.get('/', requirePermission('SYSTEM', 'SETTINGS', 'VIEW'), getFullConfig);
+router.put('/', requirePermission('SYSTEM', 'SETTINGS', 'EDIT'), updateConfig);
+router.post('/restore/:version', requirePermission('SYSTEM', 'SETTINGS', 'EDIT'), restoreConfigVersion);
 
 export default router;

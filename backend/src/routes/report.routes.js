@@ -16,13 +16,13 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/overview', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), getOverview);
-router.get('/users', requirePermission('USERS', 'SUBSCRIBERS', 'VIEW'), getUserReports);
-router.get('/subscriptions', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getSubscriptionReports);
-router.get('/content', requirePermission('CONTENT', 'MONOGRAPHS', 'VIEW'), getContentReports);
-router.get('/workflow', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), getWorkflowReports);
-router.get('/commerce', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getCommerceReports);
-router.get('/crm', requirePermission('USERS', 'SUBSCRIBERS', 'VIEW'), getCRMReports);
-router.get('/export/:domain', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), exportReport);
+router.get('/overview', requirePermission('SYSTEM', 'REPORTS', 'VIEW'), getOverview);
+router.get('/users', requirePermission('SYSTEM', 'REPORTS', 'VIEW'), getUserReports);
+router.get('/subscriptions', requirePermission('SYSTEM', 'REPORTS', 'VIEW'), getSubscriptionReports);
+router.get('/content', requirePermission('SYSTEM', 'REPORTS', 'VIEW'), getContentReports);
+router.get('/workflow', requirePermission('SYSTEM', 'REPORTS', 'VIEW'), getWorkflowReports);
+router.get('/commerce', requirePermission('SYSTEM', 'REPORTS', 'VIEW'), getCommerceReports);
+router.get('/crm', requirePermission('SYSTEM', 'REPORTS', 'VIEW'), getCRMReports);
+router.get('/export/:domain', requirePermission('SYSTEM', 'REPORTS', 'EXPORT'), exportReport);
 
 export default router;

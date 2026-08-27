@@ -1,6 +1,6 @@
 import User from '../models/user.model.js';
 import Role from '../models/role.model.js';
-import { getUserEffectivePermissions } from '../middlewares/rbac.middleware.js';
+import { getUserEffectivePermissions, invalidateRBACCache } from '../middlewares/rbac.middleware.js';
 
 export const adminService = {
   /**
@@ -296,7 +296,10 @@ export const adminService = {
     }
 
     admin.customPermissions = customPermissions.map((p) => p.toUpperCase());
+    admin.hasCustomPermissions = true;
     await admin.save();
+
+    invalidateRBACCache();
 
     return admin;
   },

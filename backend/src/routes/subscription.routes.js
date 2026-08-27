@@ -25,19 +25,19 @@ const router = Router();
 router.use(authenticate);
 
 // Config & Stats
-router.get('/stats', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getSubscriptionStats);
-router.get('/config', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getSystemConfigs);
-router.put('/config', requirePermission('SUBSCRIPTIONS', 'PLANS', 'EDIT'), updateSystemConfig);
+router.get('/stats', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'VIEW'), getSubscriptionStats);
+router.get('/config', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'VIEW'), getSystemConfigs);
+router.put('/config', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'EDIT'), updateSystemConfig);
 
 // Directory & Details
-router.get('/', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getSubscriptions);
-router.get('/:id', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getSubscriptionById);
-router.get('/user/:userId/timeline', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getUserSubscriptionTimeline);
+router.get('/', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'VIEW'), getSubscriptions);
+router.get('/:id', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'VIEW'), getSubscriptionById);
+router.get('/user/:userId/timeline', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'VIEW'), getUserSubscriptionTimeline);
 
 // Actions
-router.post('/assign', requirePermission('SUBSCRIPTIONS', 'PLANS', 'ADD'), validateAssignSubscription, assignSubscription);
-router.post('/:id/renew', requirePermission('SUBSCRIPTIONS', 'PLANS', 'EDIT'), renewSubscription);
-router.post('/:id/cancel', requirePermission('SUBSCRIPTIONS', 'PLANS', 'DELETE'), validateCancelSubscription, cancelSubscription);
-router.patch('/:id/status', requirePermission('SUBSCRIPTIONS', 'PLANS', 'EDIT'), validateChangeStatus, changeSubscriptionStatus);
+router.post('/assign', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'ADD'), validateAssignSubscription, assignSubscription);
+router.post('/:id/renew', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'EDIT'), renewSubscription);
+router.post('/:id/cancel', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'DELETE'), validateCancelSubscription, cancelSubscription);
+router.patch('/:id/status', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'EDIT'), validateChangeStatus, changeSubscriptionStatus);
 
 export default router;

@@ -13,12 +13,12 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/stats', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getOrderStats);
-router.get('/export', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), exportOrders);
-router.get('/', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getOrdersList);
-router.get('/:id', requirePermission('SUBSCRIPTIONS', 'PLANS', 'VIEW'), getOrderById);
+router.get('/stats', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'VIEW'), getOrderStats);
+router.get('/export', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'VIEW'), exportOrders);
+router.get('/', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'VIEW'), getOrdersList);
+router.get('/:id', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'VIEW'), getOrderById);
 
 // Refund processing
-router.post('/:id/refund', requirePermission('SUBSCRIPTIONS', 'PLANS', 'EDIT'), processRefund);
+router.post('/:id/refund', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'EDIT'), processRefund);
 
 export default router;
