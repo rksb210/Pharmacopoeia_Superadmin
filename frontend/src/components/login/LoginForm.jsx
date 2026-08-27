@@ -88,7 +88,7 @@ export const LoginForm = ({ onLoginSuccess }) => {
       const adminRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver', 'editor', 'viewer'];
       const userRole = (res.user?.role || '').toLowerCase();
       if (adminRoles.includes(userRole)) {
-        navigate('/admin/dashboard');
+        navigate('/admin');
       } else {
         navigate('/dashboard');
       }

@@ -264,4 +264,18 @@ export const getFilteredAdminNav = (user, can = null) => {
   }).filter((section) => section.items.length > 0);
 };
 
+/**
+ * Get the first permitted route path in the sidebar for the active user
+ * @param {Object} user - Authenticated user object
+ * @param {Function} can - Optional can helper from PermissionContext
+ * @returns {String} Route path (e.g. '/admin/dashboard', '/admin/plans')
+ */
+export const getFirstPermittedAdminRoute = (user, can = null) => {
+  const filtered = getFilteredAdminNav(user, can);
+  if (filtered.length > 0 && filtered[0].items && filtered[0].items.length > 0) {
+    return filtered[0].items[0].path;
+  }
+  return '/admin/dashboard';
+};
+
 export default ADMIN_NAV_SECTIONS;

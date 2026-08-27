@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { PermissionProvider } from './context/PermissionContext';
+import { PermissionProvider, usePermission } from './context/PermissionContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 
@@ -30,6 +30,32 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ForbiddenPage from './pages/error/ForbiddenPage';
 import UnauthorizedPage from './pages/error/UnauthorizedPage';
 import PermissionGuard from './components/admin/common/PermissionGuard';
+import { getFirstPermittedAdminRoute } from './config/adminNav';
+
+// Dynamic Index Redirect to the first permitted route in user's sidebar
+const AdminIndexRedirect = () => {
+  const { user } = useAuth();
+  const { can, loading, isSuperAdmin, permissions } = usePermission();
+
+  if (loading) {
+    return (
+      <div className="py-20 flex flex-col items-center justify-center gap-2">
+        <div className="w-8 h-8 border-3 border-[#FFD243] border-t-[#E76120] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isSuperAdmin) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  if (Array.isArray(permissions) && permissions.length === 0) {
+    return null;
+  }
+
+  const targetPath = getFirstPermittedAdminRoute(user, can);
+  return <Navigate to={targetPath} replace />;
+};
 
 // Protected Route Component for Public/Subscriber Portal
 const ProtectedRoute = ({ children }) => {
@@ -60,7 +86,7 @@ const PublicRoute = ({ children }) => {
   if (loading) return null;
 
   if (isAuthenticated) {
-    return <Navigate to={isAdminUser ? '/admin/dashboard' : '/dashboard'} replace />;
+    return <Navigate to={isAdminUser ? '/admin' : '/dashboard'} replace />;
   }
 
   return children;
@@ -112,8 +138,21 @@ function AppRoutes() {
           </AdminRoute>
         }
       >
-        <Route index element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboardPage />} />
+        <Route index element={<AdminIndexRedirect />} />
+        <Route
+          path="dashboard"
+          element={
+            <PermissionGuard
+              module="OVERVIEW"
+              section="DASHBOARD"
+              action="VIEW"
+              pageLevel
+              fallback={<AdminIndexRedirect />}
+            >
+              <AdminDashboardPage />
+            </PermissionGuard>
+          }
+        />
 
         {/* User & Access Management */}
         <Route
