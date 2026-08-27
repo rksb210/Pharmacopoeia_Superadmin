@@ -48,11 +48,23 @@ export const validateCreateSubscriber = (req, res, next) => {
     if (!dynamicFields.companyName || !dynamicFields.companyName.trim()) {
       errors.push('Industry / Organization Name is required');
     }
-    if (!dynamicFields.gstin || !dynamicFields.gstin.trim()) {
-      errors.push('GSTIN is required for Industry subscribers');
+
+    // GSTIN Nomenclature Check (15 characters: 2 digits + 10-char PAN + 1 entity + Z + 1 check digit)
+    const gstinVal = (dynamicFields.gstin || '').trim().toUpperCase();
+    const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstinVal) {
+      errors.push('Company GSTIN is required for Industry subscribers');
+    } else if (!gstinRegex.test(gstinVal)) {
+      errors.push('Invalid Company GSTIN format. Must be exactly 15 characters (e.g. 22AAAAA0000A1Z5)');
     }
-    if (!dynamicFields.pan || !dynamicFields.pan.trim()) {
-      errors.push('PAN is required for Industry subscribers');
+
+    // Corporate PAN Nomenclature Check (10 characters: 5 letters + 4 digits + 1 letter)
+    const panVal = (dynamicFields.pan || '').trim().toUpperCase();
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if (!panVal) {
+      errors.push('Corporate PAN is required for Industry subscribers');
+    } else if (!panRegex.test(panVal)) {
+      errors.push('Invalid Corporate PAN format. Must be exactly 10 characters (e.g. AAAAA9999A)');
     }
   } else if (uType === 'OTHERS') {
     if (!dynamicFields.designation || !dynamicFields.designation.trim()) {
@@ -85,6 +97,19 @@ export const validateUpdateSubscriber = (req, res, next) => {
 
   if (username !== undefined && (!username || username.trim().length < 3)) {
     errors.push('Username must be at least 3 characters');
+  }
+
+  if (req.body.dynamicFields && typeof req.body.dynamicFields === 'object') {
+    const { gstin, pan } = req.body.dynamicFields;
+    const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+
+    if (gstin !== undefined && gstin.trim() && !gstinRegex.test(gstin.trim().toUpperCase())) {
+      errors.push('Invalid Company GSTIN format. Must be exactly 15 characters (e.g. 22AAAAA0000A1Z5)');
+    }
+    if (pan !== undefined && pan.trim() && !panRegex.test(pan.trim().toUpperCase())) {
+      errors.push('Invalid Corporate PAN format. Must be exactly 10 characters (e.g. AAAAA9999A)');
+    }
   }
 
   if (errors.length > 0) {

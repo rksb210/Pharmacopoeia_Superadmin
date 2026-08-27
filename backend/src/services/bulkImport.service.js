@@ -181,9 +181,21 @@ export const bulkImportService = {
         dynamicFields.registrationNo = regNo;
         dynamicFields.registrationState = state;
       } else if (userType === 'INDUSTRY') {
-        if (!gstin && !pan) errors.push('Either GSTIN or PAN is mandatory for Industry entities');
-        dynamicFields.gstin = gstin;
-        dynamicFields.pan = pan;
+        const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+        const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+
+        if (!gstin && !pan) {
+          errors.push('Either GSTIN or PAN is mandatory for Industry entities');
+        }
+        if (gstin && !gstinRegex.test(gstin.toUpperCase())) {
+          errors.push(`Invalid GSTIN format '${gstin}'. Must be 15 characters (e.g. 22AAAAA0000A1Z5)`);
+        }
+        if (pan && !panRegex.test(pan.toUpperCase())) {
+          errors.push(`Invalid Corporate PAN format '${pan}'. Must be 10 characters (e.g. AAAAA9999A)`);
+        }
+
+        dynamicFields.gstin = gstin ? gstin.toUpperCase() : '';
+        dynamicFields.pan = pan ? pan.toUpperCase() : '';
       } else if (userType === 'OTHERS') {
         dynamicFields.designation = designation || 'Professional';
       }

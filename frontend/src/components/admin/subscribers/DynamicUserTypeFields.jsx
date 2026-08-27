@@ -116,22 +116,26 @@ export const DynamicUserTypeFields = ({
             <InputField
               id="gstin"
               name="gstin"
-              label="Company GSTIN"
-              placeholder="e.g. 07AAAAA0000A1Z5"
+              label="Company GSTIN (15 Characters)"
+              placeholder="e.g. 22AAAAA0000A1Z5"
               value={dynamicFields.gstin || ''}
-              onChange={(e) => handleChange('gstin', e.target.value)}
+              onChange={(e) => handleChange('gstin', e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 15))}
               error={errors.gstin}
+              helperText="Format: 2 digits + 10-char PAN + 1 entity + Z + 1 check digit"
+              maxLength={15}
               required
             />
 
             <InputField
               id="pan"
               name="pan"
-              label="Corporate PAN"
-              placeholder="e.g. ABCDE1234F"
+              label="Corporate PAN (10 Characters)"
+              placeholder="e.g. AAAAA9999A"
               value={dynamicFields.pan || ''}
-              onChange={(e) => handleChange('pan', e.target.value)}
+              onChange={(e) => handleChange('pan', e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 10))}
               error={errors.pan}
+              helperText="Format: 5 letters + 4 digits + 1 letter"
+              maxLength={10}
               required
             />
           </div>
