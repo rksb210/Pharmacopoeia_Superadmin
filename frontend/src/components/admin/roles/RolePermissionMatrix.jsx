@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
-import { Search, Check, Minus, CheckCheck, XCircle } from 'lucide-react';
+import { Search, Check, Minus, CheckCheck, XCircle, CheckSquare, Square, CheckCircle2 } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 
 const DISPLAY_ACTIONS = [
@@ -187,19 +187,56 @@ export const RolePermissionMatrix = ({
                 if (matchingSections.length === 0) return null;
 
                 const allModuleCodes = Object.values(sections).flatMap((perms) => perms.map((p) => p.code));
-                const isModuleAll = allModuleCodes.length > 0 && allModuleCodes.every((c) => selectedPermissions.includes(c));
+                const selectedInModule = allModuleCodes.filter((c) => selectedPermissions.includes(c));
+                const hasAnyModuleSelected = selectedInModule.length > 0;
+                const isModuleAll = allModuleCodes.length > 0 && selectedInModule.length === allModuleCodes.length;
 
                 return (
                   <React.Fragment key={moduleName}>
-                    {/* Module Separator Row */}
+                    {/* Module Separator Row with Master Checkbox & Sidebar Heading Indicator */}
                     <tr className="bg-slate-50/90 font-bold text-[#284661] text-[11px] uppercase tracking-wider border-y border-slate-200/60">
-                      <td colSpan={DISPLAY_ACTIONS.length + (readOnly ? 1 : 2)} className="py-2 px-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span>{moduleName} MODULE</span>
+                      <td colSpan={DISPLAY_ACTIONS.length + (readOnly ? 1 : 2)} className="py-2.5 px-4">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            {!readOnly ? (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleModule(sections)}
+                                className="flex items-center gap-2 cursor-pointer group select-none text-left"
+                                title={
+                                  hasAnyModuleSelected
+                                    ? 'Click to clear all in module (hides sidebar heading for this role)'
+                                    : 'Click to select all in module (enables sidebar heading for this role)'
+                                }
+                              >
+                                {isModuleAll ? (
+                                  <CheckSquare className="w-4 h-4 text-[#E76120] shrink-0" />
+                                ) : hasAnyModuleSelected ? (
+                                  <CheckSquare className="w-4 h-4 text-[#284661] shrink-0" />
+                                ) : (
+                                  <Square className="w-4 h-4 text-slate-300 group-hover:text-slate-500 shrink-0" />
+                                )}
+                                <span>{moduleName} MODULE</span>
+                              </button>
+                            ) : (
+                              <span>{moduleName} MODULE</span>
+                            )}
+
                             <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
                               {Object.keys(sections).length} Sections
                             </Badge>
+
+                            {/* Dynamic Sidebar Heading Indicator */}
+                            {hasAnyModuleSelected ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 uppercase tracking-tight shadow-2xs">
+                                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                <span>Sidebar Heading Visible ({selectedInModule.length} selected)</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-slate-100 text-slate-400 border border-slate-200 uppercase tracking-tight">
+                                <span>Sidebar Hidden (0 selected)</span>
+                              </span>
+                            )}
                           </div>
 
                           {!readOnly && (
@@ -208,7 +245,7 @@ export const RolePermissionMatrix = ({
                               onClick={() => handleToggleModule(sections)}
                               className="text-[10px] font-bold text-[#E76120] hover:underline normal-case cursor-pointer"
                             >
-                              {isModuleAll ? 'Clear Module' : 'Select All Module'}
+                              {hasAnyModuleSelected ? 'Clear Module' : 'Select All Module'}
                             </button>
                           )}
                         </div>

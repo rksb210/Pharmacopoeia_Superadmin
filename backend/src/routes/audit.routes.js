@@ -12,9 +12,9 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/stats', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), getAuditStats);
-router.get('/export', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), exportAuditLogs);
-router.get('/', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), getAuditLogsList);
-router.get('/:id', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), getAuditLogById);
+router.get('/stats', requirePermission('SYSTEM', 'AUDIT_LOGS', 'VIEW'), getAuditStats);
+router.get('/export', requirePermission('SYSTEM', 'AUDIT_LOGS', 'EXPORT'), exportAuditLogs);
+router.get('/', requirePermission('SYSTEM', 'AUDIT_LOGS', 'VIEW'), getAuditLogsList);
+router.get('/:id', requirePermission('SYSTEM', 'AUDIT_LOGS', 'VIEW'), getAuditLogById);
 
 export default router;

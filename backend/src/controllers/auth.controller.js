@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import User from '../models/user.model.js';
+import Subscriber from '../models/subscriber.model.js';
 import { generateToken } from '../utils/jwt.js';
 
 /**
@@ -27,7 +28,7 @@ const getClientDevice = (req) => {
 };
 
 /**
- * @desc    Authenticate user & get token (supports Email or Username)
+ * @desc    Authenticate user & get token (supports Official Email or Username)
  * @route   POST /api/auth/login
  * @access  Public
  */
@@ -36,23 +37,38 @@ export const login = async (req, res, next) => {
     const { identifier, password, rememberMe } = req.body;
     const cleanIdentifier = (identifier || '').toLowerCase().trim();
 
-    // Query user by either email or username + explicitly select password
-    const user = await User.findOne({
+    // 1. Search Admin/Staff Users by Email OR Username
+    let user = await User.findOne({
       $or: [
         { email: cleanIdentifier },
         { username: cleanIdentifier },
       ],
     }).select('+password +failedLoginAttempts +lockUntil +twoFactorEnabled');
 
+    let isSubscriber = false;
+
+    // 2. If not found in User collection, search Subscriber collection by Email OR Username
+    if (!user) {
+      user = await Subscriber.findOne({
+        $or: [
+          { email: cleanIdentifier },
+          { username: cleanIdentifier },
+        ],
+      }).select('+password');
+      if (user) {
+        isSubscriber = true;
+      }
+    }
+
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email/username or password.',
+        message: 'Invalid official email address/username or password.',
       });
     }
 
     // Check if account is temporarily locked due to excessive failed attempts
-    if (user.isLocked()) {
+    if (!isSubscriber && user.isLocked && user.isLocked()) {
       const lockMinutesRemaining = Math.ceil((user.lockUntil - Date.now()) / (60 * 1000));
       return res.status(423).json({
         success: false,
@@ -71,28 +87,30 @@ export const login = async (req, res, next) => {
     // Verify password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      // Increment failed attempts
-      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
-      
-      // Lock account for 15 minutes after 5 consecutive failed attempts
-      if (user.failedLoginAttempts >= 5) {
-        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
-        await user.save({ validateBeforeSave: false });
-        return res.status(423).json({
-          success: false,
-          message: 'Too many failed login attempts. Account temporarily locked for 15 minutes.',
-        });
-      }
+      if (!isSubscriber) {
+        // Increment failed attempts for security
+        user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+        
+        // Lock account for 15 minutes after 5 consecutive failed attempts
+        if (user.failedLoginAttempts >= 5) {
+          user.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
+          await user.save({ validateBeforeSave: false });
+          return res.status(423).json({
+            success: false,
+            message: 'Too many failed login attempts. Account temporarily locked for 15 minutes.',
+          });
+        }
 
-      await user.save({ validateBeforeSave: false });
+        await user.save({ validateBeforeSave: false });
+      }
 
       return res.status(401).json({
         success: false,
-        message: 'Invalid email/username or password.',
+        message: 'Invalid official email address/username or password.',
       });
     }
 
-    // 2FA Hook Readiness: If 2FA is enabled on account, return 2FA challenge (future module)
+    // 2FA Hook Readiness: If 2FA is enabled on account, return 2FA challenge
     if (user.twoFactorEnabled) {
       return res.status(200).json({
         success: true,
@@ -102,20 +120,25 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // Reset failed attempts & lock on successful login
-    user.failedLoginAttempts = 0;
-    user.lockUntil = null;
+    // Reset failed attempts & update login telemetry on successful login
+    if (!isSubscriber) {
+      user.failedLoginAttempts = 0;
+      user.lockUntil = null;
+    }
     user.lastLogin = new Date();
     user.lastLoginIP = getClientIP(req);
     user.lastLoginDevice = getClientDevice(req);
     await user.save({ validateBeforeSave: false });
+
+    const role = isSubscriber ? 'subscriber' : user.role;
 
     // Generate JWT token
     const token = generateToken({
       id: user._id,
       email: user.email,
       username: user.username,
-      role: user.role,
+      role,
+      userType: isSubscriber ? user.userType : undefined,
     });
 
     // Cookie options
@@ -138,7 +161,9 @@ export const login = async (req, res, next) => {
         name: user.name,
         email: user.email,
         username: user.username,
-        role: user.role,
+        role,
+        userType: isSubscriber ? user.userType : undefined,
+        subscription: isSubscriber ? user.subscription : undefined,
         lastLogin: user.lastLogin,
         lastLoginIP: user.lastLoginIP,
         lastLoginDevice: user.lastLoginDevice,
@@ -271,17 +296,42 @@ export const resetPassword = async (req, res, next) => {
  */
 export const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    let user = await User.findById(req.user.id);
+    let isSubscriber = false;
+
+    if (!user) {
+      user = await Subscriber.findById(req.user.id);
+      if (user) {
+        isSubscriber = true;
+      }
+    }
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found.',
+        message: 'User profile not found.',
       });
     }
 
+    const role = isSubscriber ? 'subscriber' : user.role;
+
     return res.status(200).json({
       success: true,
-      user,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        role,
+        userType: isSubscriber ? user.userType : undefined,
+        subscription: isSubscriber ? user.subscription : undefined,
+        department: user.department,
+        designation: user.designation,
+        phoneNumber: user.phoneNumber,
+        lastLogin: user.lastLogin,
+        lastLoginIP: user.lastLoginIP,
+        lastLoginDevice: user.lastLoginDevice,
+      },
     });
   } catch (error) {
     next(error);

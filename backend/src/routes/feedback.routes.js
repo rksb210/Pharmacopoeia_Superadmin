@@ -25,25 +25,25 @@ router.post('/submit', publicSubmissionLimiter, optionalAuthenticate, validateCr
 // Administrative Routes (Protected)
 router.use(authenticate);
 
-router.get('/stats', requirePermission('USERS', 'SUBSCRIBERS', 'VIEW'), getFeedbackStats);
-router.get('/', requirePermission('USERS', 'SUBSCRIBERS', 'VIEW'), getFeedbackList);
-router.get('/:id', requirePermission('USERS', 'SUBSCRIBERS', 'VIEW'), getFeedbackById);
+router.get('/stats', requirePermission('ENGAGEMENT', 'FEEDBACK', 'VIEW'), getFeedbackStats);
+router.get('/', requirePermission('ENGAGEMENT', 'FEEDBACK', 'VIEW'), getFeedbackList);
+router.get('/:id', requirePermission('ENGAGEMENT', 'FEEDBACK', 'VIEW'), getFeedbackById);
 
 // Ticket Mutations
 router.patch(
   '/:id/assign',
-  requirePermission('USERS', 'SUBSCRIBERS', 'EDIT'),
+  requirePermission('ENGAGEMENT', 'FEEDBACK', 'EDIT'),
   assignFeedback
 );
 router.patch(
   '/:id/status',
-  requirePermission('USERS', 'SUBSCRIBERS', 'EDIT'),
+  requirePermission('ENGAGEMENT', 'FEEDBACK', 'EDIT'),
   validateStatusUpdate,
   updateFeedbackStatus
 );
 router.post(
   '/:id/reply',
-  requirePermission('USERS', 'SUBSCRIBERS', 'EDIT'),
+  requirePermission('ENGAGEMENT', 'FEEDBACK', 'EDIT'),
   validateReply,
   replyToFeedback
 );

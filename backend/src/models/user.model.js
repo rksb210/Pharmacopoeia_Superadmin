@@ -85,6 +85,10 @@ const userSchema = new mongoose.Schema(
         uppercase: true,
       },
     ],
+    hasCustomPermissions: {
+      type: Boolean,
+      default: false,
+    },
     isActive: {
       type: Boolean,
       default: true,

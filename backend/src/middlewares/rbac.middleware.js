@@ -44,14 +44,14 @@ export const getUserEffectivePermissions = async (user) => {
     return ['*'];
   }
 
-  // Get permissions from Role model
+  // If user has custom permissions explicitly configured by superadmin (even if empty [])
+  if (user.hasCustomPermissions) {
+    return (user.customPermissions || []).map((p) => p.toUpperCase());
+  }
+
+  // Fallback to Role model permissions
   const rolePermissions = await getCachedRolePermissions(user.role);
-
-  // Combine with custom user permissions
-  const customPermissions = user.customPermissions || [];
-  const combined = new Set([...rolePermissions, ...customPermissions]);
-
-  return Array.from(combined);
+  return rolePermissions;
 };
 
 /**

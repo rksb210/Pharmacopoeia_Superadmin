@@ -27,24 +27,24 @@ router.get('/inbox/my-feed', getMyFeed);
 router.post('/:id/read', markAsRead);
 
 // Administrative Campaign Management
-router.get('/stats', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), getNotificationStats);
-router.get('/', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), getNotifications);
-router.get('/:id', requirePermission('SETTINGS', 'SYSTEM', 'VIEW'), getNotificationById);
+router.get('/stats', requirePermission('ENGAGEMENT', 'NOTIFICATIONS', 'VIEW'), getNotificationStats);
+router.get('/', requirePermission('ENGAGEMENT', 'NOTIFICATIONS', 'VIEW'), getNotifications);
+router.get('/:id', requirePermission('ENGAGEMENT', 'NOTIFICATIONS', 'VIEW'), getNotificationById);
 
 // Mutations
 router.post(
   '/',
-  requirePermission('SETTINGS', 'SYSTEM', 'EDIT'),
+  requirePermission('ENGAGEMENT', 'NOTIFICATIONS', 'ADD'),
   validateCreateNotification,
   createNotification
 );
 router.put(
   '/:id',
-  requirePermission('SETTINGS', 'SYSTEM', 'EDIT'),
+  requirePermission('ENGAGEMENT', 'NOTIFICATIONS', 'EDIT'),
   validateUpdateNotification,
   updateNotification
 );
-router.patch('/:id/status', requirePermission('SETTINGS', 'SYSTEM', 'EDIT'), toggleNotificationStatus);
-router.post('/:id/dispatch', requirePermission('SETTINGS', 'SYSTEM', 'EDIT'), dispatchNotification);
+router.patch('/:id/status', requirePermission('ENGAGEMENT', 'NOTIFICATIONS', 'EDIT'), toggleNotificationStatus);
+router.post('/:id/dispatch', requirePermission('ENGAGEMENT', 'NOTIFICATIONS', 'PUBLISH'), dispatchNotification);
 
 export default router;
