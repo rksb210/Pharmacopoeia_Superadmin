@@ -21,9 +21,27 @@ export const PlanCard = ({
   onViewSubscribers,
   onToggleStatus,
 }) => {
-  const is2031 =
-    plan.validityType === 'fixed_date' ||
-    (plan.fixedDate && new Date(plan.fixedDate).getFullYear() >= 2031);
+  const getValidThruBadge = () => {
+    if (plan.validityType === 'fixed_date') {
+      const formattedDate = plan.fixedDate
+        ? new Date(plan.fixedDate).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          })
+        : '31 Dec 2031';
+      return (
+        <Badge variant="nfiNavy" className="text-[9px] font-bold">
+          Valid thru {formattedDate}
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="secondary" className="text-[9px] font-bold">
+        {plan.durationValue} {plan.validityType?.replace('duration_', '')}
+      </Badge>
+    );
+  };
 
   return (
     <div
@@ -101,15 +119,7 @@ export const PlanCard = ({
 
         {/* Validity Tag */}
         <div className="text-right">
-          {is2031 ? (
-            <Badge variant="nfiNavy" className="text-[9px] font-bold">
-              Valid thru 31 Dec 2031
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="text-[9px] font-bold">
-              {plan.durationValue} {plan.validityType?.replace('duration_', '')}
-            </Badge>
-          )}
+          {getValidThruBadge()}
         </div>
       </div>
 

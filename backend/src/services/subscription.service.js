@@ -1,6 +1,7 @@
 import Subscription from '../models/subscription.model.js';
 import Subscriber from '../models/subscriber.model.js';
 import SystemConfig from '../models/systemConfig.model.js';
+import Plan from '../models/plan.model.js';
 
 export const subscriptionService = {
   /**
@@ -259,10 +260,24 @@ export const subscriptionService = {
     let discountAmount = 0;
     let paymentStatus = 'success';
 
+    let planDoc = null;
+    if (planCode) {
+      planDoc = await Plan.findOne({ code: planCode });
+    }
+
     // Business Rules for Expiry Calculation
     if (type === 'paid') {
-      // BRD Business Rule: Fixed validity until 31 December 2031 from SystemConfig
-      endDate = await subscriptionService.getConfiguredFixedExpiry();
+      if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
+        endDate = new Date(planDoc.fixedDate);
+      } else if (planDoc && planDoc.validityType === 'duration_years') {
+        endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + (planDoc.durationValue || 1));
+      } else if (planDoc && planDoc.validityType === 'duration_months') {
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + (planDoc.durationValue || 12));
+      } else {
+        endDate = await subscriptionService.getConfiguredFixedExpiry();
+      }
     } else if (type === 'trial') {
       const days = parseInt(customDays, 10) || 14;
       endDate = new Date(startDate.getTime() + days * 24 * 60 * 60 * 1000);
@@ -275,7 +290,11 @@ export const subscriptionService = {
       finalAmount = 0;
       paymentStatus = 'waived';
     } else if (type === 'discounted') {
-      endDate = await subscriptionService.getConfiguredFixedExpiry();
+      if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
+        endDate = new Date(planDoc.fixedDate);
+      } else {
+        endDate = await subscriptionService.getConfiguredFixedExpiry();
+      }
       const disc = Math.min(100, Math.max(0, parseInt(discountPercent, 10) || 0));
       discountAmount = Math.round((Number(amount) * disc) / 100);
       finalAmount = Math.max(0, Number(amount) - discountAmount);
@@ -354,10 +373,15 @@ export const subscriptionService = {
     const { notes = '', renewMonths = 12 } = data;
     const oldStatus = subscription.status;
 
-    // If paid/discounted, re-confirm BRD fixed expiry date
+    // If paid/discounted, re-confirm dynamic fixed expiry date from Plan or SystemConfig
     let newEndDate;
     if (subscription.type === 'paid' || subscription.type === 'discounted') {
-      newEndDate = await subscriptionService.getConfiguredFixedExpiry();
+      const planDoc = await Plan.findOne({ code: subscription.planCode });
+      if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
+        newEndDate = new Date(planDoc.fixedDate);
+      } else {
+        newEndDate = await subscriptionService.getConfiguredFixedExpiry();
+      }
     } else {
       const currentEnd = new Date(subscription.endDate) > new Date() ? new Date(subscription.endDate) : new Date();
       newEndDate = new Date(currentEnd);

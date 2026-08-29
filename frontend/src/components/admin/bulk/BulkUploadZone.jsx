@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import InputField from '../../common/InputField';
@@ -12,14 +12,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import bulkImportService from '../../../services/bulkImport.service';
-
-const DEFAULT_PLANS = [
-  { code: 'NFI-INDIVIDUAL', name: 'Individual Practitioner Pass (₹3,500)' },
-  { code: 'NFI-INSTITUTIONAL', name: 'Institutional Campus License (₹45,000)' },
-  { code: 'NFI-STUDENT-SPECIAL', name: 'Academic Scholar Pass (₹1,200)' },
-  { code: 'NFI-DOCTOR-PRO', name: 'Clinical Specialist Edition (₹6,000)' },
-  { code: 'NFI-CORPORATE', name: 'Corporate Enterprise License (₹85,000)' },
-];
+import planService from '../../../services/plan.service';
 
 export const BulkUploadZone = ({
   onUploadSuccess,
@@ -28,10 +21,26 @@ export const BulkUploadZone = ({
   const [file, setFile] = useState(null);
   const [institutionName, setInstitutionName] = useState('');
   const [billingContact, setBillingContact] = useState('');
-  const [defaultPlanCode, setDefaultPlanCode] = useState('NFI-INSTITUTIONAL');
+  const [plans, setPlans] = useState([]);
+  const [defaultPlanCode, setDefaultPlanCode] = useState('NFI-INDIVIDUAL');
   const [error, setError] = useState('');
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const res = await planService.getPlans({ status: 'active' });
+        if (res && res.plans && res.plans.length > 0) {
+          setPlans(res.plans);
+          setDefaultPlanCode(res.plans[0].code);
+        }
+      } catch (err) {
+        console.warn('Failed to load plans for bulk upload:', err.message);
+      }
+    };
+    fetchPlans();
+  }, []);
 
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
@@ -150,9 +159,9 @@ export const BulkUploadZone = ({
             onChange={(e) => setDefaultPlanCode(e.target.value)}
             className="h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:border-[#E76120]"
           >
-            {DEFAULT_PLANS.map((p) => (
+            {plans.map((p) => (
               <option key={p.code} value={p.code}>
-                {p.name}
+                {p.name} (₹{p.priceINR?.toLocaleString('en-IN')})
               </option>
             ))}
           </select>

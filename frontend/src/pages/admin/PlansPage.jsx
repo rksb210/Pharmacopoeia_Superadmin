@@ -367,7 +367,13 @@ export const PlansPage = () => {
                   <TableCell>
                     <span className="text-xs font-semibold text-slate-700">
                       {p.validityType === 'fixed_date'
-                        ? '31 Dec 2031'
+                        ? (p.fixedDate
+                            ? new Date(p.fixedDate).toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })
+                            : '31 Dec 2031')
                         : `${p.durationValue} ${p.validityType?.replace('duration_', '')}`}
                     </span>
                   </TableCell>

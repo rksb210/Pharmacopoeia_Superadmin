@@ -246,7 +246,7 @@ export const CreateEditPlanModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               <div className="flex flex-col gap-1.5">
                 <label className="font-semibold text-slate-700">Tier Category</label>
                 <select
@@ -274,8 +274,16 @@ export const CreateEditPlanModal = ({
               />
 
               <InputField
+                id="fixedDate"
+                label="Valid Thru (Expiry Date)"
+                type="date"
+                value={formData.fixedDate}
+                onChange={(e) => handleChange('fixedDate', e.target.value)}
+              />
+
+              <InputField
                 id="seatQuota"
-                label="Seat Quota (Concurrent Users)"
+                label="Seat Quota (Users)"
                 type="number"
                 placeholder="1 (0 for unlimited)"
                 value={formData.seatQuota}

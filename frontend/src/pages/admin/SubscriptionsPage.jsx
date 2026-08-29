@@ -378,7 +378,7 @@ export const SubscriptionsPage = () => {
               <TableHead>Subscription &amp; Invoice</TableHead>
               <TableHead>Subscriber</TableHead>
               <TableHead>Formulary Plan &amp; Tier</TableHead>
-              <TableHead>Validity (BRD 2031 Rule)</TableHead>
+              <TableHead>Validity &amp; Expiry Date</TableHead>
               <TableHead>Price &amp; Concession</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -390,9 +390,6 @@ export const SubscriptionsPage = () => {
                 sub.status === 'active' &&
                 new Date(sub.endDate) > new Date() &&
                 new Date(sub.endDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-              const is2031 =
-                new Date(sub.endDate).getFullYear() >= 2031;
 
               return (
                 <TableRow key={sub._id}>
@@ -445,9 +442,13 @@ export const SubscriptionsPage = () => {
                           year: 'numeric',
                         })}
                       </span>
-                      {is2031 ? (
+                      {sub.type === 'paid' || sub.type === 'discounted' ? (
                         <span className="text-[10px] font-bold text-[#284661] bg-blue-50 px-1 py-0.2 rounded inline-block mt-0.5">
-                          ● Valid until 31 Dec 2031
+                          ● Valid until {new Date(sub.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      ) : sub.type === 'trial' ? (
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1 py-0.2 rounded inline-block mt-0.5">
+                          ● Free Trial
                         </span>
                       ) : (
                         <span className="text-[10px] text-slate-400">
@@ -493,19 +494,17 @@ export const SubscriptionsPage = () => {
                         <Eye className="w-4 h-4" />
                       </button>
 
-                      {/* Renew / Extend */}
-                      {sub.status !== 'cancelled' && (
-                        <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="EDIT">
-                          <button
-                            type="button"
-                            onClick={() => setRenewingSubscription(sub)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#284661] hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Renew / Extend Validity"
-                          >
-                            <RotateCw className="w-4 h-4" />
-                          </button>
-                        </PermissionGuard>
-                      )}
+                      {/* Renew / Reactivate / Extend */}
+                      <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="EDIT">
+                        <button
+                          type="button"
+                          onClick={() => setRenewingSubscription(sub)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-[#284661] hover:bg-slate-100 transition-colors cursor-pointer"
+                          title={sub.status === 'cancelled' ? 'Reactivate / Renew Subscription' : 'Renew / Extend Validity'}
+                        >
+                          <RotateCw className="w-4 h-4" />
+                        </button>
+                      </PermissionGuard>
 
                       {/* Cancel / Deactivate */}
                       {sub.status === 'active' && (

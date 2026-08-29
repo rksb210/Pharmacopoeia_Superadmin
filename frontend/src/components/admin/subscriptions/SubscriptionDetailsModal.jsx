@@ -71,20 +71,18 @@ export const SubscriptionDetailsModal = ({
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-            {subscription.status !== 'cancelled' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  onClose();
-                  if (onRenew) onRenew(subscription);
-                }}
-                className="h-8 rounded-xl font-bold text-xs cursor-pointer"
-              >
-                <RotateCw className="w-3.5 h-3.5 mr-1" />
-                <span>Renew</span>
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onClose();
+                if (onRenew) onRenew(subscription);
+              }}
+              className="h-8 rounded-xl font-bold text-xs cursor-pointer"
+            >
+              <RotateCw className="w-3.5 h-3.5 mr-1" />
+              <span>{subscription.status === 'cancelled' ? 'Reactivate' : 'Renew'}</span>
+            </Button>
 
             {subscription.status === 'active' && (
               <Button
@@ -181,7 +179,7 @@ export const SubscriptionDetailsModal = ({
                 </div>
 
                 <div className="bg-white p-2.5 rounded-xl border border-slate-100 min-w-0">
-                  <span className="text-slate-400 block mb-0.5">Expiry Date (BRD Fixed Rule)</span>
+                  <span className="text-slate-400 block mb-0.5">Expiry Date</span>
                   <span className="font-bold text-[#284661] block truncate">
                     {new Date(subscription.endDate).toLocaleDateString('en-IN', {
                       day: '2-digit',
