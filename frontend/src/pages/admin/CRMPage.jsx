@@ -16,6 +16,7 @@ import {
   Stethoscope,
   Clock,
   RotateCw,
+  Megaphone,
 } from 'lucide-react';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
@@ -40,6 +41,7 @@ import PermissionGuard from '../../components/admin/common/PermissionGuard';
 // Components & Modals
 import CRMSegmentBadge from '../../components/admin/crm/CRMSegmentBadge';
 import Customer360Modal from '../../components/admin/crm/Customer360Modal';
+import MarqueeAlertMasterModal from '../../components/admin/crm/MarqueeAlertMasterModal';
 
 const USER_TYPES = [
   { id: 'all', label: 'All Healthcare Categories' },
@@ -88,6 +90,7 @@ export const CRMPage = () => {
 
   // Modals
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [isMarqueeMasterOpen, setIsMarqueeMasterOpen] = useState(false);
 
   // Fetch KPI Stats
   const fetchStats = async () => {
@@ -153,6 +156,16 @@ export const CRMPage = () => {
         >
           <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
+        </Button>
+
+        <Button
+          variant="nfiYellow"
+          size="sm"
+          onClick={() => setIsMarqueeMasterOpen(true)}
+          className="rounded-xl text-xs font-bold shadow-2xs cursor-pointer flex items-center gap-1.5"
+        >
+          <Megaphone className="w-3.5 h-3.5" />
+          <span>Marquee Broadcast Alerts</span>
         </Button>
       </PageHeader>
 
@@ -385,6 +398,12 @@ export const CRMPage = () => {
         isOpen={!!selectedCustomer}
         onClose={() => setSelectedCustomer(null)}
         customer={selectedCustomer}
+      />
+
+      {/* Marquee Broadcast Alerts Master Modal */}
+      <MarqueeAlertMasterModal
+        isOpen={isMarqueeMasterOpen}
+        onClose={() => setIsMarqueeMasterOpen(false)}
       />
     </PageContainer>
   );
