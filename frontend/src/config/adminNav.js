@@ -126,16 +126,8 @@ export const ADMIN_NAV_SECTIONS = [
         roles: ['superadmin', 'admin'],
       },
       {
-        id: 'discounts',
-        title: 'Discounts',
-        path: '/admin/discounts',
-        icon: Percent,
-        permission: { module: 'COMMERCIAL', section: 'DISCOUNTS', action: 'VIEW' },
-        roles: ['superadmin', 'admin'],
-      },
-      {
         id: 'coupons',
-        title: 'Coupons',
+        title: 'Coupons & Discounts',
         path: '/admin/coupons',
         icon: Ticket,
         permission: { module: 'COMMERCIAL', section: 'COUPONS', action: 'VIEW' },

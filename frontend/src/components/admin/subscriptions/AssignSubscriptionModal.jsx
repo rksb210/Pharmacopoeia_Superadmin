@@ -4,44 +4,7 @@ import InputField from '../../common/InputField';
 import { Badge } from '../../ui/badge';
 import { CreditCard, Clock, Gift, Percent, AlertCircle, Search, ShieldCheck } from 'lucide-react';
 import subscriberService from '../../../services/subscriber.service';
-
-const PLANS = [
-  {
-    name: 'NFI 9th Edition Formulary - Individual Pass',
-    code: 'NFI-INDIVIDUAL',
-    tier: 'Individual',
-    amount: 3500,
-    desc: 'Full digital monograph formulary access for individual healthcare practitioners.',
-  },
-  {
-    name: 'NFI Institutional Campus License (Multi-User)',
-    code: 'NFI-INSTITUTIONAL',
-    tier: 'Institutional',
-    amount: 45000,
-    desc: 'Unlimited campus-wide digital access for medical colleges and teaching hospitals.',
-  },
-  {
-    name: 'NFI Scholar Pass (Academic Special)',
-    code: 'NFI-STUDENT-SPECIAL',
-    tier: 'Student',
-    amount: 1200,
-    desc: 'Subsidized academic edition for verified MBBS/B.Pharm students.',
-  },
-  {
-    name: 'NFI Clinical Consultant Edition',
-    code: 'NFI-DOCTOR-PRO',
-    tier: 'Doctor Professional',
-    amount: 6000,
-    desc: 'Extended therapeutic guidance, adverse reaction alerts & monographs.',
-  },
-  {
-    name: 'NFI Corporate & Manufacturing Formulary License',
-    code: 'NFI-CORPORATE',
-    tier: 'Corporate',
-    amount: 85000,
-    desc: 'Complete commercial monograph specifications for pharma industries.',
-  },
-];
+import planService from '../../../services/plan.service';
 
 export const AssignSubscriptionModal = ({
   isOpen,
@@ -51,7 +14,11 @@ export const AssignSubscriptionModal = ({
   const [subscribers, setSubscribers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userSearch, setUserSearch] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState(PLANS[0]);
+  
+  const [plans, setPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
   const [subType, setSubType] = useState('paid'); // 'paid' | 'trial' | 'complimentary' | 'discounted'
   const [discountPercent, setDiscountPercent] = useState(20);
   const [trialDays, setTrialDays] = useState(14);
@@ -63,6 +30,37 @@ export const AssignSubscriptionModal = ({
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Fetch active plans from database
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchPlans = async () => {
+      setLoadingPlans(true);
+      try {
+        const res = await planService.getPlans({ status: 'active' });
+        if (res && res.plans && res.plans.length > 0) {
+          const formattedPlans = res.plans.map((p) => ({
+            name: p.name,
+            code: p.code,
+            tier: p.tier,
+            amount: p.priceINR || 0,
+            desc: p.description || 'Full digital monograph formulary access.',
+            validityType: p.validityType,
+            fixedDate: p.fixedDate,
+          }));
+          setPlans(formattedPlans);
+          setSelectedPlan(formattedPlans[0]);
+        }
+      } catch (err) {
+        console.warn('Failed to load active plans:', err.message);
+      } finally {
+        setLoadingPlans(false);
+      }
+    };
+
+    fetchPlans();
+  }, [isOpen]);
 
   // Search subscribers
   useEffect(() => {
@@ -93,7 +91,7 @@ export const AssignSubscriptionModal = ({
   }, [userSearch, isOpen]);
 
   // Compute amounts
-  const baseAmount = selectedPlan.amount;
+  const baseAmount = selectedPlan?.amount || 0;
   const calculatedDiscount =
     subType === 'discounted' ? Math.round((baseAmount * discountPercent) / 100) : 0;
   const finalPrice =
@@ -105,6 +103,10 @@ export const AssignSubscriptionModal = ({
     e?.preventDefault();
     if (!selectedUser) {
       setError('Please select a subscriber to assign subscription.');
+      return;
+    }
+    if (!selectedPlan) {
+      setError('Please select a formulary plan tier.');
       return;
     }
 
@@ -259,21 +261,27 @@ export const AssignSubscriptionModal = ({
         {/* 3. Plan Selection */}
         <div className="space-y-1.5">
           <label className="font-bold text-slate-800 text-xs block">Select Formulary Tier</label>
-          <select
-            value={selectedPlan.code}
-            onChange={(e) => {
-              const p = PLANS.find((plan) => plan.code === e.target.value);
-              if (p) setSelectedPlan(p);
-            }}
-            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#E76120] cursor-pointer"
-          >
-            {PLANS.map((plan) => (
-              <option key={plan.code} value={plan.code}>
-                {plan.name} — ₹{plan.amount.toLocaleString('en-IN')}
-              </option>
-            ))}
-          </select>
-          <p className="text-[11px] text-slate-400">{selectedPlan.desc}</p>
+          {loadingPlans ? (
+            <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center text-xs text-slate-400">
+              Loading active plans...
+            </div>
+          ) : (
+            <select
+              value={selectedPlan?.code || ''}
+              onChange={(e) => {
+                const p = plans.find((plan) => plan.code === e.target.value);
+                if (p) setSelectedPlan(p);
+              }}
+              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#E76120] cursor-pointer"
+            >
+              {plans.map((plan) => (
+                <option key={plan.code} value={plan.code}>
+                  {plan.name} — ₹{plan.amount.toLocaleString('en-IN')}
+                </option>
+              ))}
+            </select>
+          )}
+          {selectedPlan?.desc && <p className="text-[11px] text-slate-400">{selectedPlan.desc}</p>}
         </div>
 
         {/* 4. Type Specific Settings */}
@@ -282,7 +290,15 @@ export const AssignSubscriptionModal = ({
             <ShieldCheck className="w-4 h-4 text-[#284661] shrink-0" />
             <span>
               <strong>BRD Business Rule Active:</strong> This purchased subscription will be valid until{' '}
-              <strong>31 December 2031</strong>.
+              <strong>
+                {selectedPlan?.fixedDate
+                  ? new Date(selectedPlan.fixedDate).toLocaleDateString('en-GB', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })
+                  : '31 December 2031'}
+              </strong>.
             </span>
           </div>
         )}

@@ -158,7 +158,7 @@ export const PlanDetailsModal = ({
                 </span>
                 <p className="font-bold text-slate-900">
                   {p.validityType === 'fixed_date'
-                    ? `Fixed Expiry: ${new Date(p.fixedDate).toLocaleDateString('en-IN')} (BRD 2031 Rule)`
+                    ? `Fixed Expiry: ${p.fixedDate ? new Date(p.fixedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '31 Dec 2031'}`
                     : `${p.durationValue} ${p.validityType?.replace('duration_', '')}`}
                 </p>
               </div>

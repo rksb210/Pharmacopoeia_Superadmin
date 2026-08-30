@@ -102,3 +102,34 @@
 .border-nfi-default {
   border-color: var(--color-border-default);
 }
+
+@keyframes nfiMarquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-nfi-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: nfiMarquee 25s linear infinite;
+}
+
+.animate-nfi-marquee-slow {
+  display: inline-block;
+  white-space: nowrap;
+  animation: nfiMarquee 38s linear infinite;
+}
+
+.animate-nfi-marquee-fast {
+  display: inline-block;
+  white-space: nowrap;
+  animation: nfiMarquee 15s linear infinite;
+}
+
+.pause-on-hover:hover {
+  animation-play-state: paused;
+}

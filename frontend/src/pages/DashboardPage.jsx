@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../layouts/DashboardLayout';
+import MarqueeAlertBanner from '../components/dashboard/MarqueeAlertBanner';
 import SubscriptionBanner from '../components/dashboard/SubscriptionBanner';
 import QuickActionCards from '../components/dashboard/QuickActionCards';
 import RecentActivity from '../components/dashboard/RecentActivity';
@@ -20,6 +21,9 @@ export const DashboardPage = () => {
     <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
       {activeTab === 'Dashboard' ? (
         <div className="space-y-6">
+          {/* User-Type Targeted Running Marquee Alert */}
+          <MarqueeAlertBanner />
+
           {/* Top Greeting & Action Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
             <div>

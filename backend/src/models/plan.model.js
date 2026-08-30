@@ -160,7 +160,6 @@ const planSchema = new mongoose.Schema(
   }
 );
 
-planSchema.index({ code: 1 });
 planSchema.index({ tier: 1 });
 planSchema.index({ isActive: 1 });
 

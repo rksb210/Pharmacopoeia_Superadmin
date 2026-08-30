@@ -64,7 +64,15 @@ export const RenewSubscriptionModal = ({
           </p>
           {isPaid && (
             <p className="text-[11px] text-[#284661] font-bold">
-              ● Under BRD policy, purchased subscription renewal confirms validity through 31 Dec 2031.
+              ● Purchased subscription renewal confirms validity through{' '}
+              {subscription.endDate
+                ? new Date(subscription.endDate).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })
+                : '31 Dec 2031'}
+              .
             </p>
           )}
         </div>
