@@ -187,6 +187,35 @@ export const subscriberService = {
   },
 
   /**
+   * Get distinct Industry Companies with employee counts
+   */
+  getIndustriesGrouped: async ({ search = '' } = {}) => {
+    const match = { userType: 'INDUSTRY' };
+    if (search && search.trim()) {
+      match['dynamicFields.companyName'] = {
+        $regex: escapeRegex(search.trim()),
+        $options: 'i',
+      };
+    }
+
+    const industries = await Subscriber.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { $ifNull: ['$dynamicFields.companyName', 'Unnamed Industry'] },
+          companyName: { $first: { $ifNull: ['$dynamicFields.companyName', 'Unnamed Industry'] } },
+          gstin: { $first: '$dynamicFields.gstin' },
+          pan: { $first: '$dynamicFields.pan' },
+          subscribersCount: { $sum: 1 },
+        },
+      },
+      { $sort: { companyName: 1 } },
+    ]);
+
+    return industries;
+  },
+
+  /**
    * Get filtered, searchable, paginated subscribers
    */
   getSubscribersList: async ({
@@ -194,6 +223,7 @@ export const subscriberService = {
     limit = 10,
     search = '',
     userType = '',
+    companyName = '',
     subscriptionStatus = '',
     status = '',
     dateFrom = '',
@@ -218,6 +248,11 @@ export const subscriberService = {
     // User Type filter
     if (userType && userType !== 'all') {
       query.userType = userType.toUpperCase().trim();
+    }
+
+    // Filter by Company Name (for Industry subscribers)
+    if (companyName && companyName.trim()) {
+      query['dynamicFields.companyName'] = new RegExp(`^${escapeRegex(companyName.trim())}$`, 'i');
     }
 
     // Subscription Status filter

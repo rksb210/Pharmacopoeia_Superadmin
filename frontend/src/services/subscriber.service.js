@@ -13,6 +13,10 @@ export const subscriberService = {
     return api.get('/subscribers', { params });
   },
 
+  getIndustries: async (params = {}) => {
+    return api.get('/subscribers/industries', { params });
+  },
+
   getSubscriberById: async (id) => {
     return api.get(`/subscribers/${id}`);
   },

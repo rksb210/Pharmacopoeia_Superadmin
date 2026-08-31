@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getUserTypes,
   getSubscriberStats,
+  getIndustries,
   getSubscribers,
   getSubscriberById,
   createSubscriber,
@@ -29,6 +30,9 @@ router.get('/types', requirePermission('USERS', 'USERS', 'VIEW'), getUserTypes);
 
 // KPI Stats
 router.get('/stats', requirePermission('USERS', 'USERS', 'VIEW'), getSubscriberStats);
+
+// Distinct Industry Directory
+router.get('/industries', requirePermission('USERS', 'USERS', 'VIEW'), getIndustries);
 
 // Directory Listing & Details
 router.get('/', requirePermission('USERS', 'USERS', 'VIEW'), getSubscribers);

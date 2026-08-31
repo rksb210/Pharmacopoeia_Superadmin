@@ -24,6 +24,19 @@ export const getSubscriberStats = async (req, res, next) => {
   }
 };
 
+export const getIndustries = async (req, res, next) => {
+  try {
+    const { search } = req.query;
+    const industries = await subscriberService.getIndustriesGrouped({ search });
+    return res.status(200).json({
+      success: true,
+      industries,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getSubscribers = async (req, res, next) => {
   try {
     const {
@@ -31,6 +44,7 @@ export const getSubscribers = async (req, res, next) => {
       limit,
       search,
       userType,
+      companyName,
       subscriptionStatus,
       status,
       dateFrom,
@@ -44,6 +58,7 @@ export const getSubscribers = async (req, res, next) => {
       limit,
       search,
       userType,
+      companyName,
       subscriptionStatus,
       status,
       dateFrom,

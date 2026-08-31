@@ -15,6 +15,7 @@ import {
   Filter,
   FileText,
   TrendingUp,
+  Users,
 } from 'lucide-react';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
@@ -212,13 +213,13 @@ export const SubscriptionsPage = () => {
         </div>
       )}
 
-      {/* 6 KPI Stat Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-3.5">
+      {/* 4 KPI Stat Cards Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
         <StatCard
-          title="Total Passes"
+          title="Total Subscriber"
           value={stats.totalSubscriptions}
-          subtitle="All issued licenses"
-          icon={CreditCard}
+          subtitle="All registered subscriber passes"
+          icon={Users}
           iconColor="text-sky-600"
           iconBg="bg-sky-50"
         />
@@ -233,30 +234,12 @@ export const SubscriptionsPage = () => {
         />
 
         <StatCard
-          title="Expiring Soon"
-          value={stats.expiringSoonSubscriptions}
-          subtitle="< 30 days remaining"
-          icon={Clock}
-          iconColor="text-[#E76120]"
-          iconBg="bg-[#FFF5EE]"
-        />
-
-        <StatCard
           title="Free Trials"
           value={stats.trialSubscriptions}
-          subtitle="Evaluation users"
+          subtitle="Evaluation passes"
           icon={Clock}
           iconColor="text-amber-600"
           iconBg="bg-amber-50"
-        />
-
-        <StatCard
-          title="Complimentary"
-          value={stats.complimentarySubscriptions}
-          subtitle="Institutional grants"
-          icon={Gift}
-          iconColor="text-purple-600"
-          iconBg="bg-purple-50"
         />
 
         <StatCard

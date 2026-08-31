@@ -3,11 +3,11 @@
  */
 
 export const validateAssignSubscription = (req, res, next) => {
-  const { userId, type = 'paid', planName, amount } = req.body;
+  const { userId, userIds, type = 'paid', planName, amount } = req.body;
   const errors = [];
 
-  if (!userId) {
-    errors.push('Subscriber User ID is required');
+  if (!userId && (!Array.isArray(userIds) || userIds.length === 0)) {
+    errors.push('Subscriber User ID(s) are required');
   }
 
   if (!planName || !planName.trim()) {
