@@ -211,8 +211,8 @@ export const Customer360Modal = ({
                       <span className="font-bold text-slate-900">{c.registrationNo || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block">State of Council</span>
-                      <span className="font-bold text-slate-900">{c.registrationState || 'N/A'}</span>
+                      <span className="text-slate-400 block">States</span>
+                      <span className="font-bold text-slate-900">{c.registrationState || c.dynamicFields?.stateCouncil || 'N/A'}</span>
                     </div>
                   </>
                 )}

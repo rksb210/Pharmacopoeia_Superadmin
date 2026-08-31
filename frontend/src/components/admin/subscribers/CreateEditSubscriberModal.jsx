@@ -95,29 +95,32 @@ export const CreateEditSubscriberModal = ({
     }
     if ((uType === 'DOCTOR' || uType === 'PHARMACIST' || uType === 'NURSE')) {
       if (!dFields.registrationNo?.trim()) newErrors.registrationNo = 'Registration number is required';
-      if (!dFields.stateCouncil?.trim()) newErrors.stateCouncil = 'State council is required';
+      if (!dFields.stateCouncil?.trim()) newErrors.stateCouncil = 'State is required';
     }
     if (uType === 'INDUSTRY') {
       if (!dFields.companyName?.trim()) {
         newErrors.companyName = 'Company name is required';
       }
 
-      // GSTIN Nomenclature Check (15 characters: 2 digits + 10-char PAN + 1 entity + Z + 1 check digit)
       const gstinVal = (dFields.gstin || '').trim().toUpperCase();
-      const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-      if (!gstinVal) {
-        newErrors.gstin = 'Company GSTIN is required';
-      } else if (!gstinRegex.test(gstinVal)) {
-        newErrors.gstin = 'Invalid GSTIN format. Must be 15 characters (e.g. 22AAAAA0000A1Z5)';
-      }
-
-      // Corporate PAN Nomenclature Check (10 characters: 5 letters + 4 digits + 1 letter)
       const panVal = (dFields.pan || '').trim().toUpperCase();
-      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-      if (!panVal) {
-        newErrors.pan = 'Corporate PAN is required';
-      } else if (!panRegex.test(panVal)) {
-        newErrors.pan = 'Invalid PAN format. Must be 10 characters (e.g. AAAAA9999A)';
+
+      if (!gstinVal && !panVal) {
+        newErrors.gstin = 'Either GSTIN or Corporate PAN is required';
+        newErrors.pan = 'Either Corporate PAN or GSTIN is required';
+      } else {
+        if (gstinVal) {
+          const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+          if (!gstinRegex.test(gstinVal)) {
+            newErrors.gstin = 'Invalid GSTIN format. Must be 15 characters (e.g. 22AAAAA0000A1Z5)';
+          }
+        }
+        if (panVal) {
+          const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+          if (!panRegex.test(panVal)) {
+            newErrors.pan = 'Invalid PAN format. Must be 10 characters (e.g. AAAAA9999A)';
+          }
+        }
       }
     }
     if (uType === 'OTHERS' && !dFields.designation?.trim()) {
