@@ -439,35 +439,65 @@ export const couponService = {
   },
 
   /**
-   * Direct User / Email Discount Assignment
+   * Direct User / Email Discount Assignment (Single or Multiple Subscribers)
    */
   assignDirectDiscount: async (payload, adminUser) => {
-    const { userId, email, discountType = 'percentage', discountValue = 20, endDate, notes = '' } = payload;
+    const {
+      userId,
+      userIds,
+      email,
+      discountType = 'percentage',
+      discountValue = 20,
+      endDate,
+      notes = '',
+    } = payload;
 
-    const subscriber = userId ? await Subscriber.findById(userId) : await Subscriber.findOne({ email: email.toLowerCase() });
-    if (!subscriber) throw new Error('Subscriber account not found for direct concession');
+    const targetUserIds = Array.isArray(userIds) && userIds.length > 0
+      ? userIds
+      : userId
+      ? [userId]
+      : [];
 
-    const code = `DIRECT-${subscriber.username?.toUpperCase() || Date.now().toString().slice(-6)}`;
+    if (targetUserIds.length === 0 && email) {
+      const subscriberByEmail = await Subscriber.findOne({ email: email.toLowerCase() });
+      if (subscriberByEmail) targetUserIds.push(subscriberByEmail._id);
+    }
 
-    const newCoupon = await Coupon.create({
-      code,
-      title: `Direct Concession for ${subscriber.name}`,
-      description: notes || 'Direct administrative concession assignment',
-      discountType,
-      discountValue: Number(discountValue),
-      startDate: new Date(),
-      endDate: new Date(endDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)),
-      usageLimit: 1,
-      perUserLimit: 1,
-      applicablePlans: ['ALL'],
-      applicableUserTypes: ['ALL'],
-      specificUsers: [subscriber._id],
-      specificEmails: [subscriber.email],
-      isActive: true,
-      createdBy: adminUser?._id || null,
-    });
+    if (targetUserIds.length === 0) {
+      throw new Error('Please select at least one subscriber account for direct concession.');
+    }
 
-    return newCoupon;
+    const createdCoupons = [];
+
+    for (const singleUserId of targetUserIds) {
+      const subscriber = await Subscriber.findById(singleUserId);
+      if (!subscriber) continue;
+
+      const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const code = `DIRECT-${subscriber.username?.toUpperCase() || Date.now().toString().slice(-6)}-${randomSuffix}`;
+
+      const newCoupon = await Coupon.create({
+        code,
+        title: `Direct Concession for ${subscriber.name}`,
+        description: notes || 'Direct administrative concession assignment',
+        discountType,
+        discountValue: Number(discountValue),
+        startDate: new Date(),
+        endDate: new Date(endDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)),
+        usageLimit: 1,
+        perUserLimit: 1,
+        applicablePlans: ['ALL'],
+        applicableUserTypes: ['ALL'],
+        specificUsers: [subscriber._id],
+        specificEmails: [subscriber.email],
+        isActive: true,
+        createdBy: adminUser?._id || null,
+      });
+
+      createdCoupons.push(newCoupon);
+    }
+
+    return createdCoupons.length === 1 ? createdCoupons[0] : createdCoupons;
   },
 };
 

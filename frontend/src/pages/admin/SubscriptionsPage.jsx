@@ -259,11 +259,9 @@ export const SubscriptionsPage = () => {
           {[
             { id: 'all', label: 'All Subscriptions', count: stats.totalSubscriptions },
             { id: 'active', label: 'Active', count: stats.activeSubscriptions },
-            { id: 'expiring_soon', label: 'Expiring Soon', count: stats.expiringSoonSubscriptions },
             { id: 'trial', label: 'Free Trial', count: stats.trialSubscriptions },
-            { id: 'complimentary', label: 'Complimentary VIP', count: stats.complimentarySubscriptions },
             { id: 'discounted', label: 'Discounted', count: stats.discountedSubscriptions },
-            { id: 'expired', label: 'Expired / Cancelled', count: stats.expiredSubscriptions },
+            { id: 'expired', label: 'Cancelled', count: stats.expiredSubscriptions },
           ].map((tab) => (
             <button
               key={tab.id}
