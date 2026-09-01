@@ -6,6 +6,7 @@ import Feedback from '../models/feedback.model.js';
 import Coupon from '../models/coupon.model.js';
 import Plan from '../models/plan.model.js';
 import User from '../models/user.model.js';
+import BulkImport from '../models/bulkImport.model.js';
 
 export const reportService = {
   /**
@@ -62,36 +63,73 @@ export const reportService = {
   },
 
   /**
-   * 2. User & Subscriber Analytics
+   * 2. User & Subscriber Analytics (100% Dynamic Aggregations)
    */
   getUserAnalytics: async ({ startDate, endDate } = {}) => {
     const dateQuery = reportService.buildDateQuery(startDate, endDate);
 
     const [
       totalUsers,
-      activeUsers,
-      inactiveUsers,
+      activePaidSubscribers,
+      trialSubscribers,
+      activeAccounts,
+      inactiveAccounts,
       userTypeBreakdown,
+      registrationTrendsAgg,
     ] = await Promise.all([
       Subscriber.countDocuments(dateQuery),
-      Subscriber.countDocuments({ ...dateQuery, status: 'active' }),
-      Subscriber.countDocuments({ ...dateQuery, status: 'inactive' }),
+      Subscriber.countDocuments({
+        ...dateQuery,
+        'subscription.status': 'active',
+        'subscription.isTrial': { $ne: true },
+      }),
+      Subscriber.countDocuments({
+        ...dateQuery,
+        $or: [{ 'subscription.status': 'trial' }, { 'subscription.isTrial': true }],
+      }),
+      Subscriber.countDocuments({ ...dateQuery, isActive: true }),
+      Subscriber.countDocuments({ ...dateQuery, isActive: false }),
       Subscriber.aggregate([
         { $match: dateQuery },
         { $group: { _id: '$userType', count: { $sum: 1 } } },
       ]),
+      Subscriber.aggregate([
+        { $match: dateQuery },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
     ]);
 
-    // Simulated / aggregated 7-day registration trend
-    const trends = [
-      { label: 'Mon', count: Math.max(1, Math.round(totalUsers * 0.12)) },
-      { label: 'Tue', count: Math.max(1, Math.round(totalUsers * 0.18)) },
-      { label: 'Wed', count: Math.max(2, Math.round(totalUsers * 0.22)) },
-      { label: 'Thu', count: Math.max(1, Math.round(totalUsers * 0.15)) },
-      { label: 'Fri', count: Math.max(2, Math.round(totalUsers * 0.20)) },
-      { label: 'Sat', count: Math.max(0, Math.round(totalUsers * 0.08)) },
-      { label: 'Sun', count: Math.max(0, Math.round(totalUsers * 0.05)) },
-    ];
+    // Build real timeseries trend map from database
+    const trendsMap = new Map();
+    registrationTrendsAgg.forEach((item) => {
+      if (item._id) trendsMap.set(item._id, item.count);
+    });
+
+    const trends = [];
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
+
+    const dayDiff = Math.max(1, Math.round((end - start) / (24 * 60 * 60 * 1000)));
+    const step = dayDiff > 30 ? Math.ceil(dayDiff / 15) : 1;
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + step)) {
+      const dateStr = d.toISOString().split('T')[0];
+      const count = trendsMap.get(dateStr) || 0;
+      const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      trends.push({ label, count });
+    }
+
+    if (trends.length === 0) {
+      trends.push({ label: 'Today', count: totalUsers });
+    }
 
     const typeDistribution = {
       DOCTOR: 0,
@@ -109,15 +147,17 @@ export const reportService = {
 
     return {
       totalUsers,
-      activeUsers,
-      inactiveUsers,
+      activePaidSubscribers,
+      trialSubscribers,
+      activeAccounts,
+      inactiveAccounts,
       typeDistribution,
       trends,
     };
   },
 
   /**
-   * 3. Subscription & Pass Analytics
+   * 3. Subscription & Pass Analytics (100% Dynamic Aggregations)
    */
   getSubscriptionAnalytics: async ({ startDate, endDate } = {}) => {
     const dateQuery = reportService.buildDateQuery(startDate, endDate);
@@ -125,41 +165,97 @@ export const reportService = {
     const [
       totalSubs,
       activeSubs,
-      expiredSubs,
-      cancelledSubs,
       trialSubs,
-      tierBreakdown,
+      discountedSubs,
+      cancelledSubs,
+      typeBreakdown,
+      planBreakdown,
+      issuanceTrendsAgg,
     ] = await Promise.all([
       Subscription.countDocuments(dateQuery),
       Subscription.countDocuments({ ...dateQuery, status: 'active' }),
-      Subscription.countDocuments({ ...dateQuery, status: 'expired' }),
-      Subscription.countDocuments({ ...dateQuery, status: 'cancelled' }),
       Subscription.countDocuments({ ...dateQuery, type: 'trial' }),
+      Subscription.countDocuments({
+        ...dateQuery,
+        $or: [{ type: 'discounted' }, { discountPercent: { $gt: 0 } }],
+      }),
+      Subscription.countDocuments({
+        ...dateQuery,
+        $or: [{ status: 'cancelled' }, { status: 'expired' }],
+      }),
       Subscription.aggregate([
         { $match: dateQuery },
-        { $group: { _id: '$tier', count: { $sum: 1 } } },
+        { $group: { _id: '$type', count: { $sum: 1 } } },
+      ]),
+      Subscription.aggregate([
+        { $match: dateQuery },
+        { $group: { _id: '$planName', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 6 },
+      ]),
+      Subscription.aggregate([
+        { $match: dateQuery },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
       ]),
     ]);
 
-    const tierDistribution = {
-      INDIVIDUAL: 0,
-      INSTITUTIONAL: 0,
-      STUDENT: 0,
-      COMMERCIAL: 0,
+    // Build real timeseries trend map
+    const trendsMap = new Map();
+    issuanceTrendsAgg.forEach((item) => {
+      if (item._id) trendsMap.set(item._id, item.count);
+    });
+
+    const trends = [];
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
+
+    const dayDiff = Math.max(1, Math.round((end - start) / (24 * 60 * 60 * 1000)));
+    const step = dayDiff > 30 ? Math.ceil(dayDiff / 15) : 1;
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + step)) {
+      const dateStr = d.toISOString().split('T')[0];
+      const count = trendsMap.get(dateStr) || 0;
+      const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      trends.push({ label, count });
+    }
+
+    if (trends.length === 0) {
+      trends.push({ label: 'Today', count: totalSubs });
+    }
+
+    const typeDistribution = {
+      paid: 0,
+      trial: 0,
+      discounted: 0,
+      cancelled: cancelledSubs,
     };
-    tierBreakdown.forEach((t) => {
-      if (t._id && tierDistribution[t._id] !== undefined) {
-        tierDistribution[t._id] = t.count;
+    typeBreakdown.forEach((t) => {
+      const key = (t._id || '').toLowerCase();
+      if (typeDistribution[key] !== undefined) {
+        typeDistribution[key] = t.count;
       }
     });
 
     return {
       totalSubscriptions: totalSubs,
       activeSubscriptions: activeSubs,
-      expiredSubscriptions: expiredSubs,
-      cancelledSubscriptions: cancelledSubs,
       trialSubscriptions: trialSubs,
-      tierDistribution,
+      discountedSubscriptions: discountedSubs,
+      cancelledSubscriptions: cancelledSubs,
+      typeDistribution,
+      planBreakdown: planBreakdown.map((p) => ({
+        label: p._id || 'Individual Plan',
+        count: p.count,
+      })),
+      trends,
     };
   },
 
@@ -191,27 +287,65 @@ export const reportService = {
   },
 
   /**
-   * 5. Editorial Workflow & SLA Analytics
+   * 5. Bulk Subscription & Batch Enrolment Analytics (100% Dynamic Aggregations)
    */
-  getWorkflowAnalytics: async () => {
+  getBulkImportAnalytics: async ({ startDate, endDate } = {}) => {
+    const dateQuery = reportService.buildDateQuery(startDate, endDate);
+
+    const [
+      totalJobs,
+      completedJobs,
+      processingJobs,
+      rowsAgg,
+      recentJobs,
+    ] = await Promise.all([
+      BulkImport.countDocuments(dateQuery),
+      BulkImport.countDocuments({ ...dateQuery, status: 'completed' }),
+      BulkImport.countDocuments({ ...dateQuery, status: { $in: ['processing', 'preview'] } }),
+      BulkImport.aggregate([
+        { $match: dateQuery },
+        {
+          $group: {
+            _id: null,
+            totalRows: { $sum: '$totalRows' },
+            validCount: { $sum: '$validCount' },
+            invalidCount: { $sum: '$invalidCount' },
+          },
+        },
+      ]),
+      BulkImport.find(dateQuery)
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .select('jobId institutionName planName totalRows validCount invalidCount status createdAt')
+        .lean(),
+    ]);
+
+    const totalProcessedRows = rowsAgg[0]?.totalRows || 0;
+    const successfulEnrollments = rowsAgg[0]?.validCount || 0;
+    const failedRows = rowsAgg[0]?.invalidCount || 0;
+    const successRatePercent =
+      totalProcessedRows > 0
+        ? Math.round((successfulEnrollments / totalProcessedRows) * 100)
+        : 100;
+
     return {
-      pendingReviews: 8,
-      pendingApprovals: 3,
-      rejectedThisMonth: 2,
-      averageReviewHours: 36.5,
-      averageApprovalHours: 18.2,
-      completedWorkflows: 142,
-      slaComplianceRatePercent: 94.8,
-      reviewerWorkload: [
-        { reviewerName: 'Dr. S. K. Gupta', assigned: 6, completed: 34, avgTurnaroundHours: 32 },
-        { reviewerName: 'Prof. Anjali Mehta', assigned: 4, completed: 28, avgTurnaroundHours: 28 },
-        { reviewerName: 'Dr. V. Ramanathan', assigned: 3, completed: 41, avgTurnaroundHours: 38 },
-      ],
+      totalJobs,
+      completedJobs,
+      processingJobs,
+      totalProcessedRows,
+      successfulEnrollments,
+      failedRows,
+      successRatePercent,
+      recentJobs,
     };
   },
 
+  getWorkflowAnalytics: async (params) => {
+    return reportService.getBulkImportAnalytics(params);
+  },
+
   /**
-   * 6. Commerce, Orders & Revenue Analytics
+   * 6. Commerce, Orders & Revenue Analytics (100% Dynamic Aggregations)
    */
   getCommerceAnalytics: async ({ startDate, endDate } = {}) => {
     const dateQuery = reportService.buildDateQuery(startDate, endDate);
@@ -220,22 +354,16 @@ export const reportService = {
       totalOrders,
       completedOrders,
       failedOrders,
-      refundedOrders,
       revenueAgg,
-      refundAgg,
       planBreakdown,
+      recentOrders,
     ] = await Promise.all([
       Order.countDocuments(dateQuery),
       Order.countDocuments({ ...dateQuery, orderStatus: 'completed' }),
       Order.countDocuments({ ...dateQuery, orderStatus: 'failed' }),
-      Order.countDocuments({ ...dateQuery, orderStatus: 'refunded' }),
       Order.aggregate([
         { $match: { ...dateQuery, orderStatus: 'completed' } },
         { $group: { _id: null, total: { $sum: '$pricing.totalAmount' } } },
-      ]),
-      Order.aggregate([
-        { $match: { ...dateQuery, orderStatus: 'refunded' } },
-        { $group: { _id: null, total: { $sum: '$refund.refundAmount' } } },
       ]),
       Order.aggregate([
         { $match: { ...dateQuery, orderStatus: 'completed' } },
@@ -247,10 +375,14 @@ export const reportService = {
           },
         },
       ]),
+      Order.find(dateQuery)
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .select('orderNumber invoiceNumber userName userEmail planName pricing paymentStatus orderStatus createdAt')
+        .lean(),
     ]);
 
     const totalRevenueINR = revenueAgg[0]?.total || 0;
-    const totalRefundsINR = refundAgg[0]?.total || 0;
     const averageOrderValueINR =
       completedOrders > 0 ? Math.round(totalRevenueINR / completedOrders) : 0;
 
@@ -258,16 +390,15 @@ export const reportService = {
       totalOrders,
       completedOrders,
       failedOrders,
-      refundedOrders,
       totalRevenueINR,
-      totalRefundsINR,
       averageOrderValueINR,
       planBreakdown,
+      recentOrders,
     };
   },
 
   /**
-   * 7. CRM & Feedback Analytics
+   * 7. CRM & Feedback Analytics (100% Dynamic Aggregations)
    */
   getCRMAnalytics: async ({ startDate, endDate } = {}) => {
     const dateQuery = reportService.buildDateQuery(startDate, endDate);
@@ -278,6 +409,7 @@ export const reportService = {
       inReviewTickets,
       completedTickets,
       categoryAgg,
+      recentTickets,
     ] = await Promise.all([
       Feedback.countDocuments(dateQuery),
       Feedback.countDocuments({ ...dateQuery, status: 'pending' }),
@@ -287,6 +419,11 @@ export const reportService = {
         { $match: dateQuery },
         { $group: { _id: '$category', count: { $sum: 1 } } },
       ]),
+      Feedback.find(dateQuery)
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .select('ticketId name email category subject status priority createdAt')
+        .lean(),
     ]);
 
     const resolutionRatePercent =
@@ -299,6 +436,7 @@ export const reportService = {
       completedTickets,
       resolutionRatePercent,
       categoryBreakdown: categoryAgg,
+      recentTickets,
     };
   },
 
@@ -310,50 +448,141 @@ export const reportService = {
 
     if (domain === 'users') {
       const data = await reportService.getUserAnalytics({ startDate, endDate });
-      const summarySheet = XLSX.utils.aoa_to_sheet([
-        ['USER ANALYTICS REPORT', `Generated: ${new Date().toLocaleString('en-IN')}`],
+      const dateQuery = reportService.buildDateQuery(startDate, endDate);
+      const subscribersList = await Subscriber.find(dateQuery)
+        .sort({ createdAt: -1 })
+        .limit(1000)
+        .lean();
+
+      const summaryRows = [
+        ['SUBSCRIBER & USER ANALYTICS REPORT', `Generated: ${new Date().toLocaleString('en-IN')}`],
         [],
         ['Metric', 'Value'],
-        ['Total Registered Users', data.totalUsers],
-        ['Active Users', data.activeUsers],
-        ['Inactive Users', data.inactiveUsers],
+        ['Total Registered Subscribers', data.totalUsers],
+        ['Active Paid Subscribers', data.activePaidSubscribers],
+        ['Free Trial Subscribers', data.trialSubscribers],
+        ['Active Status Accounts (Enabled)', data.activeAccounts],
+        ['Deactivated Accounts', data.inactiveAccounts],
         [],
-        ['User Category Breakdown', 'Count'],
+        ['Healthcare Category Breakdown', 'Count'],
         ['Doctors', data.typeDistribution.DOCTOR],
         ['Pharmacists', data.typeDistribution.PHARMACIST],
         ['Students', data.typeDistribution.STUDENT],
         ['Nurses', data.typeDistribution.NURSE],
         ['Industry & Corporate', data.typeDistribution.INDUSTRY],
         ['Others', data.typeDistribution.OTHERS],
-      ]);
+        [],
+        ['--- SUBSCRIBERS DIRECTORY ROSTER ---'],
+        ['Name', 'Email Address', 'Phone Number', 'Healthcare Category', 'Plan Name', 'Subscription Status', 'Account Status', 'Registration Date'],
+      ];
+
+      subscribersList.forEach((sub) => {
+        summaryRows.push([
+          sub.name || '—',
+          sub.email || '—',
+          sub.phoneNumber || '—',
+          sub.userType || 'OTHERS',
+          sub.subscription?.planName || 'Universal Access Pass',
+          (sub.subscription?.status || 'none').toUpperCase(),
+          sub.isActive ? 'ACTIVE' : 'DEACTIVATED',
+          new Date(sub.createdAt).toLocaleDateString('en-IN'),
+        ]);
+      });
+
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
       XLSX.utils.book_append_sheet(workbook, summarySheet, 'User Analytics');
     } else if (domain === 'subscriptions') {
       const data = await reportService.getSubscriptionAnalytics({ startDate, endDate });
-      const sheet = XLSX.utils.aoa_to_sheet([
-        ['SUBSCRIPTION ANALYTICS REPORT', `Generated: ${new Date().toLocaleString('en-IN')}`],
+      const dateQuery = reportService.buildDateQuery(startDate, endDate);
+      const subsList = await Subscription.find(dateQuery)
+        .populate('user', 'name email phoneNumber')
+        .sort({ createdAt: -1 })
+        .limit(1000)
+        .lean();
+
+      const rows = [
+        ['SUBSCRIPTION & LICENSE ANALYTICS REPORT', `Generated: ${new Date().toLocaleString('en-IN')}`],
         [],
         ['Metric', 'Value'],
-        ['Total Subscriptions', data.totalSubscriptions],
-        ['Active Passes', data.activeSubscriptions],
-        ['Expired Passes', data.expiredSubscriptions],
-        ['Cancelled / Refunded', data.cancelledSubscriptions],
-        ['Trial Subscriptions', data.trialSubscriptions],
+        ['Total Subscriptions Issued', data.totalSubscriptions],
+        ['Active Valid Passes', data.activeSubscriptions],
+        ['Free Trial Passes', data.trialSubscriptions],
+        ['Discounted Concession Passes', data.discountedSubscriptions],
+        ['Cancelled / Expired Passes', data.cancelledSubscriptions],
         [],
-        ['Tier Breakdown', 'Count'],
-        ['Individual Passes', data.tierDistribution.INDIVIDUAL],
-        ['Institutional Passes', data.tierDistribution.INSTITUTIONAL],
-        ['Student Academic Passes', data.tierDistribution.STUDENT],
-        ['Commercial Passes', data.tierDistribution.COMMERCIAL],
-      ]);
+        ['Subscription Type Breakdown', 'Count'],
+        ['Paid', data.typeDistribution.paid || 0],
+        ['Free Trial', data.typeDistribution.trial || 0],
+        ['Discounted', data.typeDistribution.discounted || 0],
+        ['Cancelled', data.typeDistribution.cancelled || 0],
+        [],
+        ['--- ISSUED PASSES & SUBSCRIPTIONS REGISTER ---'],
+        ['Subscription ID', 'Subscriber Name', 'Email Address', 'Plan Name', 'Tier', 'Type', 'Amount (INR)', 'Final Amount (INR)', 'Status', 'Start Date', 'Expiry Date'],
+      ];
+
+      subsList.forEach((s) => {
+        rows.push([
+          s.subscriptionId || '—',
+          s.user?.name || '—',
+          s.user?.email || '—',
+          s.planName || 'Universal Access Pass',
+          s.tier || 'Individual',
+          (s.type || 'paid').toUpperCase(),
+          s.amount || 0,
+          s.finalAmount || 0,
+          (s.status || 'active').toUpperCase(),
+          s.startDate ? new Date(s.startDate).toLocaleDateString('en-IN') : '—',
+          s.endDate ? new Date(s.endDate).toLocaleDateString('en-IN') : '—',
+        ]);
+      });
+
+      const sheet = XLSX.utils.aoa_to_sheet(rows);
       XLSX.utils.book_append_sheet(workbook, sheet, 'Subscription Analytics');
+    } else if (domain === 'bulk' || domain === 'workflow') {
+      const data = await reportService.getBulkImportAnalytics({ startDate, endDate });
+      const rows = [
+        ['BULK SUBSCRIPTION IMPORT ANALYTICS REPORT', `Generated: ${new Date().toLocaleString('en-IN')}`],
+        [],
+        ['Metric', 'Value'],
+        ['Total Batch Upload Jobs', data.totalJobs],
+        ['Completed Jobs', data.completedJobs],
+        ['Total Records Processed', data.totalProcessedRows],
+        ['Successful User Enrollments', data.successfulEnrollments],
+        ['Failed / Skipped Rows', data.failedRows],
+        ['Batch Success Rate', `${data.successRatePercent}%`],
+        [],
+        ['--- BATCH IMPORT JOBS AUDIT TRAIL ---'],
+        ['Job ID', 'Institution / Cohort Name', 'Plan Name', 'Total Rows', 'Valid (Enrolled)', 'Invalid (Skipped)', 'Batch Status', 'Upload Date'],
+      ];
+
+      (data.recentJobs || []).forEach((j) => {
+        rows.push([
+          j.jobId,
+          j.institutionName || 'Institutional Cohort',
+          j.planName || 'Universal Access Pass',
+          j.totalRows || 0,
+          j.validCount || 0,
+          j.invalidCount || 0,
+          (j.status || 'completed').toUpperCase(),
+          new Date(j.createdAt).toLocaleDateString('en-IN'),
+        ]);
+      });
+
+      const sheet = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(workbook, sheet, 'Bulk Subscriptions');
     } else if (domain === 'commerce') {
       const data = await reportService.getCommerceAnalytics({ startDate, endDate });
+      const dateQuery = reportService.buildDateQuery(startDate, endDate);
+      const ordersList = await Order.find(dateQuery)
+        .sort({ createdAt: -1 })
+        .limit(1000)
+        .lean();
+
       const rows = [
         ['COMMERCE & REVENUE REPORT', `Generated: ${new Date().toLocaleString('en-IN')}`],
         [],
         ['Metric', 'Value (INR)'],
         ['Gross Revenue Realized', `INR ${data.totalRevenueINR.toLocaleString('en-IN')}`],
-        ['Total Refunds Processed', `INR ${data.totalRefundsINR.toLocaleString('en-IN')}`],
         ['Average Order Value (AOV)', `INR ${data.averageOrderValueINR.toLocaleString('en-IN')}`],
         ['Total Orders Count', data.totalOrders],
         ['Completed Orders', data.completedOrders],
@@ -363,11 +592,74 @@ export const reportService = {
       ];
 
       (data.planBreakdown || []).forEach((p) => {
-        rows.push([p._id || 'Standard Plan', p.count, p.revenue]);
+        rows.push([p._id || 'Universal Access Pass', p.count, p.revenue]);
+      });
+
+      rows.push([]);
+      rows.push(['--- COMMERCIAL ORDERS & TRANSACTIONS REGISTER ---']);
+      rows.push(['Order Number', 'Invoice Number', 'Subscriber Name', 'Subscriber Email', 'Plan Name', 'Total Amount (INR)', 'Payment Method', 'Payment Status', 'Order Status', 'Order Date']);
+
+      ordersList.forEach((ord) => {
+        rows.push([
+          ord.orderNumber || '—',
+          ord.invoiceNumber || '—',
+          ord.userName || '—',
+          ord.userEmail || '—',
+          ord.planName || 'Universal Access Pass',
+          ord.pricing?.totalAmount || 0,
+          ord.paymentMethod || 'Online Gateway',
+          (ord.paymentStatus || 'success').toUpperCase(),
+          (ord.orderStatus || 'completed').toUpperCase(),
+          new Date(ord.createdAt).toLocaleDateString('en-IN'),
+        ]);
       });
 
       const sheet = XLSX.utils.aoa_to_sheet(rows);
       XLSX.utils.book_append_sheet(workbook, sheet, 'Commerce Analytics');
+    } else if (domain === 'crm') {
+      const data = await reportService.getCRMAnalytics({ startDate, endDate });
+      const dateQuery = reportService.buildDateQuery(startDate, endDate);
+      const ticketsList = await Feedback.find(dateQuery)
+        .sort({ createdAt: -1 })
+        .limit(1000)
+        .lean();
+
+      const rows = [
+        ['CRM & FEEDBACK INQUIRIES REPORT', `Generated: ${new Date().toLocaleString('en-IN')}`],
+        [],
+        ['Metric', 'Value'],
+        ['Total Inquiries & Tickets', data.totalTickets],
+        ['Pending Inquiries', data.pendingTickets],
+        ['In Review Tickets', data.inReviewTickets],
+        ['Resolved Tickets', data.completedTickets],
+        ['Resolution Rate', `${data.resolutionRatePercent}%`],
+        [],
+        ['Category Breakdown', 'Count'],
+      ];
+
+      (data.categoryBreakdown || []).forEach((cat) => {
+        rows.push([cat._id?.replace(/_/g, ' ') || 'General', cat.count]);
+      });
+
+      rows.push([]);
+      rows.push(['--- SUPPORT & FEEDBACK INQUIRIES REGISTER ---']);
+      rows.push(['Ticket ID', 'Subscriber Name', 'Subscriber Email', 'Category', 'Subject', 'Priority', 'Status', 'Created Date']);
+
+      ticketsList.forEach((tck) => {
+        rows.push([
+          tck.ticketId || '—',
+          tck.name || '—',
+          tck.email || '—',
+          (tck.category || 'general').replace(/_/g, ' ').toUpperCase(),
+          tck.subject || '—',
+          (tck.priority || 'medium').toUpperCase(),
+          (tck.status || 'pending').replace(/_/g, ' ').toUpperCase(),
+          new Date(tck.createdAt).toLocaleDateString('en-IN'),
+        ]);
+      });
+
+      const sheet = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(workbook, sheet, 'CRM & Feedback');
     } else {
       const data = await reportService.getExecutiveOverview({ startDate, endDate });
       const sheet = XLSX.utils.aoa_to_sheet([

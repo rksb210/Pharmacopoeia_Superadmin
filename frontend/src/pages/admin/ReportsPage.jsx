@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   Award,
+  UserCheck,
+  Building2,
 } from 'lucide-react';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
@@ -45,7 +47,7 @@ const DOMAIN_TABS = [
   { id: 'users', label: '1. User Reports', icon: Users },
   { id: 'subscriptions', label: '2. Subscription Reports', icon: CreditCard },
   { id: 'content', label: '3. Content Reports', icon: BookOpen },
-  { id: 'workflow', label: '4. Workflow SLA Reports', icon: GitPullRequest },
+  { id: 'workflow', label: '4. Bulk Subscription Reports', icon: Building2 },
   { id: 'commerce', label: '5. Commerce Reports', icon: TrendingUp },
   { id: 'crm', label: '6. CRM & Feedback Reports', icon: MessageSquare },
 ];
@@ -241,33 +243,42 @@ export const ReportsPage = () => {
           {/* ========================================================= */}
           {activeDomain === 'users' && domainData && (
             <div className="space-y-4 animate-in fade-in-0 duration-150">
-              {/* 3 KPI Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {/* 4 KPI Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <StatCard
                   title="Total Registered Subscribers"
                   value={domainData.totalUsers || 0}
-                  subtitle="Cumulative healthcare accounts"
+                  subtitle="Public & institutional accounts"
                   icon={Users}
-                  iconColor="text-[#284661]"
-                  iconBg="bg-blue-50"
+                  iconColor="text-sky-600"
+                  iconBg="bg-sky-50"
                 />
 
                 <StatCard
-                  title="Active Verified Users"
-                  value={domainData.activeUsers || 0}
-                  subtitle="Platform active status"
+                  title="Active Paid Subscribers"
+                  value={domainData.activePaidSubscribers || 0}
+                  subtitle="Valid formulary access"
                   icon={CheckCircle2}
                   iconColor="text-emerald-600"
                   iconBg="bg-emerald-50"
                 />
 
                 <StatCard
-                  title="Inactive / Pending Verification"
-                  value={domainData.inactiveUsers || 0}
-                  subtitle="Requires follow-up"
+                  title="Free Trial Users"
+                  value={domainData.trialSubscribers || 0}
+                  subtitle="Evaluation pass accounts"
                   icon={Clock}
-                  iconColor="text-amber-600"
-                  iconBg="bg-amber-50"
+                  iconColor="text-[#E76120]"
+                  iconBg="bg-[#FFF5EE]"
+                />
+
+                <StatCard
+                  title="Account Status Active"
+                  value={domainData.activeAccounts || 0}
+                  subtitle={`${domainData.inactiveAccounts || 0} deactivated accounts`}
+                  icon={UserCheck}
+                  iconColor="text-[#284661]"
+                  iconBg="bg-blue-50"
                 />
               </div>
 
@@ -279,8 +290,8 @@ export const ReportsPage = () => {
                     <span className="font-bold text-slate-900 text-xs">
                       Subscriber Registration Velocity
                     </span>
-                    <Badge variant="outline" className="text-[9px] uppercase font-bold">
-                      7-Day Trend
+                    <Badge variant="outline" className="text-[9px] uppercase font-bold text-[#E76120] border-[#E76120]/30 bg-[#FFF5EE]">
+                      Real-time Velocity
                     </Badge>
                   </div>
                   <TrendAreaChart
@@ -318,74 +329,84 @@ export const ReportsPage = () => {
             <div className="space-y-4 animate-in fade-in-0 duration-150">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 <StatCard
-                  title="Total Pass Provisions"
+                  title="Total Subscriptions"
                   value={domainData.totalSubscriptions || 0}
-                  subtitle="Cumulative passes issued"
+                  subtitle="All issued subscriber passes"
                   icon={CreditCard}
-                  iconColor="text-[#284661]"
-                  iconBg="bg-blue-50"
+                  iconColor="text-sky-600"
+                  iconBg="bg-sky-50"
                 />
 
                 <StatCard
-                  title="Active Valid Passes"
+                  title="Active Subscriptions"
                   value={domainData.activeSubscriptions || 0}
-                  subtitle="Valid through 31 Dec 2031"
+                  subtitle="Valid formulary access"
                   icon={CheckCircle2}
                   iconColor="text-emerald-600"
                   iconBg="bg-emerald-50"
                 />
 
                 <StatCard
-                  title="Trial Passes Active"
+                  title="Free Trials"
                   value={domainData.trialSubscriptions || 0}
-                  subtitle="Evaluation licenses"
-                  icon={Sparkles}
-                  iconColor="text-sky-600"
-                  iconBg="bg-sky-50"
+                  subtitle="Evaluation pass licenses"
+                  icon={Clock}
+                  iconColor="text-[#E76120]"
+                  iconBg="bg-[#FFF5EE]"
                 />
 
                 <StatCard
-                  title="Expired / Lapsed"
-                  value={domainData.expiredSubscriptions || 0}
-                  subtitle="Needs renewal"
+                  title="Cancelled / Expired"
+                  value={domainData.cancelledSubscriptions || 0}
+                  subtitle="Deactivated or lapsed passes"
                   icon={Clock}
                   iconColor="text-rose-600"
                   iconBg="bg-rose-50"
                 />
               </div>
 
-              {/* Tier Distribution Donut */}
+              {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* 1. Subscription Type Distribution Donut */}
                 <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-2xs space-y-3">
                   <span className="font-bold text-slate-900 text-xs block">
-                    Formulary Tier Distribution
+                    Subscription Category Distribution
                   </span>
                   <DonutDistributionChart
                     items={[
-                      { label: 'Individual', count: domainData.tierDistribution?.INDIVIDUAL || 0, color: '#284661' },
-                      { label: 'Institutional', count: domainData.tierDistribution?.INSTITUTIONAL || 0, color: '#E76120' },
-                      { label: 'Student Special', count: domainData.tierDistribution?.STUDENT || 0, color: '#10b981' },
-                      { label: 'Commercial', count: domainData.tierDistribution?.COMMERCIAL || 0, color: '#8b5cf6' },
+                      { label: 'Paid', count: domainData.typeDistribution?.paid || 0, color: '#284661' },
+                      { label: 'Free Trial', count: domainData.typeDistribution?.trial || 0, color: '#E76120' },
+                      { label: 'Discounted', count: domainData.typeDistribution?.discounted || 0, color: '#10b981' },
+                      { label: 'Cancelled', count: domainData.typeDistribution?.cancelled || 0, color: '#e11d48' },
                     ]}
                     centerLabel="Total Passes"
                   />
                 </div>
 
+                {/* 2. Plan-wise Allocation Bar Chart */}
                 <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-2xs space-y-3">
                   <span className="font-bold text-slate-900 text-xs block">
-                    Compliance &amp; Validity Telemetry
+                    Plan-wise Subscription Allocation
                   </span>
-                  <div className="p-3 bg-slate-50 rounded-xl space-y-2 text-xs text-slate-600">
-                    <p>
-                      ● <strong>BRD Fixed Validity Standard:</strong> All commercial passes remain active until 31 December 2031.
-                    </p>
-                    <p>
-                      ● <strong>Auto Renewal Tracking:</strong> Server cron evaluates renewal eligibility 90 days before horizon.
-                    </p>
-                    <p>
-                      ● <strong>Institutional Seat Quotas:</strong> Campus licenses support multi-seat authorization with transaction safety.
-                    </p>
-                  </div>
+                  {domainData.planBreakdown && domainData.planBreakdown.length > 0 ? (
+                    <BarDistributionChart
+                      items={(domainData.planBreakdown || []).map((p, idx) => ({
+                        label: p.label,
+                        count: p.count,
+                        color: idx % 2 === 0 ? 'bg-[#284661]' : 'bg-[#E76120]',
+                      }))}
+                      unit="passes"
+                    />
+                  ) : (
+                    <div className="p-3 bg-slate-50 rounded-xl space-y-2 text-xs text-slate-600">
+                      <p>
+                        ● <strong>BRD Fixed Validity Standard:</strong> All commercial passes remain active through the fixed edition horizon (2031).
+                      </p>
+                      <p>
+                        ● <strong>Dynamic Concessions:</strong> Direct 0-100% custom concessions with audit tracking.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -481,80 +502,131 @@ export const ReportsPage = () => {
           )}
 
           {/* ========================================================= */}
-          {/* DOMAIN 4: WORKFLOW SLA REPORTS */}
+          {/* DOMAIN 4: BULK SUBSCRIPTION REPORTS */}
           {/* ========================================================= */}
           {activeDomain === 'workflow' && domainData && (
             <div className="space-y-4 animate-in fade-in-0 duration-150">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 <StatCard
-                  title="SLA Compliance"
-                  value={`${domainData.slaComplianceRatePercent}%`}
-                  subtitle="Turnaround on target"
-                  icon={Award}
+                  title="Total Bulk Jobs"
+                  value={domainData.totalJobs || 0}
+                  subtitle="All batch roster imports"
+                  icon={Building2}
+                  iconColor="text-sky-600"
+                  iconBg="bg-sky-50"
+                />
+
+                <StatCard
+                  title="Total Records Processed"
+                  value={domainData.totalProcessedRows || 0}
+                  subtitle="Uploaded subscriber rows"
+                  icon={CheckCircle2}
                   iconColor="text-emerald-600"
                   iconBg="bg-emerald-50"
                 />
 
                 <StatCard
-                  title="Pending Reviews"
-                  value={domainData.pendingReviews || 0}
-                  subtitle="Scientific desk"
-                  icon={Clock}
-                  iconColor="text-amber-600"
-                  iconBg="bg-amber-50"
-                />
-
-                <StatCard
-                  title="Pending Approvals"
-                  value={domainData.pendingApprovals || 0}
-                  subtitle="Committee signing"
-                  icon={GitPullRequest}
+                  title="Successful Enrollments"
+                  value={domainData.successfulEnrollments || 0}
+                  subtitle={`${domainData.successRatePercent || 100}% batch success rate`}
+                  icon={Users}
                   iconColor="text-[#284661]"
                   iconBg="bg-blue-50"
                 />
 
                 <StatCard
-                  title="Avg Review Time"
-                  value={`${domainData.averageReviewHours}h`}
-                  subtitle="Turnaround hours"
-                  icon={Clock}
-                  iconColor="text-purple-600"
-                  iconBg="bg-purple-50"
+                  title="Failed / Skipped Records"
+                  value={domainData.failedRows || 0}
+                  subtitle="Format or validation errors"
+                  icon={AlertTriangle}
+                  iconColor="text-rose-600"
+                  iconBg="bg-rose-50"
                 />
               </div>
 
-              {/* Reviewer SLA Table */}
+              {/* Recent Batch Imports Table */}
               <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden text-xs">
-                <div className="p-4 border-b border-slate-100">
-                  <span className="font-bold text-slate-900 block">
-                    Reviewer Workload &amp; Editorial Turnaround Metrics
-                  </span>
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-slate-900 block">
+                      Recent Bulk Batch Import Jobs &amp; Roster Allocations
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Audit trail of university cohorts, hospital teams, and corporate batch imports
+                    </span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] font-bold">
+                    {domainData.recentJobs?.length || 0} Recent Batches
+                  </Badge>
                 </div>
 
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Reviewer Officer</TableHead>
-                      <TableHead className="text-center">Currently Assigned</TableHead>
-                      <TableHead className="text-center">Completed Workflows</TableHead>
-                      <TableHead className="text-right">Avg Turnaround SLA</TableHead>
+                      <TableHead>Job ID</TableHead>
+                      <TableHead>Institution / Batch Name</TableHead>
+                      <TableHead>Plan Assigned</TableHead>
+                      <TableHead className="text-center">Total Rows</TableHead>
+                      <TableHead className="text-center">Enrolled (Valid)</TableHead>
+                      <TableHead className="text-center">Skipped (Invalid)</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="text-right">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(domainData.reviewerWorkload || []).map((rev, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="font-bold text-slate-900">{rev.reviewerName}</TableCell>
-                        <TableCell className="text-center font-mono font-bold text-amber-700">
-                          {rev.assigned}
-                        </TableCell>
-                        <TableCell className="text-center font-mono font-bold text-emerald-700">
-                          {rev.completed}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-slate-800">
-                          {rev.avgTurnaroundHours} Hours
+                    {(!domainData.recentJobs || domainData.recentJobs.length === 0) ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-slate-400">
+                          No bulk import batches processed in this date range.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      domainData.recentJobs.map((job) => (
+                        <TableRow key={job._id || job.jobId}>
+                          <TableCell className="font-mono font-bold text-[#284661]">
+                            {job.jobId}
+                          </TableCell>
+                          <TableCell className="font-bold text-slate-900">
+                            {job.institutionName || 'Institutional Consortium'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-[9px] uppercase font-semibold">
+                              {job.planName || 'Universal Access Pass'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center font-mono font-bold text-slate-700">
+                            {job.totalRows || 0}
+                          </TableCell>
+                          <TableCell className="text-center font-mono font-bold text-emerald-700">
+                            {job.validCount || 0}
+                          </TableCell>
+                          <TableCell className="text-center font-mono font-bold text-rose-600">
+                            {job.invalidCount || 0}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={
+                                job.status === 'completed'
+                                  ? 'nfiNavy'
+                                  : job.status === 'processing'
+                                  ? 'nfiYellow'
+                                  : 'secondary'
+                              }
+                              className="text-[9px] uppercase font-bold"
+                            >
+                              {job.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-slate-500">
+                            {new Date(job.createdAt).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -570,7 +642,7 @@ export const ReportsPage = () => {
                 <StatCard
                   title="Gross Revenue Realized"
                   value={`₹${(domainData.totalRevenueINR || 0).toLocaleString('en-IN')}`}
-                  subtitle="Total captured amount"
+                  subtitle="Total successful payments"
                   icon={TrendingUp}
                   iconColor="text-emerald-600"
                   iconBg="bg-emerald-50"
@@ -579,7 +651,7 @@ export const ReportsPage = () => {
                 <StatCard
                   title="Completed Orders"
                   value={domainData.completedOrders || 0}
-                  subtitle="Paid orders"
+                  subtitle="Settled transactions"
                   icon={CheckCircle2}
                   iconColor="text-[#284661]"
                   iconBg="bg-blue-50"
@@ -588,17 +660,17 @@ export const ReportsPage = () => {
                 <StatCard
                   title="Average Order Value"
                   value={`₹${(domainData.averageOrderValueINR || 0).toLocaleString('en-IN')}`}
-                  subtitle="AOV metric"
+                  subtitle="Per successful order"
                   icon={CreditCard}
                   iconColor="text-[#E76120]"
                   iconBg="bg-[#FFF5EE]"
                 />
 
                 <StatCard
-                  title="Total Refunds"
-                  value={`₹${(domainData.totalRefundsINR || 0).toLocaleString('en-IN')}`}
-                  subtitle={`${domainData.refundedOrders || 0} refunds`}
-                  icon={Clock}
+                  title="Failed Orders"
+                  value={domainData.failedOrders || 0}
+                  subtitle="Unsuccessful transactions"
+                  icon={AlertTriangle}
                   iconColor="text-rose-600"
                   iconBg="bg-rose-50"
                 />
@@ -621,18 +693,96 @@ export const ReportsPage = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(domainData.planBreakdown || []).map((p, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="font-bold text-slate-900">{p._id || 'General Plan'}</TableCell>
-                        <TableCell className="text-center font-mono font-bold">{p.count}</TableCell>
-                        <TableCell className="text-right font-mono font-black text-emerald-700">
-                          ₹{(p.revenue || 0).toLocaleString('en-IN')}
+                    {(!domainData.planBreakdown || domainData.planBreakdown.length === 0) ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-6 text-slate-400">
+                          No commercial orders recorded in this date range.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      domainData.planBreakdown.map((p, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="font-bold text-slate-900">{p._id || 'Universal Access Pass'}</TableCell>
+                          <TableCell className="text-center font-mono font-bold">{p.count}</TableCell>
+                          <TableCell className="text-right font-mono font-black text-emerald-700">
+                            ₹{(p.revenue || 0).toLocaleString('en-IN')}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Recent Orders Table */}
+              {domainData.recentOrders && domainData.recentOrders.length > 0 && (
+                <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden text-xs">
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <span className="font-bold text-slate-900 block">
+                      Recent Commercial Orders &amp; Invoices
+                    </span>
+                    <Badge variant="outline" className="text-[10px] font-bold">
+                      {domainData.recentOrders.length} Recent Transactions
+                    </Badge>
+                  </div>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order #</TableHead>
+                        <TableHead>Invoice #</TableHead>
+                        <TableHead>Subscriber</TableHead>
+                        <TableHead>Plan</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="text-center">Payment Status</TableHead>
+                        <TableHead className="text-right">Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {domainData.recentOrders.map((order) => (
+                        <TableRow key={order._id || order.orderNumber}>
+                          <TableCell className="font-mono font-bold text-[#284661]">
+                            {order.orderNumber}
+                          </TableCell>
+                          <TableCell className="font-mono text-slate-600">
+                            {order.invoiceNumber || '—'}
+                          </TableCell>
+                          <TableCell className="font-bold text-slate-900">
+                            {order.userName}
+                          </TableCell>
+                          <TableCell className="text-slate-600">
+                            {order.planName || 'Universal Access Pass'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-bold text-emerald-700">
+                            ₹{(order.pricing?.totalAmount || 0).toLocaleString('en-IN')}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={
+                                order.paymentStatus === 'success' || order.orderStatus === 'completed'
+                                  ? 'nfiNavy'
+                                  : order.paymentStatus === 'failed'
+                                  ? 'destructive'
+                                  : 'secondary'
+                              }
+                              className="text-[9px] uppercase font-bold"
+                            >
+                              {order.paymentStatus || order.orderStatus}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-slate-500">
+                            {new Date(order.createdAt).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </div>
           )}
 
@@ -643,36 +793,36 @@ export const ReportsPage = () => {
             <div className="space-y-4 animate-in fade-in-0 duration-150">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 <StatCard
-                  title="Total Feedback Inquiries"
+                  title="Total Inquiries & Tickets"
                   value={domainData.totalTickets || 0}
-                  subtitle="Comments filed"
+                  subtitle="Customer & clinical queries"
                   icon={MessageSquare}
-                  iconColor="text-[#284661]"
-                  iconBg="bg-blue-50"
+                  iconColor="text-sky-600"
+                  iconBg="bg-sky-50"
                 />
 
                 <StatCard
                   title="Resolution Rate"
-                  value={`${domainData.resolutionRatePercent}%`}
-                  subtitle="Triage success"
+                  value={`${domainData.resolutionRatePercent || 100}%`}
+                  subtitle="Triage success rate"
                   icon={Award}
                   iconColor="text-emerald-600"
                   iconBg="bg-emerald-50"
                 />
 
                 <StatCard
-                  title="Pending Triage"
+                  title="Pending Inquiries"
                   value={domainData.pendingTickets || 0}
-                  subtitle="New inquiries"
+                  subtitle="Awaiting response"
                   icon={Clock}
                   iconColor="text-amber-600"
                   iconBg="bg-amber-50"
                 />
 
                 <StatCard
-                  title="Completed &amp; Dispatched"
+                  title="Resolved Tickets"
                   value={domainData.completedTickets || 0}
-                  subtitle="Official answers sent"
+                  subtitle="Official answers dispatched"
                   icon={CheckCircle2}
                   iconColor="text-emerald-600"
                   iconBg="bg-emerald-50"
@@ -693,6 +843,74 @@ export const ReportsPage = () => {
                   unit="tickets"
                 />
               </div>
+
+              {/* Recent Tickets Table */}
+              {domainData.recentTickets && domainData.recentTickets.length > 0 && (
+                <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden text-xs">
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <span className="font-bold text-slate-900 block">
+                      Recent Support &amp; CRM Inquiries
+                    </span>
+                    <Badge variant="outline" className="text-[10px] font-bold">
+                      {domainData.recentTickets.length} Recent Inquiries
+                    </Badge>
+                  </div>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ticket ID</TableHead>
+                        <TableHead>Subscriber Name</TableHead>
+                        <TableHead>Subject</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
+                        <TableHead className="text-right">Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {domainData.recentTickets.map((ticket) => (
+                        <TableRow key={ticket._id || ticket.ticketId}>
+                          <TableCell className="font-mono font-bold text-[#284661]">
+                            {ticket.ticketId}
+                          </TableCell>
+                          <TableCell className="font-bold text-slate-900">
+                            {ticket.name}
+                          </TableCell>
+                          <TableCell className="text-slate-700 max-w-[200px] truncate">
+                            {ticket.subject}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-[9px] uppercase font-semibold">
+                              {ticket.category?.replace(/_/g, ' ')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={
+                                ticket.status === 'completed'
+                                  ? 'nfiNavy'
+                                  : ticket.status === 'in_review'
+                                  ? 'nfiYellow'
+                                  : 'secondary'
+                              }
+                              className="text-[9px] uppercase font-bold"
+                            >
+                              {ticket.status?.replace(/_/g, ' ')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-slate-500">
+                            {new Date(ticket.createdAt).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </div>
           )}
         </div>
