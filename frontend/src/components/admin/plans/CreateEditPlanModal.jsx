@@ -283,7 +283,7 @@ export const CreateEditPlanModal = ({
 
               <InputField
                 id="seatQuota"
-                label="Seat Quota (Users)"
+                label="Seat per subscription"
                 type="number"
                 placeholder="1 (0 for unlimited)"
                 value={formData.seatQuota}
@@ -293,7 +293,7 @@ export const CreateEditPlanModal = ({
 
             <InputField
               id="description"
-              label="Public Description & Positioning"
+              label="Plan Description"
               placeholder="Detailed description of audience, benefits, and coverage..."
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}

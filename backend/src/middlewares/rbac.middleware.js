@@ -96,8 +96,11 @@ export const requirePermission = (module, section, action) => {
         });
       }
 
-      // Bypass for Superadmin
-      if (req.user.role === 'superadmin') {
+      // Bypass for Superadmin or default actions (EXPORT, DOWNLOAD, PRINT)
+      if (
+        req.user.role === 'superadmin' ||
+        ['EXPORT', 'DOWNLOAD', 'PRINT'].includes((action || '').toUpperCase())
+      ) {
         return next();
       }
 

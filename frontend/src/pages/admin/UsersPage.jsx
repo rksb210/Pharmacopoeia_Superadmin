@@ -266,7 +266,7 @@ export const UsersPage = () => {
       )}
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           title="Total Registered Users"
           value={stats.totalUsers}
@@ -288,19 +288,10 @@ export const UsersPage = () => {
         <StatCard
           title="Free Trial Users"
           value={stats.trialUsers}
-          subtitle="14-day evaluation accounts"
+          subtitle="Evaluation pass accounts"
           icon={Clock}
           iconColor="text-[#E76120]"
           iconBg="bg-[#FFF5EE]"
-        />
-
-        <StatCard
-          title="Complimentary Licenses"
-          value={stats.complimentaryUsers}
-          subtitle="Institutional / VIP passes"
-          icon={Gift}
-          iconColor="text-purple-600"
-          iconBg="bg-purple-50"
         />
       </div>
 

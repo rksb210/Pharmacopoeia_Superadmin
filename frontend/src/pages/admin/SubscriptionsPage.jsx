@@ -216,7 +216,7 @@ export const SubscriptionsPage = () => {
       {/* 4 KPI Stat Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
         <StatCard
-          title="Total Subscriber"
+          title="Total Subscriptions"
           value={stats.totalSubscriptions}
           subtitle="All registered subscriber passes"
           icon={Users}
@@ -225,7 +225,7 @@ export const SubscriptionsPage = () => {
         />
 
         <StatCard
-          title="Active Paid"
+          title="Active Subscriptions"
           value={stats.activeSubscriptions}
           subtitle="Valid formulary access"
           icon={CheckCircle2}

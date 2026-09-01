@@ -4,16 +4,12 @@ import { Search, Check, Minus, CheckCheck, XCircle, CheckSquare, Square, CheckCi
 import { Badge } from '../../ui/badge';
 
 const DISPLAY_ACTIONS = [
-  { key: 'VIEW', label: 'View' },
-  { key: 'ADD', label: 'Add' },
-  { key: 'EDIT', label: 'Edit' },
-  { key: 'DELETE', label: 'Delete' },
-  { key: 'APPROVE', label: 'Approve' },
-  { key: 'REJECT', label: 'Reject' },
-  { key: 'PUBLISH', label: 'Publish' },
-  { key: 'EXPORT', label: 'Export' },
-  { key: 'DOWNLOAD', label: 'Download' },
-  { key: 'PRINT', label: 'Print' },
+  { key: 'VIEW', label: 'View', actions: ['VIEW'] },
+  { key: 'ADD', label: 'Add', actions: ['ADD'] },
+  { key: 'EDIT', label: 'Edit', actions: ['EDIT'] },
+  { key: 'DELETE', label: 'Delete', actions: ['DELETE'] },
+  { key: 'REVIEWER', label: 'Reviewer', actions: ['APPROVE', 'REJECT'] },
+  { key: 'APPROVER', label: 'Approver', actions: ['PUBLISH'] },
 ];
 
 export const RolePermissionMatrix = ({
@@ -48,17 +44,20 @@ export const RolePermissionMatrix = ({
     fetchPermissions();
   }, []);
 
-  const handleToggle = (code) => {
-    if (readOnly) return;
-    const isChecked = selectedPermissions.includes(code);
-    const updated = isChecked
-      ? selectedPermissions.filter((p) => p !== code)
-      : [...selectedPermissions, code];
+  const handleToggleActionGroup = (targetPerms) => {
+    if (readOnly || isWildcardAll) return;
+    const targetCodes = targetPerms.map((p) => p.code);
+    const areAllSelected = targetCodes.every((c) => selectedPermissions.includes(c));
+
+    const updated = areAllSelected
+      ? selectedPermissions.filter((c) => !targetCodes.includes(c))
+      : Array.from(new Set([...selectedPermissions, ...targetCodes]));
+
     onChange(updated);
   };
 
   const handleToggleRow = (sectionPerms) => {
-    if (readOnly) return;
+    if (readOnly || isWildcardAll) return;
     const sectionCodes = sectionPerms.map((p) => p.code);
     const allSelected = sectionCodes.every((c) => selectedPermissions.includes(c));
 
@@ -70,7 +69,7 @@ export const RolePermissionMatrix = ({
   };
 
   const handleToggleModule = (sections) => {
-    if (readOnly) return;
+    if (readOnly || isWildcardAll) return;
     const allModuleCodes = Object.values(sections).flatMap((perms) => perms.map((p) => p.code));
     const allSelected = allModuleCodes.every((c) => selectedPermissions.includes(c));
 
@@ -266,9 +265,9 @@ export const RolePermissionMatrix = ({
 
                           {/* Action Checkbox Cells */}
                           {DISPLAY_ACTIONS.map((act) => {
-                            const perm = perms.find((p) => p.action === act.key);
+                            const targetPerms = perms.filter((p) => act.actions.includes(p.action));
 
-                            if (!perm) {
+                            if (targetPerms.length === 0) {
                               // Action not available for this section
                               return (
                                 <td key={act.key} className="py-2.5 px-2 text-center text-slate-300">
@@ -277,14 +276,15 @@ export const RolePermissionMatrix = ({
                               );
                             }
 
-                            const isChecked = isWildcardAll || selectedPermissions.includes(perm.code);
+                            const isChecked =
+                              isWildcardAll || targetPerms.every((p) => selectedPermissions.includes(p.code));
 
                             return (
                               <td key={act.key} className="py-2.5 px-2 text-center">
                                 <button
                                   type="button"
                                   disabled={readOnly || isWildcardAll}
-                                  onClick={() => handleToggle(perm.code)}
+                                  onClick={() => handleToggleActionGroup(targetPerms)}
                                   className={`
                                     w-6 h-6 rounded-md mx-auto flex items-center justify-center transition-all cursor-pointer
                                     ${
@@ -294,7 +294,7 @@ export const RolePermissionMatrix = ({
                                     }
                                     ${readOnly ? 'cursor-default' : ''}
                                   `}
-                                  title={`${act.label} ${sectionName}`}
+                                  title={`${act.label} permission for ${sectionName}`}
                                 >
                                   {isChecked && <Check className="w-4 h-4 stroke-[3]" />}
                                 </button>
