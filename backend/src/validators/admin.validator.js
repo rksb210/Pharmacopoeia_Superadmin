@@ -3,7 +3,7 @@
  */
 
 export const validateCreateAdmin = (req, res, next) => {
-  const { name, email, username, password, role } = req.body;
+  const { name, email, username, password, role, departmentRef, designationRef } = req.body;
   const errors = [];
 
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -31,6 +31,9 @@ export const validateCreateAdmin = (req, res, next) => {
     errors.push(`Role must be one of: ${validRoles.join(', ')}`);
   }
 
+  if (departmentRef && !/^[0-9a-fA-F]{24}$/.test(String(departmentRef))) errors.push('Invalid department selected');
+  if (designationRef && !/^[0-9a-fA-F]{24}$/.test(String(designationRef))) errors.push('Invalid designation selected');
+
   if (errors.length > 0) {
     return res.status(400).json({
       success: false,
@@ -43,7 +46,7 @@ export const validateCreateAdmin = (req, res, next) => {
 };
 
 export const validateUpdateAdmin = (req, res, next) => {
-  const { name, email, username, role } = req.body;
+  const { name, email, username, role, departmentRef, designationRef } = req.body;
   const errors = [];
 
   if (name !== undefined && (!name || !name.trim())) {
@@ -62,6 +65,9 @@ export const validateUpdateAdmin = (req, res, next) => {
   if (role && !validRoles.includes(role.toLowerCase())) {
     errors.push(`Role must be one of: ${validRoles.join(', ')}`);
   }
+
+  if (departmentRef !== undefined && departmentRef !== null && departmentRef !== '' && !/^[0-9a-fA-F]{24}$/.test(String(departmentRef))) errors.push('Invalid department selected');
+  if (designationRef !== undefined && designationRef !== null && designationRef !== '' && !/^[0-9a-fA-F]{24}$/.test(String(designationRef))) errors.push('Invalid designation selected');
 
   if (errors.length > 0) {
     return res.status(400).json({

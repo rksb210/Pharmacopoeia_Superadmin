@@ -126,3 +126,59 @@ export const validateRegister = (req, res, next) => {
 
   next();
 };
+
+/**
+ * Validate public subscriber signup request body
+ */
+export const validateSignup = (req, res, next) => {
+  const { name, email, username, password, phoneNumber, userType, dynamicFields } = req.body;
+  const errors = [];
+
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    errors.push('Full name is required');
+  } else if (name.trim().length > 100) {
+    errors.push('Name cannot exceed 100 characters');
+  }
+
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    errors.push('Email address is required');
+  } else if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email.trim())) {
+    errors.push('Please enter a valid email address');
+  }
+
+  if (!username || typeof username !== 'string' || !username.trim()) {
+    errors.push('Username is required');
+  } else if (username.trim().length < 3) {
+    errors.push('Username must be at least 3 characters');
+  } else if (username.trim().length > 30) {
+    errors.push('Username cannot exceed 30 characters');
+  } else if (!/^[a-zA-Z0-9._-]+$/.test(username.trim())) {
+    errors.push('Username can only contain letters, numbers, dots, underscores, and hyphens');
+  }
+
+  if (!password || typeof password !== 'string' || password.length < 6) {
+    errors.push('Password must be at least 6 characters long');
+  }
+
+  if (!userType || typeof userType !== 'string' || !userType.trim()) {
+    errors.push('User type is required');
+  }
+
+  if (phoneNumber !== undefined && typeof phoneNumber !== 'string') {
+    errors.push('Phone number must be a string');
+  }
+
+  if (dynamicFields !== undefined && (typeof dynamicFields !== 'object' || Array.isArray(dynamicFields))) {
+    errors.push('Dynamic fields must be an object');
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors,
+    });
+  }
+
+  next();
+};

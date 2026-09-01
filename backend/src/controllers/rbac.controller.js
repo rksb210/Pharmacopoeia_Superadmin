@@ -366,6 +366,8 @@ export const seedRBAC = async (req, res, next) => {
       { module: 'USERS', section: 'ADMINS', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE', 'EXPORT'] },
       { module: 'USERS', section: 'SUBADMINS', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE', 'EXPORT'] },
       { module: 'USERS', section: 'ROLES', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE'] },
+      { module: 'SYSTEM', section: 'DEPARTMENTS', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE', 'EXPORT'] },
+      { module: 'SYSTEM', section: 'DESIGNATIONS', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE', 'EXPORT'] },
       { module: 'CONTENT', section: 'MONOGRAPHS', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE', 'APPROVE', 'REJECT', 'PUBLISH', 'EXPORT', 'DOWNLOAD', 'PRINT'] },
       { module: 'CONTENT', section: 'WORKFLOW', actions: ['VIEW', 'ADD', 'EDIT', 'APPROVE', 'REJECT', 'PUBLISH'] },
       { module: 'CONTENT', section: 'SEARCH_INDEX', actions: ['VIEW', 'EDIT'] },

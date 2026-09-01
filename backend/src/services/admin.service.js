@@ -1,5 +1,7 @@
 import User from '../models/user.model.js';
 import Role from '../models/role.model.js';
+import Department from '../models/department.model.js';
+import Designation from '../models/designation.model.js';
 import { getUserEffectivePermissions, invalidateRBACCache } from '../middlewares/rbac.middleware.js';
 
 export const adminService = {
@@ -37,7 +39,6 @@ export const adminService = {
     const adminRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
     const query = { role: { $in: adminRoles } };
 
-    // Search by Name, Email, Username, or Department
     if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
       query.$or = [
@@ -72,6 +73,8 @@ export const adminService = {
         .skip(skip)
         .limit(pageSize)
         .populate('roleRef', 'name code description')
+        .populate('departmentRef', 'name code')
+        .populate('designationRef', 'name code department')
         .lean(),
       User.countDocuments(query),
     ]);
@@ -93,7 +96,10 @@ export const adminService = {
    * Get Admin by ID with effective permissions
    */
   getAdminById: async (id) => {
-    const admin = await User.findById(id).populate('roleRef', 'name code description');
+    const admin = await User.findById(id)
+      .populate('roleRef', 'name code description')
+      .populate('departmentRef', 'name code')
+      .populate('designationRef', 'name code department');
     if (!admin) {
       throw new Error('Administrator not found');
     }
@@ -117,7 +123,9 @@ export const adminService = {
       password,
       role = 'admin',
       department = 'Indian Pharmacopoeia Commission',
+      departmentRef: departmentId,
       designation = 'Administrator',
+      designationRef: designationId,
       phoneNumber = '',
       notes = '',
       customPermissions = [],
@@ -146,6 +154,36 @@ export const adminService = {
     // Lookup roleRef if available
     const roleDoc = await Role.findOne({ code: role.toLowerCase() });
 
+    // Resolve department & designation refs with cascading validation
+    let resolvedDepartmentRef = null;
+    let resolvedDepartmentName = department ? department.trim() : 'Indian Pharmacopoeia Commission';
+    let resolvedDesignationRef = null;
+    let resolvedDesignationName = designation ? designation.trim() : 'Administrator';
+
+    if (departmentId) {
+      const dept = await Department.findById(departmentId);
+      if (!dept) throw new Error('Selected department does not exist.');
+      if (!dept.isActive) throw new Error('Selected department is inactive.');
+      resolvedDepartmentRef = dept._id;
+      resolvedDepartmentName = dept.name;
+    }
+
+    if (designationId) {
+      const des = await Designation.findById(designationId).populate('department');
+      if (!des) throw new Error('Selected designation does not exist.');
+      if (!des.isActive) throw new Error('Selected designation is inactive.');
+      if (resolvedDepartmentRef && String(des.department._id) !== String(resolvedDepartmentRef)) {
+        throw new Error(`Designation '${des.name}' does not belong to the selected department.`);
+      }
+      // If no departmentRef supplied, infer from designation's department
+      if (!resolvedDepartmentRef) {
+        resolvedDepartmentRef = des.department._id;
+        resolvedDepartmentName = des.department.name;
+      }
+      resolvedDesignationRef = des._id;
+      resolvedDesignationName = des.name;
+    }
+
     const newAdmin = await User.create({
       name: name.trim(),
       email: cleanEmail,
@@ -153,8 +191,10 @@ export const adminService = {
       password,
       role: role.toLowerCase(),
       roleRef: roleDoc ? roleDoc._id : null,
-      department: department.trim(),
-      designation: designation.trim(),
+      department: resolvedDepartmentName,
+      departmentRef: resolvedDepartmentRef,
+      designation: resolvedDesignationName,
+      designationRef: resolvedDesignationRef,
       phoneNumber: phoneNumber.trim(),
       notes: notes.trim(),
       customPermissions: customPermissions.map((p) => p.toUpperCase()),
@@ -189,16 +229,67 @@ export const adminService = {
       username,
       role,
       department,
+      departmentRef: departmentId,
       designation,
+      designationRef: designationId,
       phoneNumber,
       notes,
     } = data;
 
     if (name) admin.name = name.trim();
-    if (department !== undefined) admin.department = department.trim();
-    if (designation !== undefined) admin.designation = designation.trim();
     if (phoneNumber !== undefined) admin.phoneNumber = phoneNumber.trim();
     if (notes !== undefined) admin.notes = notes.trim();
+
+    // Department/Designation master handling (cascading)
+    if (departmentId !== undefined || department !== undefined || designationId !== undefined || designation !== undefined) {
+      let nextDeptRef = admin.departmentRef;
+      let nextDeptName = admin.department;
+      let nextDesRef = admin.designationRef;
+      let nextDesName = admin.designation;
+
+      if (departmentId !== undefined) {
+        if (departmentId) {
+          const dept = await Department.findById(departmentId);
+          if (!dept) throw new Error('Selected department does not exist.');
+          if (!dept.isActive) throw new Error('Selected department is inactive.');
+          nextDeptRef = dept._id;
+          nextDeptName = dept.name;
+        } else {
+          nextDeptRef = null;
+          nextDeptName = department !== undefined ? department.trim() : admin.department;
+        }
+      } else if (department !== undefined) {
+        nextDeptName = department.trim();
+        // If raw string differs and no ref supplied, clear refs – master will be required going forward if provided
+      }
+
+      if (designationId !== undefined) {
+        if (designationId) {
+          const des = await Designation.findById(designationId).populate('department');
+          if (!des) throw new Error('Selected designation does not exist.');
+          if (!des.isActive) throw new Error('Selected designation is inactive.');
+          const desDeptId = String(des.department._id || des.department);
+          if (nextDeptRef && String(nextDeptRef) !== desDeptId) throw new Error(`Designation '${des.name}' does not belong to the selected department.`);
+          if (!nextDeptRef) {
+            nextDeptRef = des.department._id || des.department;
+            const deptDoc = await Department.findById(nextDeptRef);
+            if (deptDoc) nextDeptName = deptDoc.name;
+          }
+          nextDesRef = des._id;
+          nextDesName = des.name;
+        } else {
+          nextDesRef = null;
+          nextDesName = designation !== undefined ? designation.trim() : admin.designation;
+        }
+      } else if (designation !== undefined) {
+        nextDesName = designation.trim();
+      }
+
+      admin.departmentRef = nextDeptRef;
+      admin.department = nextDeptName;
+      admin.designationRef = nextDesRef;
+      admin.designation = nextDesName;
+    }
 
     if (email && email.toLowerCase().trim() !== admin.email) {
       const cleanEmail = email.toLowerCase().trim();

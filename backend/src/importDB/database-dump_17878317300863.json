@@ -1,0 +1,5037 @@
+{
+  "exportedAt": "2026-08-27T11:53:54.965Z",
+  "databaseName": "pharmacopoeia_superadmin",
+  "collections": {
+    "auditlogs": [
+      {
+        "_id": "6a8ecd35d11c82d35e403173",
+        "action": "LOGIN_SUCCESS",
+        "module": "AUTH",
+        "entity": "User",
+        "entityId": "USR-ADMIN-001",
+        "user": null,
+        "userName": "NFI Super Administrator",
+        "userEmail": "admin@nfi.gov.in",
+        "userRole": "Superadmin",
+        "status": "SUCCESS",
+        "ipAddress": "103.21.124.55",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0",
+        "requestMethod": "POST",
+        "requestUrl": "/api/auth/login",
+        "details": "Successful two-factor administrative login.",
+        "oldValues": null,
+        "newValues": null,
+        "errorMessage": null,
+        "createdAt": "2026-08-23T11:25:41.008Z",
+        "__v": 0,
+        "updatedAt": "2026-08-26T11:25:41.015Z"
+      },
+      {
+        "_id": "6a8ecd35d11c82d35e403174",
+        "action": "ROLE_PERMISSIONS_UPDATED",
+        "module": "ROLES",
+        "entity": "Role",
+        "entityId": "ROLE-REVIEWER",
+        "user": null,
+        "userName": "NFI Super Administrator",
+        "userEmail": "admin@nfi.gov.in",
+        "userRole": "Superadmin",
+        "status": "SUCCESS",
+        "ipAddress": "103.21.124.55",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0",
+        "requestMethod": "PUT",
+        "requestUrl": "/api/rbac/roles/6a8d8a26a791d7bef03e267c/permissions",
+        "details": "Granted monographs review and committee draft permissions to Scientific Reviewer.",
+        "oldValues": {
+          "roleName": "Reviewer",
+          "totalPermissions": 14
+        },
+        "newValues": {
+          "roleName": "Reviewer",
+          "totalPermissions": 18,
+          "added": [
+            "CONTENT:MONOGRAPHS:REVIEW",
+            "CONTENT:MONOGRAPHS:EDIT"
+          ]
+        },
+        "errorMessage": null,
+        "createdAt": "2026-08-24T11:25:41.008Z",
+        "__v": 0,
+        "updatedAt": "2026-08-26T11:25:41.015Z"
+      },
+      {
+        "_id": "6a8ecd35d11c82d35e403175",
+        "action": "PLAN_PRICING_UPDATED",
+        "module": "PLANS",
+        "entity": "Plan",
+        "entityId": "NFI-INDIVIDUAL",
+        "user": null,
+        "userName": "NFI Super Administrator",
+        "userEmail": "admin@nfi.gov.in",
+        "userRole": "Superadmin",
+        "status": "SUCCESS",
+        "ipAddress": "103.21.124.55",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0",
+        "requestMethod": "PUT",
+        "requestUrl": "/api/plans/6a8d8a26a791d7bef03e267d",
+        "details": "Updated base catalog price from ₹3,000 to ₹3,500.",
+        "oldValues": {
+          "planCode": "NFI-INDIVIDUAL",
+          "basePrice": 3000
+        },
+        "newValues": {
+          "planCode": "NFI-INDIVIDUAL",
+          "basePrice": 3500
+        },
+        "errorMessage": null,
+        "createdAt": "2026-08-24T23:25:41.008Z",
+        "__v": 0,
+        "updatedAt": "2026-08-26T11:25:41.015Z"
+      },
+      {
+        "_id": "6a8ecd35d11c82d35e403176",
+        "action": "ORDER_REFUND_AUTHORIZED",
+        "module": "ORDERS",
+        "entity": "Order",
+        "entityId": "ORD-2026-664504",
+        "user": null,
+        "userName": "NFI Super Administrator",
+        "userEmail": "admin@nfi.gov.in",
+        "userRole": "Superadmin",
+        "status": "SUCCESS",
+        "ipAddress": "103.21.124.55",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0",
+        "requestMethod": "POST",
+        "requestUrl": "/api/orders/6a8d8a26a791d7bef03e267e/refund",
+        "details": "Full commercial refund of ₹47,200 authorized for duplicate institutional transaction.",
+        "oldValues": {
+          "orderStatus": "completed",
+          "paymentStatus": "paid"
+        },
+        "newValues": {
+          "orderStatus": "refunded",
+          "paymentStatus": "refunded",
+          "refundAmount": 47200,
+          "refundTxn": "REF-2026-00192"
+        },
+        "errorMessage": null,
+        "createdAt": "2026-08-25T23:25:41.008Z",
+        "__v": 0,
+        "updatedAt": "2026-08-26T11:25:41.016Z"
+      },
+      {
+        "_id": "6a8ecd35d11c82d35e403177",
+        "action": "LOGIN_FAILED",
+        "module": "AUTH",
+        "entity": "User",
+        "entityId": "UNKNOWN",
+        "user": null,
+        "userName": "Unknown Guest",
+        "userEmail": "hacker@malicious-domain.com",
+        "userRole": "Anonymous",
+        "status": "FAILURE",
+        "ipAddress": "185.220.101.4",
+        "userAgent": "curl/7.88.1",
+        "requestMethod": "POST",
+        "requestUrl": "/api/auth/login",
+        "details": "Invalid credential attempt for non-existent administrative account.",
+        "oldValues": null,
+        "newValues": null,
+        "errorMessage": "Invalid username or password supplied.",
+        "createdAt": "2026-08-26T05:25:41.008Z",
+        "__v": 0,
+        "updatedAt": "2026-08-26T11:25:41.016Z"
+      },
+      {
+        "_id": "6a8ecd35d11c82d35e403178",
+        "action": "MONOGRAPH_PUBLISHED",
+        "module": "CONTENT",
+        "entity": "Monograph",
+        "entityId": "MONO-METFORMIN-9TH",
+        "user": null,
+        "userName": "Dr. S. K. Gupta",
+        "userEmail": "sk.gupta@ipc.gov.in",
+        "userRole": "Editor",
+        "status": "SUCCESS",
+        "ipAddress": "14.139.60.2",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/123.0",
+        "requestMethod": "POST",
+        "requestUrl": "/api/monographs/metformin/publish",
+        "details": "Published 2026 Addendum revisions for Metformin Hydrochloride Tablets IP.",
+        "oldValues": {
+          "version": "9.1",
+          "state": "APPROVED"
+        },
+        "newValues": {
+          "version": "9.2",
+          "state": "PUBLISHED",
+          "publishedAt": "2026-08-26T11:25:41.008Z"
+        },
+        "errorMessage": null,
+        "createdAt": "2026-08-26T09:25:41.008Z",
+        "__v": 0,
+        "updatedAt": "2026-08-26T11:25:41.016Z"
+      },
+      {
+        "_id": "6a8ece069dd17d315bdc23ac",
+        "action": "SYSTEM_CONFIG_UPDATED",
+        "module": "SYSTEM",
+        "entity": "SystemConfig",
+        "entityId": "v2",
+        "user": "6a8d5f2a385a03832538e707",
+        "userName": "NFI Super Administrator",
+        "userEmail": "admin@nfi.gov.in",
+        "userRole": "superadmin",
+        "status": "SUCCESS",
+        "ipAddress": "::1",
+        "userAgent": "node",
+        "requestMethod": "PUT",
+        "requestUrl": "/api/config",
+        "details": "Application configuration updated to version v2. Note: Extended default evaluation trial window from 14 to 21 days for medical practitioners.",
+        "oldValues": {
+          "subscription": {
+            "fixedExpiryDate": "2031-12-31T23:59:59.999Z",
+            "renewalWindowDays": 90,
+            "gracePeriodDays": 15,
+            "allowEarlyRenewals": true
+          },
+          "trial": {
+            "defaultTrialDays": 14,
+            "maxTrialsPerUser": 1,
+            "allowTrialExtension": false
+          },
+          "userRegistration": {
+            "allowPublicRegistration": true,
+            "requireCredentialVerification": true,
+            "allowedUserTypes": [
+              "DOCTOR",
+              "PHARMACIST",
+              "STUDENT",
+              "NURSE",
+              "INDUSTRY",
+              "OTHERS"
+            ],
+            "autoApproveStudents": false
+          },
+          "contentAndSearch": {
+            "enablePublicFeedback": true,
+            "enableMonographWatermarking": true,
+            "enableFuzzySearch": true,
+            "maxSearchResults": 50,
+            "monographReviewStages": 2
+          },
+          "securityAndSessions": {
+            "maxLoginAttempts": 5,
+            "lockoutDurationMinutes": 15,
+            "sessionTimeoutMinutes": 120,
+            "requireMFAForAdmins": true,
+            "passwordExpiryDays": 90
+          },
+          "notificationsAndComms": {
+            "enableInAppNotifications": true,
+            "enableEmailDispatches": true,
+            "enableSmsAlerts": false,
+            "supportEmail": "support@nfi.gov.in",
+            "supportHotline": "+91-120-2783400"
+          },
+          "maintenanceAndGeneral": {
+            "maintenanceMode": false,
+            "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+            "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+            "announcementActive": true
+          }
+        },
+        "newValues": {
+          "subscription": {
+            "fixedExpiryDate": "2031-12-31T23:59:59.999Z",
+            "renewalWindowDays": 90,
+            "gracePeriodDays": 15,
+            "allowEarlyRenewals": true
+          },
+          "trial": {
+            "defaultTrialDays": 21,
+            "maxTrialsPerUser": 1,
+            "allowTrialExtension": true
+          },
+          "userRegistration": {
+            "allowPublicRegistration": true,
+            "requireCredentialVerification": true,
+            "allowedUserTypes": [
+              "DOCTOR",
+              "PHARMACIST",
+              "STUDENT",
+              "NURSE",
+              "INDUSTRY",
+              "OTHERS"
+            ],
+            "autoApproveStudents": false
+          },
+          "contentAndSearch": {
+            "enablePublicFeedback": true,
+            "enableMonographWatermarking": true,
+            "enableFuzzySearch": true,
+            "maxSearchResults": 50,
+            "monographReviewStages": 2
+          },
+          "securityAndSessions": {
+            "maxLoginAttempts": 5,
+            "lockoutDurationMinutes": 15,
+            "sessionTimeoutMinutes": 120,
+            "requireMFAForAdmins": true,
+            "passwordExpiryDays": 90
+          },
+          "notificationsAndComms": {
+            "enableInAppNotifications": true,
+            "enableEmailDispatches": true,
+            "enableSmsAlerts": false,
+            "supportEmail": "support@nfi.gov.in",
+            "supportHotline": "+91-120-2783400"
+          },
+          "maintenanceAndGeneral": {
+            "maintenanceMode": false,
+            "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+            "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+            "announcementActive": true
+          }
+        },
+        "errorMessage": null,
+        "createdAt": "2026-08-26T11:29:10.573Z",
+        "updatedAt": "2026-08-26T11:29:10.573Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8ece069dd17d315bdc23ad",
+        "action": "SYSTEM_CONFIG_UPDATED",
+        "module": "SYSTEM",
+        "entity": "SystemConfig",
+        "entityId": "v3",
+        "user": "6a8d5f2a385a03832538e707",
+        "userName": "NFI Super Administrator",
+        "userEmail": "admin@nfi.gov.in",
+        "userRole": "superadmin",
+        "status": "SUCCESS",
+        "ipAddress": "::1",
+        "userAgent": "node",
+        "requestMethod": "POST",
+        "requestUrl": "/api/config/restore/1",
+        "details": "Application configuration updated to version v3. Note: Restored to historical state from version v1",
+        "oldValues": {
+          "subscription": {
+            "fixedExpiryDate": "2031-12-31T23:59:59.999Z",
+            "renewalWindowDays": 90,
+            "gracePeriodDays": 15,
+            "allowEarlyRenewals": true
+          },
+          "trial": {
+            "defaultTrialDays": 21,
+            "maxTrialsPerUser": 1,
+            "allowTrialExtension": true
+          },
+          "userRegistration": {
+            "allowPublicRegistration": true,
+            "requireCredentialVerification": true,
+            "allowedUserTypes": [
+              "DOCTOR",
+              "PHARMACIST",
+              "STUDENT",
+              "NURSE",
+              "INDUSTRY",
+              "OTHERS"
+            ],
+            "autoApproveStudents": false
+          },
+          "contentAndSearch": {
+            "enablePublicFeedback": true,
+            "enableMonographWatermarking": true,
+            "enableFuzzySearch": true,
+            "maxSearchResults": 50,
+            "monographReviewStages": 2
+          },
+          "securityAndSessions": {
+            "maxLoginAttempts": 5,
+            "lockoutDurationMinutes": 15,
+            "sessionTimeoutMinutes": 120,
+            "requireMFAForAdmins": true,
+            "passwordExpiryDays": 90
+          },
+          "notificationsAndComms": {
+            "enableInAppNotifications": true,
+            "enableEmailDispatches": true,
+            "enableSmsAlerts": false,
+            "supportEmail": "support@nfi.gov.in",
+            "supportHotline": "+91-120-2783400"
+          },
+          "maintenanceAndGeneral": {
+            "maintenanceMode": false,
+            "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+            "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+            "announcementActive": true
+          }
+        },
+        "newValues": {
+          "subscription": {
+            "fixedExpiryDate": "2031-12-31T23:59:59.999Z",
+            "renewalWindowDays": 90,
+            "gracePeriodDays": 15,
+            "allowEarlyRenewals": true
+          },
+          "trial": {
+            "defaultTrialDays": 14,
+            "maxTrialsPerUser": 1,
+            "allowTrialExtension": false
+          },
+          "userRegistration": {
+            "allowPublicRegistration": true,
+            "requireCredentialVerification": true,
+            "allowedUserTypes": [
+              "DOCTOR",
+              "PHARMACIST",
+              "STUDENT",
+              "NURSE",
+              "INDUSTRY",
+              "OTHERS"
+            ],
+            "autoApproveStudents": false
+          },
+          "contentAndSearch": {
+            "enablePublicFeedback": true,
+            "enableMonographWatermarking": true,
+            "enableFuzzySearch": true,
+            "maxSearchResults": 50,
+            "monographReviewStages": 2
+          },
+          "securityAndSessions": {
+            "maxLoginAttempts": 5,
+            "lockoutDurationMinutes": 15,
+            "sessionTimeoutMinutes": 120,
+            "requireMFAForAdmins": true,
+            "passwordExpiryDays": 90
+          },
+          "notificationsAndComms": {
+            "enableInAppNotifications": true,
+            "enableEmailDispatches": true,
+            "enableSmsAlerts": false,
+            "supportEmail": "support@nfi.gov.in",
+            "supportHotline": "+91-120-2783400"
+          },
+          "maintenanceAndGeneral": {
+            "maintenanceMode": false,
+            "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+            "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+            "announcementActive": true
+          }
+        },
+        "errorMessage": null,
+        "createdAt": "2026-08-26T11:29:10.595Z",
+        "updatedAt": "2026-08-26T11:29:10.595Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8ed2e8a6f06b914e3f55f5",
+        "action": "SYSTEM_CONFIG_UPDATED",
+        "module": "SYSTEM",
+        "entity": "SystemConfig",
+        "entityId": "v4",
+        "user": "6a8d5f2a385a03832538e707",
+        "userName": "NFI Super Administrator",
+        "userEmail": "admin@nfi.gov.in",
+        "userRole": "superadmin",
+        "status": "SUCCESS",
+        "ipAddress": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+        "requestMethod": "PUT",
+        "requestUrl": "/api/config",
+        "details": "Application configuration updated to version v4. Note: Administrative settings updated",
+        "oldValues": {
+          "subscription": {
+            "fixedExpiryDate": "2031-12-31T23:59:59.999Z",
+            "renewalWindowDays": 90,
+            "gracePeriodDays": 15,
+            "allowEarlyRenewals": true
+          },
+          "trial": {
+            "defaultTrialDays": 14,
+            "maxTrialsPerUser": 1,
+            "allowTrialExtension": false
+          },
+          "userRegistration": {
+            "allowPublicRegistration": true,
+            "requireCredentialVerification": true,
+            "allowedUserTypes": [
+              "DOCTOR",
+              "PHARMACIST",
+              "STUDENT",
+              "NURSE",
+              "INDUSTRY",
+              "OTHERS"
+            ],
+            "autoApproveStudents": false
+          },
+          "contentAndSearch": {
+            "enablePublicFeedback": true,
+            "enableMonographWatermarking": true,
+            "enableFuzzySearch": true,
+            "maxSearchResults": 50,
+            "monographReviewStages": 2
+          },
+          "securityAndSessions": {
+            "maxLoginAttempts": 5,
+            "lockoutDurationMinutes": 15,
+            "sessionTimeoutMinutes": 120,
+            "requireMFAForAdmins": true,
+            "passwordExpiryDays": 90
+          },
+          "notificationsAndComms": {
+            "enableInAppNotifications": true,
+            "enableEmailDispatches": true,
+            "enableSmsAlerts": false,
+            "supportEmail": "support@nfi.gov.in",
+            "supportHotline": "+91-120-2783400"
+          },
+          "maintenanceAndGeneral": {
+            "maintenanceMode": false,
+            "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+            "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+            "announcementActive": true
+          }
+        },
+        "newValues": {
+          "subscription": {
+            "fixedExpiryDate": "2031-12-31T00:00:00.000Z",
+            "renewalWindowDays": 90,
+            "gracePeriodDays": 15,
+            "allowEarlyRenewals": true
+          },
+          "trial": {
+            "defaultTrialDays": 14,
+            "maxTrialsPerUser": 1,
+            "allowTrialExtension": false
+          },
+          "userRegistration": {
+            "allowPublicRegistration": true,
+            "requireCredentialVerification": true,
+            "allowedUserTypes": [
+              "DOCTOR",
+              "PHARMACIST",
+              "STUDENT",
+              "NURSE",
+              "INDUSTRY",
+              "OTHERS"
+            ],
+            "autoApproveStudents": false
+          },
+          "contentAndSearch": {
+            "enablePublicFeedback": true,
+            "enableMonographWatermarking": true,
+            "enableFuzzySearch": true,
+            "maxSearchResults": 50,
+            "monographReviewStages": 2
+          },
+          "securityAndSessions": {
+            "maxLoginAttempts": 5,
+            "lockoutDurationMinutes": 5,
+            "sessionTimeoutMinutes": 120,
+            "requireMFAForAdmins": true,
+            "passwordExpiryDays": 90
+          },
+          "notificationsAndComms": {
+            "enableInAppNotifications": true,
+            "enableEmailDispatches": true,
+            "enableSmsAlerts": false,
+            "supportEmail": "support@nfi.gov.in",
+            "supportHotline": "+91-120-2783400"
+          },
+          "maintenanceAndGeneral": {
+            "maintenanceMode": false,
+            "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+            "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+            "announcementActive": true
+          }
+        },
+        "errorMessage": null,
+        "createdAt": "2026-08-26T11:50:00.137Z",
+        "updatedAt": "2026-08-26T11:50:00.137Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8fdc40bc8751a5439f24a9",
+        "action": "SYSTEM_CONFIG_UPDATED",
+        "module": "SYSTEM",
+        "entity": "SystemConfig",
+        "entityId": "v5",
+        "user": "6a8d5f2a385a03832538e707",
+        "userName": "NFI Super Administrator",
+        "userEmail": "admin@nfi.gov.in",
+        "userRole": "superadmin",
+        "status": "SUCCESS",
+        "ipAddress": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+        "requestMethod": "PUT",
+        "requestUrl": "/api/config",
+        "details": "Application configuration updated to version v5. Note: Administrative settings updated",
+        "oldValues": {
+          "subscription": {
+            "fixedExpiryDate": "2031-12-31T00:00:00.000Z",
+            "renewalWindowDays": 90,
+            "gracePeriodDays": 15,
+            "allowEarlyRenewals": true
+          },
+          "trial": {
+            "defaultTrialDays": 14,
+            "maxTrialsPerUser": 1,
+            "allowTrialExtension": false
+          },
+          "userRegistration": {
+            "allowPublicRegistration": true,
+            "requireCredentialVerification": true,
+            "allowedUserTypes": [
+              "DOCTOR",
+              "PHARMACIST",
+              "STUDENT",
+              "NURSE",
+              "INDUSTRY",
+              "OTHERS"
+            ],
+            "autoApproveStudents": false
+          },
+          "contentAndSearch": {
+            "enablePublicFeedback": true,
+            "enableMonographWatermarking": true,
+            "enableFuzzySearch": true,
+            "maxSearchResults": 50,
+            "monographReviewStages": 2
+          },
+          "securityAndSessions": {
+            "maxLoginAttempts": 5,
+            "lockoutDurationMinutes": 5,
+            "sessionTimeoutMinutes": 120,
+            "requireMFAForAdmins": true,
+            "passwordExpiryDays": 90
+          },
+          "notificationsAndComms": {
+            "enableInAppNotifications": true,
+            "enableEmailDispatches": true,
+            "enableSmsAlerts": false,
+            "supportEmail": "support@nfi.gov.in",
+            "supportHotline": "+91-120-2783400"
+          },
+          "maintenanceAndGeneral": {
+            "maintenanceMode": false,
+            "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+            "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+            "announcementActive": true
+          }
+        },
+        "newValues": {
+          "subscription": {
+            "fixedExpiryDate": "2031-12-31T00:00:00.000Z",
+            "renewalWindowDays": 90,
+            "gracePeriodDays": 15,
+            "allowEarlyRenewals": true
+          },
+          "trial": {
+            "defaultTrialDays": 14,
+            "maxTrialsPerUser": 1,
+            "allowTrialExtension": false
+          },
+          "userRegistration": {
+            "allowPublicRegistration": true,
+            "requireCredentialVerification": true,
+            "allowedUserTypes": [
+              "DOCTOR",
+              "PHARMACIST",
+              "STUDENT",
+              "NURSE",
+              "INDUSTRY",
+              "OTHERS"
+            ],
+            "autoApproveStudents": false
+          },
+          "contentAndSearch": {
+            "enablePublicFeedback": true,
+            "enableMonographWatermarking": true,
+            "enableFuzzySearch": true,
+            "maxSearchResults": 50,
+            "monographReviewStages": 2
+          },
+          "securityAndSessions": {
+            "maxLoginAttempts": 5,
+            "lockoutDurationMinutes": 5,
+            "sessionTimeoutMinutes": 120,
+            "requireMFAForAdmins": true,
+            "passwordExpiryDays": 90
+          },
+          "notificationsAndComms": {
+            "enableInAppNotifications": true,
+            "enableEmailDispatches": true,
+            "enableSmsAlerts": false,
+            "supportEmail": "support@nfi.gov.in",
+            "supportHotline": "+91-120-2783400"
+          },
+          "maintenanceAndGeneral": {
+            "maintenanceMode": false,
+            "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+            "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+            "announcementActive": true
+          }
+        },
+        "errorMessage": null,
+        "createdAt": "2026-08-27T06:42:08.020Z",
+        "updatedAt": "2026-08-27T06:42:08.020Z",
+        "__v": 0
+      }
+    ],
+    "usertypes": [
+      {
+        "_id": "6a8d8d2e3bfcc0d69d6e3d48",
+        "code": "STUDENT",
+        "__v": 0,
+        "createdAt": "2026-08-25T12:40:14.972Z",
+        "description": "Medical, Pharmacy, and Nursing undergraduate/postgraduate scholars.",
+        "fields": [
+          {
+            "fieldKey": "apaarId",
+            "label": "APAAR ID (Edu-Account)",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. 1234-5678-9012",
+            "options": []
+          },
+          {
+            "fieldKey": "institution",
+            "label": "College / University",
+            "type": "text",
+            "required": false,
+            "placeholder": "e.g. AIIMS New Delhi",
+            "options": []
+          }
+        ],
+        "isActive": true,
+        "name": "Student",
+        "updatedAt": "2026-08-25T12:40:14.972Z"
+      },
+      {
+        "_id": "6a8d8d2e3bfcc0d69d6e3d49",
+        "code": "DOCTOR",
+        "__v": 0,
+        "createdAt": "2026-08-25T12:40:14.985Z",
+        "description": "Registered medical practitioners & clinical consultants.",
+        "fields": [
+          {
+            "fieldKey": "registrationNo",
+            "label": "Medical Registration Number",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. MCI-2023-89102",
+            "options": []
+          },
+          {
+            "fieldKey": "stateCouncil",
+            "label": "State Medical Council",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. Delhi Medical Council",
+            "options": []
+          }
+        ],
+        "isActive": true,
+        "name": "Doctor",
+        "updatedAt": "2026-08-25T12:40:14.985Z"
+      },
+      {
+        "_id": "6a8d8d2e3bfcc0d69d6e3d4a",
+        "code": "PHARMACIST",
+        "__v": 0,
+        "createdAt": "2026-08-25T12:40:14.989Z",
+        "description": "Registered hospital, retail, and clinical pharmacists.",
+        "fields": [
+          {
+            "fieldKey": "registrationNo",
+            "label": "Pharmacy Council Registration Number",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. PCI-DL-9841",
+            "options": []
+          },
+          {
+            "fieldKey": "stateCouncil",
+            "label": "State Pharmacy Council",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. Maharashtra State Pharmacy Council",
+            "options": []
+          }
+        ],
+        "isActive": true,
+        "name": "Pharmacist",
+        "updatedAt": "2026-08-25T12:40:14.989Z"
+      },
+      {
+        "_id": "6a8d8d2e3bfcc0d69d6e3d4b",
+        "code": "NURSE",
+        "__v": 0,
+        "createdAt": "2026-08-25T12:40:14.993Z",
+        "description": "Certified nursing officers and healthcare practitioners.",
+        "fields": [
+          {
+            "fieldKey": "registrationNo",
+            "label": "Nursing Council Registration Number",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. INC-RN-4819",
+            "options": []
+          },
+          {
+            "fieldKey": "stateCouncil",
+            "label": "State Nursing Council",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. Karnataka Nursing Council",
+            "options": []
+          }
+        ],
+        "isActive": true,
+        "name": "Nurse",
+        "updatedAt": "2026-08-25T12:40:14.993Z"
+      },
+      {
+        "_id": "6a8d8d2f3bfcc0d69d6e3d4c",
+        "code": "INDUSTRY",
+        "__v": 0,
+        "createdAt": "2026-08-25T12:40:14.997Z",
+        "description": "Pharmaceutical manufacturers, laboratories, and corporate entities.",
+        "fields": [
+          {
+            "fieldKey": "companyName",
+            "label": "Company / Organization Name",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. Cipla Healthcare Ltd",
+            "options": []
+          },
+          {
+            "fieldKey": "gstin",
+            "label": "GSTIN Number",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. 07AAAAA0000A1Z5",
+            "options": []
+          },
+          {
+            "fieldKey": "pan",
+            "label": "Company PAN",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. ABCDE1234F",
+            "options": []
+          }
+        ],
+        "isActive": true,
+        "name": "Industry",
+        "updatedAt": "2026-08-25T12:40:14.997Z"
+      },
+      {
+        "_id": "6a8d8d2f3bfcc0d69d6e3d4d",
+        "code": "OTHERS",
+        "__v": 0,
+        "createdAt": "2026-08-25T12:40:15.169Z",
+        "description": "General researchers, policymakers, and public stakeholders.",
+        "fields": [
+          {
+            "fieldKey": "designation",
+            "label": "Designation / Professional Role",
+            "type": "text",
+            "required": true,
+            "placeholder": "e.g. Health Policy Researcher",
+            "options": []
+          },
+          {
+            "fieldKey": "organization",
+            "label": "Affiliated Organization",
+            "type": "text",
+            "required": false,
+            "placeholder": "e.g. Indian Council of Medical Research",
+            "options": []
+          }
+        ],
+        "isActive": true,
+        "name": "Others",
+        "updatedAt": "2026-08-25T12:40:15.169Z"
+      }
+    ],
+    "orders": [
+      {
+        "_id": "6a8ebf1e3bfcc0d69d6e3d65",
+        "orderNumber": "ORD-2026-901241",
+        "__v": 0,
+        "auditTimeline": [
+          {
+            "action": "Checkout Initiated",
+            "performedBy": "Subscriber",
+            "timestamp": "2026-08-22T10:25:34.289Z",
+            "note": "Initiated checkout via Razorpay Gateway",
+            "previousStatus": null,
+            "newStatus": "processing"
+          },
+          {
+            "action": "Payment Captured & Verified",
+            "performedBy": "Razorpay Webhook (Server)",
+            "timestamp": "2026-08-22T10:25:34.289Z",
+            "note": "Captured ₹3,540 via UPI transaction pay_Nsf910284Kla",
+            "previousStatus": "processing",
+            "newStatus": "completed"
+          }
+        ],
+        "clientIp": "103.21.124.55",
+        "createdAt": "2026-08-26T10:25:34.290Z",
+        "invoiceNumber": "INV-2026-004121",
+        "orderStatus": "completed",
+        "payment": {
+          "status": "paid",
+          "gateway": "Razorpay",
+          "gatewayTransactionId": "pay_Nsf910284Kla",
+          "paymentMethod": "UPI",
+          "paidAt": "2026-08-22T10:25:34.289Z",
+          "gatewaySignature": "hmac_sha256_verified_sig_99120"
+        },
+        "plan": null,
+        "planCode": "NFI-INDIVIDUAL",
+        "planName": "Individual Practitioner Annual Pass",
+        "pricing": {
+          "baseAmount": 3500,
+          "discountAmount": 500,
+          "couponCode": "MED-SPECIAL",
+          "taxRatePercent": 18,
+          "taxAmount": 540,
+          "totalAmount": 3540,
+          "currency": "INR"
+        },
+        "refund": {
+          "isRefunded": false,
+          "refundAmount": 0,
+          "refundReason": "",
+          "refundTransactionId": "",
+          "refundedAt": null,
+          "refundedBy": null
+        },
+        "subscription": null,
+        "tier": "INDIVIDUAL",
+        "updatedAt": "2026-08-26T10:25:34.290Z",
+        "user": "6a8d8d2fc8e012745f314c0a",
+        "userEmail": "rohan.d@student.aiims.edu",
+        "userName": "Rohan Deshmukh",
+        "userType": "STUDENT"
+      },
+      {
+        "_id": "6a8ebf1e3bfcc0d69d6e3d66",
+        "orderNumber": "ORD-2026-881202",
+        "__v": 1,
+        "auditTimeline": [
+          {
+            "action": "Checkout Initiated",
+            "performedBy": "Subscriber",
+            "timestamp": "2026-08-24T10:25:34.289Z",
+            "note": "Initiated checkout via BillDesk Gateway",
+            "previousStatus": null,
+            "newStatus": "processing"
+          },
+          {
+            "action": "Payment Captured",
+            "performedBy": "BillDesk Server Webhook",
+            "timestamp": "2026-08-24T10:25:34.289Z",
+            "note": "Card transaction authorized",
+            "previousStatus": "processing",
+            "newStatus": "completed"
+          },
+          {
+            "action": "Refund Issued & Processed",
+            "performedBy": "NFI Super Administrator",
+            "timestamp": "2026-08-26T10:25:34.360Z",
+            "note": "Refund of ₹1,180 authorized. Ref: REF-2026-112285. Reason: Subscriber requested refund within commercial policy window",
+            "previousStatus": "completed",
+            "newStatus": "refunded"
+          }
+        ],
+        "clientIp": "49.36.18.92",
+        "createdAt": "2026-08-26T10:25:34.304Z",
+        "invoiceNumber": "INV-2026-004122",
+        "orderStatus": "refunded",
+        "payment": {
+          "status": "refunded",
+          "gateway": "BillDesk",
+          "gatewayTransactionId": "bd_txn_882019234",
+          "paymentMethod": "Credit_Card",
+          "paidAt": "2026-08-24T10:25:34.289Z",
+          "gatewaySignature": "billdesk_verified_sig_88201",
+          "failureCode": "",
+          "failureReason": ""
+        },
+        "plan": null,
+        "planCode": "NFI-STUDENT-SPECIAL",
+        "planName": "Academic Scholar Formulary Pass",
+        "pricing": {
+          "baseAmount": 1200,
+          "discountAmount": 200,
+          "couponCode": "CAMPUS-2026",
+          "taxRatePercent": 18,
+          "taxAmount": 180,
+          "totalAmount": 1180,
+          "currency": "INR"
+        },
+        "refund": {
+          "isRefunded": true,
+          "refundAmount": 1180,
+          "refundReason": "Subscriber requested refund within commercial policy window",
+          "refundTransactionId": "REF-2026-112285",
+          "refundedAt": "2026-08-26T10:25:34.359Z",
+          "refundedBy": "6a8d5f2a385a03832538e707"
+        },
+        "subscription": null,
+        "tier": "STUDENT",
+        "updatedAt": "2026-08-26T10:25:34.383Z",
+        "user": "6a8d8d2fc8e012745f314c0b",
+        "userEmail": "dr.meera@medanta.org",
+        "userName": "Dr. Meera Nambiar",
+        "userType": "STUDENT"
+      },
+      {
+        "_id": "6a8ebf1e3bfcc0d69d6e3d67",
+        "orderNumber": "ORD-2026-773403",
+        "__v": 0,
+        "auditTimeline": [
+          {
+            "action": "Checkout Initiated",
+            "performedBy": "Subscriber",
+            "timestamp": "2026-08-25T10:25:34.289Z",
+            "note": "Order initiated for Clinical Specialist pass",
+            "previousStatus": null,
+            "newStatus": "processing"
+          },
+          {
+            "action": "Payment Failed",
+            "performedBy": "Razorpay Gateway",
+            "timestamp": "2026-08-25T10:25:34.289Z",
+            "note": "Failure: Card issuer 3D-Secure authentication timed out",
+            "previousStatus": "processing",
+            "newStatus": "failed"
+          }
+        ],
+        "clientIp": "14.139.60.2",
+        "createdAt": "2026-08-26T10:25:34.311Z",
+        "invoiceNumber": "INV-2026-004123",
+        "orderStatus": "failed",
+        "payment": {
+          "status": "failed",
+          "gateway": "Razorpay",
+          "gatewayTransactionId": "pay_failed_9921014a",
+          "paymentMethod": "Debit_Card",
+          "failureReason": "Card issuer 3D-Secure authentication timed out",
+          "failureCode": "GATEWAY_TIMEOUT_3DS"
+        },
+        "plan": null,
+        "planCode": "NFI-CLINICAL-SPECIALIST",
+        "planName": "Clinical Specialist Edition",
+        "pricing": {
+          "baseAmount": 6000,
+          "discountAmount": 0,
+          "couponCode": "",
+          "taxRatePercent": 18,
+          "taxAmount": 1080,
+          "totalAmount": 7080,
+          "currency": "INR"
+        },
+        "refund": {
+          "isRefunded": false,
+          "refundAmount": 0,
+          "refundReason": "",
+          "refundTransactionId": "",
+          "refundedAt": null,
+          "refundedBy": null
+        },
+        "subscription": null,
+        "tier": "INDIVIDUAL",
+        "updatedAt": "2026-08-26T10:25:34.311Z",
+        "user": "6a8d8d2fc8e012745f314c0a",
+        "userEmail": "rohan.d@student.aiims.edu",
+        "userName": "Rohan Deshmukh",
+        "userType": "STUDENT"
+      },
+      {
+        "_id": "6a8ebf1e3bfcc0d69d6e3d68",
+        "orderNumber": "ORD-2026-664504",
+        "__v": 0,
+        "auditTimeline": [
+          {
+            "action": "Bank NEFT Payment Received",
+            "performedBy": "Treasury Officer",
+            "timestamp": "2026-08-16T10:25:34.289Z",
+            "note": "NEFT verified and pass assigned",
+            "previousStatus": null,
+            "newStatus": "completed"
+          },
+          {
+            "action": "Full Refund Processed",
+            "performedBy": "Superadmin",
+            "timestamp": "2026-08-18T10:25:34.289Z",
+            "note": "Refund of ₹47,200 issued due to duplicate institutional purchase",
+            "previousStatus": "completed",
+            "newStatus": "refunded"
+          }
+        ],
+        "clientIp": "103.21.124.55",
+        "createdAt": "2026-08-26T10:25:34.317Z",
+        "invoiceNumber": "INV-2026-004124",
+        "orderStatus": "refunded",
+        "payment": {
+          "status": "refunded",
+          "gateway": "NEFT_RTGS",
+          "gatewayTransactionId": "neft_utr_9920194812",
+          "paymentMethod": "NEFT_RTGS",
+          "paidAt": "2026-08-16T10:25:34.289Z"
+        },
+        "plan": null,
+        "planCode": "NFI-INSTITUTIONAL",
+        "planName": "Institutional Campus License (50 Seats)",
+        "pricing": {
+          "baseAmount": 45000,
+          "discountAmount": 5000,
+          "couponCode": "INST-VIP",
+          "taxRatePercent": 18,
+          "taxAmount": 7200,
+          "totalAmount": 47200,
+          "currency": "INR"
+        },
+        "refund": {
+          "isRefunded": true,
+          "refundAmount": 47200,
+          "refundReason": "Accidental duplicate institutional subscription purchase",
+          "refundTransactionId": "ref_neft_utr_00192841",
+          "refundedAt": "2026-08-18T10:25:34.289Z"
+        },
+        "subscription": null,
+        "tier": "INSTITUTIONAL",
+        "updatedAt": "2026-08-26T10:25:34.317Z",
+        "user": "6a8d8d2fc8e012745f314c0a",
+        "userEmail": "rohan.d@student.aiims.edu",
+        "userName": "Rohan Deshmukh",
+        "userType": "INDUSTRY"
+      }
+    ],
+    "roles": [
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d42",
+        "code": "superadmin",
+        "__v": 0,
+        "createdAt": "2026-08-25T11:54:23.671Z",
+        "description": "Complete unrestricted access across all portal modules and governance tools.",
+        "isActive": true,
+        "isSystemDefault": true,
+        "name": "Super Admin",
+        "permissionCodes": [
+          "*"
+        ],
+        "permissions": [],
+        "updatedAt": "2026-08-25T11:54:23.671Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d43",
+        "code": "admin",
+        "__v": 0,
+        "createdAt": "2026-08-25T11:54:23.674Z",
+        "description": "Full administrative access across users, monographs, subscriptions, and reports.",
+        "isActive": true,
+        "isSystemDefault": true,
+        "name": "Admin",
+        "permissionCodes": [
+          "OVERVIEW:DASHBOARD:VIEW",
+          "OVERVIEW:DASHBOARD:EXPORT",
+          "USERS:USERS:VIEW",
+          "USERS:USERS:ADD",
+          "USERS:USERS:EDIT",
+          "USERS:USERS:DELETE",
+          "USERS:USERS:EXPORT",
+          "USERS:ADMINS:VIEW",
+          "USERS:ADMINS:ADD",
+          "USERS:ADMINS:EDIT",
+          "USERS:ADMINS:EXPORT",
+          "USERS:SUBADMINS:VIEW",
+          "USERS:SUBADMINS:ADD",
+          "USERS:SUBADMINS:EDIT",
+          "USERS:SUBADMINS:EXPORT",
+          "USERS:ROLES:VIEW",
+          "USERS:ROLES:ADD",
+          "USERS:ROLES:EDIT",
+          "CONTENT:MONOGRAPHS:VIEW",
+          "CONTENT:MONOGRAPHS:ADD",
+          "CONTENT:MONOGRAPHS:EDIT",
+          "CONTENT:MONOGRAPHS:DELETE",
+          "CONTENT:MONOGRAPHS:APPROVE",
+          "CONTENT:MONOGRAPHS:REJECT",
+          "CONTENT:MONOGRAPHS:PUBLISH",
+          "CONTENT:MONOGRAPHS:EXPORT",
+          "CONTENT:MONOGRAPHS:DOWNLOAD",
+          "CONTENT:MONOGRAPHS:PRINT",
+          "CONTENT:WORKFLOW:VIEW",
+          "CONTENT:WORKFLOW:ADD",
+          "CONTENT:WORKFLOW:EDIT",
+          "CONTENT:WORKFLOW:APPROVE",
+          "CONTENT:WORKFLOW:REJECT",
+          "CONTENT:WORKFLOW:PUBLISH",
+          "CONTENT:SEARCH_INDEX:VIEW",
+          "CONTENT:SEARCH_INDEX:EDIT",
+          "COMMERCIAL:SUBSCRIPTIONS:VIEW",
+          "COMMERCIAL:SUBSCRIPTIONS:ADD",
+          "COMMERCIAL:SUBSCRIPTIONS:EDIT",
+          "COMMERCIAL:SUBSCRIPTIONS:DELETE",
+          "COMMERCIAL:SUBSCRIPTIONS:APPROVE",
+          "COMMERCIAL:SUBSCRIPTIONS:EXPORT",
+          "COMMERCIAL:PLANS:VIEW",
+          "COMMERCIAL:PLANS:ADD",
+          "COMMERCIAL:PLANS:EDIT",
+          "COMMERCIAL:PLANS:DELETE",
+          "COMMERCIAL:DISCOUNTS:VIEW",
+          "COMMERCIAL:DISCOUNTS:ADD",
+          "COMMERCIAL:DISCOUNTS:EDIT",
+          "COMMERCIAL:DISCOUNTS:DELETE",
+          "COMMERCIAL:COUPONS:VIEW",
+          "COMMERCIAL:COUPONS:ADD",
+          "COMMERCIAL:COUPONS:EDIT",
+          "COMMERCIAL:COUPONS:DELETE",
+          "COMMERCIAL:COUPONS:EXPORT",
+          "COMMERCIAL:BULK_SUBSCRIPTION:VIEW",
+          "COMMERCIAL:BULK_SUBSCRIPTION:ADD",
+          "COMMERCIAL:BULK_SUBSCRIPTION:EDIT",
+          "COMMERCIAL:BULK_SUBSCRIPTION:APPROVE",
+          "COMMERCIAL:BULK_SUBSCRIPTION:EXPORT",
+          "ENGAGEMENT:CRM:VIEW",
+          "ENGAGEMENT:CRM:ADD",
+          "ENGAGEMENT:CRM:EDIT",
+          "ENGAGEMENT:CRM:DELETE",
+          "ENGAGEMENT:CRM:EXPORT",
+          "ENGAGEMENT:FEEDBACK:VIEW",
+          "ENGAGEMENT:FEEDBACK:EDIT",
+          "ENGAGEMENT:FEEDBACK:DELETE",
+          "ENGAGEMENT:FEEDBACK:REJECT",
+          "ENGAGEMENT:FEEDBACK:EXPORT",
+          "ENGAGEMENT:NOTIFICATIONS:VIEW",
+          "ENGAGEMENT:NOTIFICATIONS:ADD",
+          "ENGAGEMENT:NOTIFICATIONS:EDIT",
+          "ENGAGEMENT:NOTIFICATIONS:DELETE",
+          "ENGAGEMENT:NOTIFICATIONS:PUBLISH",
+          "INTEGRATED:DIKSHA:VIEW",
+          "INTEGRATED:DIKSHA:ADD",
+          "INTEGRATED:DIKSHA:EDIT",
+          "INTEGRATED:DIKSHA:EXPORT",
+          "INTEGRATED:KAYM:VIEW",
+          "INTEGRATED:KAYM:ADD",
+          "INTEGRATED:KAYM:EDIT",
+          "INTEGRATED:KAYM:EXPORT",
+          "SYSTEM:REPORTS:VIEW",
+          "SYSTEM:REPORTS:EXPORT",
+          "SYSTEM:REPORTS:DOWNLOAD",
+          "SYSTEM:REPORTS:PRINT",
+          "SYSTEM:AUDIT_LOGS:VIEW",
+          "SYSTEM:AUDIT_LOGS:EXPORT",
+          "SYSTEM:AUDIT_LOGS:PRINT",
+          "SYSTEM:SETTINGS:VIEW",
+          "SYSTEM:SETTINGS:EDIT"
+        ],
+        "permissions": [],
+        "updatedAt": "2026-08-25T11:54:23.674Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d44",
+        "code": "subadmin",
+        "__v": 1,
+        "createdAt": "2026-08-25T11:54:23.678Z",
+        "description": "Departmental coordinator managing assigned users, feedback, and viewable reports.",
+        "isActive": true,
+        "isSystemDefault": true,
+        "name": "Sub Admin",
+        "permissionCodes": [
+          "USERS:USERS:VIEW",
+          "USERS:USERS:ADD",
+          "USERS:USERS:EDIT",
+          "USERS:USERS:DELETE",
+          "USERS:USERS:EXPORT",
+          "CONTENT:MONOGRAPHS:VIEW",
+          "ENGAGEMENT:CRM:VIEW",
+          "ENGAGEMENT:CRM:ADD",
+          "ENGAGEMENT:CRM:EDIT",
+          "ENGAGEMENT:CRM:DELETE",
+          "ENGAGEMENT:CRM:EXPORT",
+          "ENGAGEMENT:FEEDBACK:VIEW",
+          "ENGAGEMENT:FEEDBACK:EDIT",
+          "ENGAGEMENT:FEEDBACK:DELETE",
+          "ENGAGEMENT:FEEDBACK:REJECT",
+          "ENGAGEMENT:FEEDBACK:EXPORT",
+          "ENGAGEMENT:NOTIFICATIONS:VIEW",
+          "ENGAGEMENT:NOTIFICATIONS:ADD",
+          "ENGAGEMENT:NOTIFICATIONS:EDIT",
+          "ENGAGEMENT:NOTIFICATIONS:DELETE",
+          "ENGAGEMENT:NOTIFICATIONS:PUBLISH",
+          "SYSTEM:REPORTS:VIEW"
+        ],
+        "permissions": [],
+        "updatedAt": "2026-08-26T05:53:21.632Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d45",
+        "code": "maker",
+        "__v": 0,
+        "createdAt": "2026-08-25T11:54:23.681Z",
+        "description": "Draft author who creates and edits monograph content, courses, and notifications.",
+        "isActive": true,
+        "isSystemDefault": true,
+        "name": "Maker",
+        "permissionCodes": [
+          "OVERVIEW:DASHBOARD:VIEW",
+          "CONTENT:MONOGRAPHS:VIEW",
+          "CONTENT:MONOGRAPHS:ADD",
+          "CONTENT:MONOGRAPHS:EDIT",
+          "CONTENT:WORKFLOW:VIEW",
+          "CONTENT:WORKFLOW:ADD",
+          "CONTENT:WORKFLOW:EDIT",
+          "INTEGRATED:DIKSHA:VIEW",
+          "INTEGRATED:DIKSHA:ADD",
+          "INTEGRATED:KAYM:VIEW",
+          "INTEGRATED:KAYM:ADD"
+        ],
+        "permissions": [],
+        "updatedAt": "2026-08-25T11:54:23.681Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d46",
+        "code": "reviewer",
+        "__v": 0,
+        "createdAt": "2026-08-25T11:54:23.683Z",
+        "description": "Editorial reviewer who checks monograph drafts, suggests amendments, and verifies accuracy.",
+        "isActive": true,
+        "isSystemDefault": true,
+        "name": "Reviewer",
+        "permissionCodes": [
+          "OVERVIEW:DASHBOARD:VIEW",
+          "CONTENT:MONOGRAPHS:VIEW",
+          "CONTENT:MONOGRAPHS:EDIT",
+          "CONTENT:WORKFLOW:VIEW",
+          "CONTENT:WORKFLOW:EDIT",
+          "CONTENT:WORKFLOW:REJECT",
+          "ENGAGEMENT:FEEDBACK:VIEW",
+          "ENGAGEMENT:FEEDBACK:EDIT",
+          "SYSTEM:REPORTS:VIEW"
+        ],
+        "permissions": [],
+        "updatedAt": "2026-08-25T11:54:23.683Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d47",
+        "code": "approver",
+        "__v": 0,
+        "createdAt": "2026-08-25T11:54:23.685Z",
+        "description": "Scientific committee authority with signing privilege to approve and publish monographs.",
+        "isActive": true,
+        "isSystemDefault": true,
+        "name": "Approver",
+        "permissionCodes": [
+          "OVERVIEW:DASHBOARD:VIEW",
+          "CONTENT:MONOGRAPHS:VIEW",
+          "CONTENT:MONOGRAPHS:APPROVE",
+          "CONTENT:MONOGRAPHS:REJECT",
+          "CONTENT:MONOGRAPHS:PUBLISH",
+          "CONTENT:WORKFLOW:VIEW",
+          "CONTENT:WORKFLOW:APPROVE",
+          "CONTENT:WORKFLOW:REJECT",
+          "CONTENT:WORKFLOW:PUBLISH",
+          "SYSTEM:REPORTS:VIEW",
+          "SYSTEM:AUDIT_LOGS:VIEW"
+        ],
+        "permissions": [],
+        "updatedAt": "2026-08-25T11:54:23.685Z"
+      }
+    ],
+    "feedbacks": [
+      {
+        "_id": "6a8ebbeb06d1edf975da729c",
+        "ticketId": "FBK-2026-F809D1",
+        "user": null,
+        "userName": "Dr. Rajesh Khanna",
+        "userEmail": "rajesh.khanna@fortis.org",
+        "userType": "DOCTOR",
+        "content": {
+          "section": "Monographs",
+          "monographTitle": "Metformin Hydrochloride Tablets IP",
+          "edition": "9th Edition 2022",
+          "contentUrl": "/monographs/metformin",
+          "pageNumber": "Page 520"
+        },
+        "category": "MONOGRAPH_AMENDMENT",
+        "priority": "high",
+        "status": "completed",
+        "subject": "Clarification on eGFR cutoff for metformin in diabetic kidney disease",
+        "message": "Requesting inclusion of updated KDIGO guideline eGFR cutoffs in renal dose adjustments.",
+        "ipAddress": "::1",
+        "userAgent": "node",
+        "assignedTo": "6a8d8a26a791d7bef03e267c",
+        "assignedAt": "2026-08-26T10:11:55.977Z",
+        "resolvedAt": "2026-08-27T06:39:39.301Z",
+        "timeline": [
+          {
+            "action": "Ticket Created",
+            "performedBy": "Dr. Rajesh Khanna (DOCTOR)",
+            "timestamp": "2026-08-26T10:11:55.698Z",
+            "note": "Public submission received from IP ::1",
+            "previousStatus": null,
+            "newStatus": "pending"
+          },
+          {
+            "action": "Staff Assignment",
+            "performedBy": "NFI Super Administrator",
+            "timestamp": "2026-08-26T10:11:55.977Z",
+            "note": "Assigned for clinical evaluation",
+            "previousStatus": "in_review",
+            "newStatus": "in_review"
+          },
+          {
+            "action": "Internal Note Added",
+            "performedBy": "NFI Super Administrator",
+            "timestamp": "2026-08-26T10:11:56.001Z",
+            "note": "Confidential staff note added",
+            "previousStatus": "in_review",
+            "newStatus": "in_review"
+          },
+          {
+            "action": "Official Response Dispatched",
+            "performedBy": "NFI Super Administrator",
+            "timestamp": "2026-08-26T10:11:56.023Z",
+            "note": "Public response sent to subscriber email",
+            "previousStatus": "in_review",
+            "newStatus": "in_review"
+          },
+          {
+            "action": "Status Changed to COMPLETED",
+            "performedBy": "NFI Super Administrator",
+            "timestamp": "2026-08-26T10:11:56.040Z",
+            "note": "Resolved and addendum published",
+            "previousStatus": "in_review",
+            "newStatus": "completed"
+          },
+          {
+            "action": "Status Changed to REOPENED",
+            "performedBy": "NFI Super Administrator",
+            "timestamp": "2026-08-27T06:39:33.832Z",
+            "note": "Reopened for additional review",
+            "previousStatus": "completed",
+            "newStatus": "reopened"
+          },
+          {
+            "action": "Status Changed to COMPLETED",
+            "performedBy": "NFI Super Administrator",
+            "timestamp": "2026-08-27T06:39:39.301Z",
+            "note": "Resolved and closed",
+            "previousStatus": "reopened",
+            "newStatus": "completed"
+          }
+        ],
+        "replies": [
+          {
+            "sender": "6a8d5f2a385a03832538e707",
+            "senderName": "NFI Super Administrator",
+            "senderRole": "superadmin",
+            "message": "Internal Note: KDIGO guidelines verified by cardiology desk.",
+            "isInternalNote": true,
+            "sentAt": "2026-08-26T10:11:56.000Z",
+            "_id": "6a8ebbec06d1edf975da729d"
+          },
+          {
+            "sender": "6a8d5f2a385a03832538e707",
+            "senderName": "NFI Super Administrator",
+            "senderRole": "superadmin",
+            "message": "Thank you Dr. Rajesh. Renal adjustment tables have been updated in 2026 addendum.",
+            "isInternalNote": false,
+            "sentAt": "2026-08-26T10:11:56.023Z",
+            "_id": "6a8ebbec06d1edf975da729f"
+          }
+        ],
+        "createdAt": "2026-08-26T10:11:55.705Z",
+        "updatedAt": "2026-08-27T06:39:39.303Z",
+        "__v": 6
+      },
+      {
+        "_id": "6a8ebbf93bfcc0d69d6e3d62",
+        "ticketId": "FBK-2026-A91201",
+        "__v": 0,
+        "assignedAt": null,
+        "assignedTo": null,
+        "category": "DOSAGE_CORRECTION",
+        "content": {
+          "section": "Monographs",
+          "monographTitle": "Paracetamol Paediatric Oral Suspension",
+          "edition": "9th Edition 2022",
+          "pageNumber": "Page 412",
+          "contentUrl": "/monographs/paracetamol-paediatric"
+        },
+        "createdAt": "2026-08-26T10:12:09.829Z",
+        "ipAddress": "103.21.124.55",
+        "message": "In section 4.2 of the paediatric formulation, the maximum single dose mentions 15mg/kg every 4-6 hours, but daily ceiling guidance for premature neonates is missing. Kindly consider adding explicit neonate guidelines as per CDSCO circular 2025.",
+        "priority": "high",
+        "replies": [
+          {
+            "sender": null,
+            "senderName": "Dr. Anita Joshi (Senior Reviewer)",
+            "senderRole": "Reviewer",
+            "message": "Thank you Dr. Suresh. We have cross-referenced the CDSCO 2025 neonate circular and referred this to the Paediatric Scientific Sub-Committee.",
+            "isInternalNote": false,
+            "sentAt": "2026-08-24T10:12:09.827Z",
+            "_id": "6a8ebbf9790ff5aca6531582"
+          },
+          {
+            "sender": null,
+            "senderName": "NFI Editorial Desk",
+            "senderRole": "Admin",
+            "message": "Internal Note: Sub-committee approved addendum inclusion in upcoming 2026 batch release.",
+            "isInternalNote": true,
+            "sentAt": "2026-08-25T10:12:09.827Z",
+            "_id": "6a8ebbf9790ff5aca6531583"
+          }
+        ],
+        "resolvedAt": null,
+        "status": "in_review",
+        "subject": "Clarification on recommended maximum daily dose for infants under 6 months",
+        "timeline": [
+          {
+            "action": "Ticket Submitted",
+            "performedBy": "Dr. Suresh Varma (Public Subscriber)",
+            "timestamp": "2026-08-23T10:12:09.827Z",
+            "note": "Submitted via digital formulary web portal",
+            "previousStatus": null,
+            "newStatus": "pending"
+          },
+          {
+            "action": "Assigned to Reviewer",
+            "performedBy": "Superadmin",
+            "timestamp": "2026-08-24T10:12:09.827Z",
+            "note": "Assigned to Dr. Anita Joshi for paediatric clinical evaluation",
+            "previousStatus": "pending",
+            "newStatus": "in_review"
+          }
+        ],
+        "updatedAt": "2026-08-26T10:12:09.829Z",
+        "user": null,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "userEmail": "suresh.varma@aiims.edu",
+        "userName": "Dr. Suresh Varma",
+        "userType": "DOCTOR"
+      },
+      {
+        "_id": "6a8ebbf93bfcc0d69d6e3d63",
+        "ticketId": "FBK-2026-B83102",
+        "__v": 0,
+        "assignedAt": null,
+        "assignedTo": null,
+        "category": "MONOGRAPH_AMENDMENT",
+        "content": {
+          "section": "Appendices",
+          "monographTitle": "Appendix 2.3: Dissolution Testing Standards for Extended Release Tablets",
+          "edition": "Addendum 2026",
+          "pageNumber": "Appendix 2.3 - B",
+          "contentUrl": "/appendices/dissolution-testing"
+        },
+        "createdAt": "2026-08-26T10:12:09.866Z",
+        "ipAddress": "49.36.18.92",
+        "message": "In Appendix 2.3 table B, row 4 specifies 150 RPM for Apparatus 2, which appears to be a typographical error compared to standard 50-75 RPM range for aqueous media.",
+        "priority": "medium",
+        "replies": [],
+        "resolvedAt": null,
+        "status": "pending",
+        "subject": "Apparatus specification typo in Paddle Speed RPM Table",
+        "timeline": [
+          {
+            "action": "Ticket Submitted",
+            "performedBy": "Pooja Deshmukh (Industry Subscriber)",
+            "timestamp": "2026-08-25T10:12:09.827Z",
+            "note": "Submitted from Maharashtra regional IP",
+            "previousStatus": null,
+            "newStatus": "pending"
+          }
+        ],
+        "updatedAt": "2026-08-26T10:12:09.866Z",
+        "user": null,
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "userEmail": "pooja.d@sunpharma.com",
+        "userName": "Pooja Deshmukh",
+        "userType": "INDUSTRY"
+      },
+      {
+        "_id": "6a8ebbf93bfcc0d69d6e3d64",
+        "ticketId": "FBK-2026-C44903",
+        "__v": 0,
+        "assignedAt": null,
+        "assignedTo": null,
+        "category": "SAFETY_QUERY",
+        "content": {
+          "section": "Dosage Guidelines",
+          "monographTitle": "Amoxicillin + Potassium Clavulanate Formulations",
+          "edition": "9th Edition 2022",
+          "pageNumber": "Page 188",
+          "contentUrl": "/monographs/amoxicillin-clavulanate"
+        },
+        "createdAt": "2026-08-26T10:12:09.871Z",
+        "ipAddress": "14.139.60.2",
+        "message": "Requesting clarification on mandatory liver function testing intervals for treatment durations exceeding 14 continuous days.",
+        "priority": "urgent",
+        "replies": [
+          {
+            "sender": null,
+            "senderName": "IPC Clinical Secretariat",
+            "senderRole": "Admin",
+            "message": "LFT monitoring is recommended after 14 days of continuous therapy, particularly in elderly cohorts and patients with pre-existing hepatic impairment as updated in section 4.4.",
+            "isInternalNote": false,
+            "sentAt": "2026-08-22T10:12:09.827Z",
+            "_id": "6a8ebbf9790ff5aca6531586"
+          }
+        ],
+        "resolvedAt": "2026-08-22T10:12:09.827Z",
+        "status": "completed",
+        "subject": "Hepatic monitoring advisories for extended courses",
+        "timeline": [
+          {
+            "action": "Ticket Submitted",
+            "performedBy": "Vikram Sethi",
+            "timestamp": "2026-08-20T10:12:09.827Z",
+            "note": "Logged as urgent safety inquiry",
+            "previousStatus": null,
+            "newStatus": "pending"
+          },
+          {
+            "action": "Marked In Review",
+            "performedBy": "Admin Team",
+            "timestamp": "2026-08-21T10:12:09.827Z",
+            "note": "Triage complete",
+            "previousStatus": "pending",
+            "newStatus": "in_review"
+          },
+          {
+            "action": "Ticket Completed & Resolved",
+            "performedBy": "Clinical Committee Approver",
+            "timestamp": "2026-08-22T10:12:09.827Z",
+            "note": "Official guidance dispatched to subscriber email",
+            "previousStatus": "in_review",
+            "newStatus": "completed"
+          }
+        ],
+        "updatedAt": "2026-08-26T10:12:09.871Z",
+        "user": null,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "userEmail": "vikram.sethi@apollo.org",
+        "userName": "Vikram Sethi",
+        "userType": "PHARMACIST"
+      }
+    ],
+    "systemconfigs": [
+      {
+        "_id": "6a8e825e3bfcc0d69d6e3d4e",
+        "key": "SUBSCRIPTION_FIXED_EXPIRY_DATE",
+        "__v": 0,
+        "category": "SUBSCRIPTION",
+        "createdAt": "2026-08-26T06:06:22.378Z",
+        "description": "BRD Business Rule: Purchased subscriptions remain valid until 31 December 2031.",
+        "isActive": true,
+        "updatedAt": "2026-08-26T06:06:22.378Z",
+        "value": "2031-12-31T23:59:59.999Z"
+      },
+      {
+        "_id": "6a8e825e3bfcc0d69d6e3d4f",
+        "key": "DEFAULT_TRIAL_DAYS",
+        "__v": 0,
+        "category": "SUBSCRIPTION",
+        "createdAt": "2026-08-26T06:06:22.386Z",
+        "description": "Default duration for free promotional trial periods in days.",
+        "isActive": true,
+        "updatedAt": "2026-08-26T06:06:22.386Z",
+        "value": 14
+      },
+      {
+        "_id": "6a8e825e3bfcc0d69d6e3d50",
+        "key": "DEFAULT_COMPLIMENTARY_MONTHS",
+        "__v": 0,
+        "category": "SUBSCRIPTION",
+        "createdAt": "2026-08-26T06:06:22.389Z",
+        "description": "Default validity for complimentary institutional/VIP passes in months.",
+        "isActive": true,
+        "updatedAt": "2026-08-26T06:06:22.389Z",
+        "value": 12
+      },
+      {
+        "_id": "6a8e825e3bfcc0d69d6e3d51",
+        "key": "EXPIRING_SOON_DAYS_THRESHOLD",
+        "__v": 0,
+        "category": "SUBSCRIPTION",
+        "createdAt": "2026-08-26T06:06:22.392Z",
+        "description": "Threshold in days to flag active subscriptions as expiring soon.",
+        "isActive": true,
+        "updatedAt": "2026-08-26T06:06:22.392Z",
+        "value": 30
+      },
+      {
+        "_id": "6a8ece069dd17d315bdc23ab",
+        "key": "NFI_SYSTEM_CONFIG",
+        "subscription": {
+          "fixedExpiryDate": "2031-12-31T00:00:00.000Z",
+          "renewalWindowDays": 90,
+          "gracePeriodDays": 15,
+          "allowEarlyRenewals": true
+        },
+        "trial": {
+          "defaultTrialDays": 14,
+          "maxTrialsPerUser": 1,
+          "allowTrialExtension": false
+        },
+        "userRegistration": {
+          "allowPublicRegistration": true,
+          "requireCredentialVerification": true,
+          "allowedUserTypes": [
+            "DOCTOR",
+            "PHARMACIST",
+            "STUDENT",
+            "NURSE",
+            "INDUSTRY",
+            "OTHERS"
+          ],
+          "autoApproveStudents": false
+        },
+        "contentAndSearch": {
+          "enablePublicFeedback": true,
+          "enableMonographWatermarking": true,
+          "enableFuzzySearch": true,
+          "maxSearchResults": 50,
+          "monographReviewStages": 2
+        },
+        "securityAndSessions": {
+          "maxLoginAttempts": 5,
+          "lockoutDurationMinutes": 5,
+          "sessionTimeoutMinutes": 120,
+          "requireMFAForAdmins": true,
+          "passwordExpiryDays": 90
+        },
+        "notificationsAndComms": {
+          "enableInAppNotifications": true,
+          "enableEmailDispatches": true,
+          "enableSmsAlerts": false,
+          "supportEmail": "support@nfi.gov.in",
+          "supportHotline": "+91-120-2783400"
+        },
+        "maintenanceAndGeneral": {
+          "maintenanceMode": false,
+          "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+          "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+          "announcementActive": true
+        },
+        "version": 5,
+        "history": [
+          {
+            "version": 4,
+            "updatedBy": "NFI Super Administrator",
+            "updatedByEmail": "admin@nfi.gov.in",
+            "updatedAt": "2026-08-27T06:42:07.558Z",
+            "note": "Administrative settings updated",
+            "changesSnapshot": {
+              "subscription": {
+                "fixedExpiryDate": "2031-12-31T00:00:00.000Z",
+                "renewalWindowDays": 90,
+                "gracePeriodDays": 15,
+                "allowEarlyRenewals": true
+              },
+              "trial": {
+                "defaultTrialDays": 14,
+                "maxTrialsPerUser": 1,
+                "allowTrialExtension": false
+              },
+              "userRegistration": {
+                "allowPublicRegistration": true,
+                "requireCredentialVerification": true,
+                "allowedUserTypes": [
+                  "DOCTOR",
+                  "PHARMACIST",
+                  "STUDENT",
+                  "NURSE",
+                  "INDUSTRY",
+                  "OTHERS"
+                ],
+                "autoApproveStudents": false
+              },
+              "contentAndSearch": {
+                "enablePublicFeedback": true,
+                "enableMonographWatermarking": true,
+                "enableFuzzySearch": true,
+                "maxSearchResults": 50,
+                "monographReviewStages": 2
+              },
+              "securityAndSessions": {
+                "maxLoginAttempts": 5,
+                "lockoutDurationMinutes": 5,
+                "sessionTimeoutMinutes": 120,
+                "requireMFAForAdmins": true,
+                "passwordExpiryDays": 90
+              },
+              "notificationsAndComms": {
+                "enableInAppNotifications": true,
+                "enableEmailDispatches": true,
+                "enableSmsAlerts": false,
+                "supportEmail": "support@nfi.gov.in",
+                "supportHotline": "+91-120-2783400"
+              },
+              "maintenanceAndGeneral": {
+                "maintenanceMode": false,
+                "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+                "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+                "announcementActive": true
+              }
+            }
+          },
+          {
+            "version": 3,
+            "updatedBy": "NFI Super Administrator",
+            "updatedByEmail": "admin@nfi.gov.in",
+            "updatedAt": "2026-08-26T11:50:00.125Z",
+            "note": "Administrative settings updated",
+            "changesSnapshot": {
+              "subscription": {
+                "fixedExpiryDate": "2031-12-31T23:59:59.999Z",
+                "renewalWindowDays": 90,
+                "gracePeriodDays": 15,
+                "allowEarlyRenewals": true
+              },
+              "trial": {
+                "defaultTrialDays": 14,
+                "maxTrialsPerUser": 1,
+                "allowTrialExtension": false
+              },
+              "userRegistration": {
+                "allowPublicRegistration": true,
+                "requireCredentialVerification": true,
+                "allowedUserTypes": [
+                  "DOCTOR",
+                  "PHARMACIST",
+                  "STUDENT",
+                  "NURSE",
+                  "INDUSTRY",
+                  "OTHERS"
+                ],
+                "autoApproveStudents": false
+              },
+              "contentAndSearch": {
+                "enablePublicFeedback": true,
+                "enableMonographWatermarking": true,
+                "enableFuzzySearch": true,
+                "maxSearchResults": 50,
+                "monographReviewStages": 2
+              },
+              "securityAndSessions": {
+                "maxLoginAttempts": 5,
+                "lockoutDurationMinutes": 15,
+                "sessionTimeoutMinutes": 120,
+                "requireMFAForAdmins": true,
+                "passwordExpiryDays": 90
+              },
+              "notificationsAndComms": {
+                "enableInAppNotifications": true,
+                "enableEmailDispatches": true,
+                "enableSmsAlerts": false,
+                "supportEmail": "support@nfi.gov.in",
+                "supportHotline": "+91-120-2783400"
+              },
+              "maintenanceAndGeneral": {
+                "maintenanceMode": false,
+                "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+                "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+                "announcementActive": true
+              }
+            }
+          },
+          {
+            "version": 2,
+            "updatedBy": "NFI Super Administrator",
+            "updatedByEmail": "admin@nfi.gov.in",
+            "updatedAt": "2026-08-26T11:29:10.590Z",
+            "note": "Restored to historical state from version v1",
+            "changesSnapshot": {
+              "subscription": {
+                "fixedExpiryDate": "2031-12-31T23:59:59.999Z",
+                "renewalWindowDays": 90,
+                "gracePeriodDays": 15,
+                "allowEarlyRenewals": true
+              },
+              "trial": {
+                "defaultTrialDays": 21,
+                "maxTrialsPerUser": 1,
+                "allowTrialExtension": true
+              },
+              "userRegistration": {
+                "allowPublicRegistration": true,
+                "requireCredentialVerification": true,
+                "allowedUserTypes": [
+                  "DOCTOR",
+                  "PHARMACIST",
+                  "STUDENT",
+                  "NURSE",
+                  "INDUSTRY",
+                  "OTHERS"
+                ],
+                "autoApproveStudents": false
+              },
+              "contentAndSearch": {
+                "enablePublicFeedback": true,
+                "enableMonographWatermarking": true,
+                "enableFuzzySearch": true,
+                "maxSearchResults": 50,
+                "monographReviewStages": 2
+              },
+              "securityAndSessions": {
+                "maxLoginAttempts": 5,
+                "lockoutDurationMinutes": 15,
+                "sessionTimeoutMinutes": 120,
+                "requireMFAForAdmins": true,
+                "passwordExpiryDays": 90
+              },
+              "notificationsAndComms": {
+                "enableInAppNotifications": true,
+                "enableEmailDispatches": true,
+                "enableSmsAlerts": false,
+                "supportEmail": "support@nfi.gov.in",
+                "supportHotline": "+91-120-2783400"
+              },
+              "maintenanceAndGeneral": {
+                "maintenanceMode": false,
+                "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+                "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+                "announcementActive": true
+              }
+            }
+          },
+          {
+            "version": 1,
+            "updatedBy": "NFI Super Administrator",
+            "updatedByEmail": "admin@nfi.gov.in",
+            "updatedAt": "2026-08-26T11:29:10.568Z",
+            "note": "Extended default evaluation trial window from 14 to 21 days for medical practitioners.",
+            "changesSnapshot": {
+              "subscription": {
+                "fixedExpiryDate": "2031-12-31T23:59:59.999Z",
+                "renewalWindowDays": 90,
+                "gracePeriodDays": 15,
+                "allowEarlyRenewals": true
+              },
+              "trial": {
+                "defaultTrialDays": 14,
+                "maxTrialsPerUser": 1,
+                "allowTrialExtension": false
+              },
+              "userRegistration": {
+                "allowPublicRegistration": true,
+                "requireCredentialVerification": true,
+                "allowedUserTypes": [
+                  "DOCTOR",
+                  "PHARMACIST",
+                  "STUDENT",
+                  "NURSE",
+                  "INDUSTRY",
+                  "OTHERS"
+                ],
+                "autoApproveStudents": false
+              },
+              "contentAndSearch": {
+                "enablePublicFeedback": true,
+                "enableMonographWatermarking": true,
+                "enableFuzzySearch": true,
+                "maxSearchResults": 50,
+                "monographReviewStages": 2
+              },
+              "securityAndSessions": {
+                "maxLoginAttempts": 5,
+                "lockoutDurationMinutes": 15,
+                "sessionTimeoutMinutes": 120,
+                "requireMFAForAdmins": true,
+                "passwordExpiryDays": 90
+              },
+              "notificationsAndComms": {
+                "enableInAppNotifications": true,
+                "enableEmailDispatches": true,
+                "enableSmsAlerts": false,
+                "supportEmail": "support@nfi.gov.in",
+                "supportHotline": "+91-120-2783400"
+              },
+              "maintenanceAndGeneral": {
+                "maintenanceMode": false,
+                "maintenanceMessage": "Formulary portal is undergoing scheduled maintenance. Please check back shortly.",
+                "announcementBanner": "National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.",
+                "announcementActive": true
+              }
+            }
+          },
+          {
+            "version": 1,
+            "updatedBy": "System Initializer",
+            "updatedByEmail": "system@nfi.gov.in",
+            "updatedAt": "2026-08-26T11:29:10.438Z",
+            "note": "Initial default BRD configuration provisioned",
+            "changesSnapshot": {
+              "subscription": {
+                "fixedExpiryDate": "2031-12-31T23:59:59.999Z",
+                "renewalWindowDays": 90
+              },
+              "trial": {
+                "defaultTrialDays": 14,
+                "maxTrialsPerUser": 1
+              },
+              "userRegistration": {
+                "allowPublicRegistration": true,
+                "requireCredentialVerification": true
+              }
+            }
+          }
+        ],
+        "createdAt": "2026-08-26T11:29:10.446Z",
+        "updatedAt": "2026-08-27T06:42:08.009Z",
+        "__v": 4
+      }
+    ],
+    "bulkimports": [
+      {
+        "_id": "6a8e854dd070ed20aae70294",
+        "jobId": "BLK-2026-D1DD21",
+        "fileName": "Test_Roster.xlsx",
+        "institutionName": "Apollo Tertiary Hospital Network",
+        "billingContact": "billing@apollo.org",
+        "planCode": "NFI-INDIVIDUAL",
+        "planName": "NFI 9th Edition Formulary - Individual Pass",
+        "tier": "Individual",
+        "totalRows": 3,
+        "validCount": 2,
+        "invalidCount": 1,
+        "status": "preview",
+        "records": [
+          {
+            "rowNumber": 2,
+            "name": "Dr. Arvind Kumar",
+            "email": "arvind.kumar@apollo.org",
+            "phoneNumber": "+919811002233",
+            "userType": "DOCTOR",
+            "dynamicFields": {
+              "registrationNo": "MCI-DL-9821",
+              "registrationState": "Delhi"
+            },
+            "planCode": "NFI-INDIVIDUAL",
+            "status": "valid",
+            "errors": [],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 3,
+            "name": "Kavita Nair",
+            "email": "kavita.nair@aiims.edu",
+            "phoneNumber": "+919822003344",
+            "userType": "STUDENT",
+            "dynamicFields": {
+              "apaarId": "APAAR-2026-0091"
+            },
+            "planCode": "NFI-STUDENT-SPECIAL",
+            "status": "valid",
+            "errors": [],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 4,
+            "name": "Invalid User",
+            "email": "invalid-email-address",
+            "phoneNumber": "+919833004455",
+            "userType": "DOCTOR",
+            "dynamicFields": {
+              "registrationNo": "",
+              "registrationState": ""
+            },
+            "planCode": "NFI-INDIVIDUAL",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'invalid-email-address'",
+              "Registration No is mandatory for DOCTOR",
+              "State of Registration is mandatory for DOCTOR"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          }
+        ],
+        "importedBy": "6a8d5f2a385a03832538e707",
+        "completedAt": null,
+        "startedAt": "2026-08-26T06:18:53.621Z",
+        "createdAt": "2026-08-26T06:18:53.623Z",
+        "updatedAt": "2026-08-26T06:18:53.623Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8e85754bc3a57bed2fcd4c",
+        "jobId": "BLK-2026-75842C",
+        "fileName": "Test_Roster.xlsx",
+        "institutionName": "Apollo Tertiary Hospital Network",
+        "billingContact": "billing@apollo.org",
+        "planCode": "NFI-INDIVIDUAL",
+        "planName": "NFI 9th Edition Formulary - Individual Pass",
+        "tier": "Individual",
+        "totalRows": 3,
+        "validCount": 2,
+        "invalidCount": 1,
+        "status": "completed",
+        "records": [
+          {
+            "rowNumber": 2,
+            "name": "Dr. Arvind Kumar",
+            "email": "arvind.kumar@apollo.org",
+            "phoneNumber": "+919811002233",
+            "userType": "DOCTOR",
+            "dynamicFields": {
+              "registrationNo": "MCI-DL-9821",
+              "registrationState": "Delhi"
+            },
+            "planCode": "NFI-INDIVIDUAL",
+            "status": "imported",
+            "errors": [],
+            "userId": "6a8e85754bc3a57bed2fcd4d",
+            "subscriptionId": "SUB-2026-73626"
+          },
+          {
+            "rowNumber": 3,
+            "name": "Kavita Nair",
+            "email": "kavita.nair@aiims.edu",
+            "phoneNumber": "+919822003344",
+            "userType": "STUDENT",
+            "dynamicFields": {
+              "apaarId": "APAAR-2026-0091"
+            },
+            "planCode": "NFI-STUDENT-SPECIAL",
+            "status": "imported",
+            "errors": [],
+            "userId": "6a8e85754bc3a57bed2fcd4f",
+            "subscriptionId": "SUB-2026-56904"
+          },
+          {
+            "rowNumber": 4,
+            "name": "Invalid User",
+            "email": "invalid-email-address",
+            "phoneNumber": "+919833004455",
+            "userType": "DOCTOR",
+            "dynamicFields": {
+              "registrationNo": "",
+              "registrationState": ""
+            },
+            "planCode": "NFI-INDIVIDUAL",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'invalid-email-address'",
+              "Registration No is mandatory for DOCTOR",
+              "State of Registration is mandatory for DOCTOR"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          }
+        ],
+        "importedBy": "6a8d5f2a385a03832538e707",
+        "completedAt": "2026-08-26T06:19:33.487Z",
+        "startedAt": "2026-08-26T06:19:33.198Z",
+        "createdAt": "2026-08-26T06:19:33.200Z",
+        "updatedAt": "2026-08-26T06:19:33.488Z",
+        "__v": 0,
+        "consolidatedInvoice": {
+          "invoiceNumber": "C-INV-2026-084A2F",
+          "institutionName": "Apollo Tertiary Hospital Network",
+          "billingContact": "billing@apollo.org",
+          "billingAddress": "",
+          "gstin": "",
+          "totalSubscribers": 2,
+          "unitPriceINR": 3500,
+          "subtotalINR": 7000,
+          "discountINR": 0,
+          "taxPercent": 18,
+          "taxAmountINR": 1260,
+          "finalAmountINR": 8260,
+          "paymentMethod": "Institutional Invoice / NEFT",
+          "paymentStatus": "paid",
+          "generatedAt": "2026-08-26T06:19:33.486Z"
+        }
+      },
+      {
+        "_id": "6a901a0db365bf3850ef1085",
+        "jobId": "BLK-2026-7977A4",
+        "fileName": "NFI_Audit_Trail_2026-08-27.xlsx",
+        "institutionName": "dgfhgdfh",
+        "billingContact": "dfhdfg",
+        "planCode": "NFI-INSTITUTIONAL",
+        "planName": "NFI Institutional Campus License (Multi-Seat)",
+        "tier": "Institutional",
+        "totalRows": 10,
+        "validCount": 0,
+        "invalidCount": 10,
+        "status": "preview",
+        "records": [
+          {
+            "rowNumber": 2,
+            "name": "27/8/2026, 12:12:08 pm",
+            "email": "system_config_updated",
+            "phoneNumber": "SYSTEM",
+            "userType": "OTHERS",
+            "planCode": "NFI SUPER ADMINISTRATOR",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'system_config_updated'",
+              "Invalid User Type 'SUCCESS'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 3,
+            "name": "26/8/2026, 5:20:00 pm",
+            "email": "system_config_updated",
+            "phoneNumber": "SYSTEM",
+            "userType": "OTHERS",
+            "planCode": "NFI SUPER ADMINISTRATOR",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'system_config_updated'",
+              "Invalid User Type 'SUCCESS'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 4,
+            "name": "26/8/2026, 4:59:10 pm",
+            "email": "system_config_updated",
+            "phoneNumber": "SYSTEM",
+            "userType": "OTHERS",
+            "planCode": "NFI SUPER ADMINISTRATOR",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'system_config_updated'",
+              "Invalid User Type 'SUCCESS'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 5,
+            "name": "26/8/2026, 4:59:10 pm",
+            "email": "system_config_updated",
+            "phoneNumber": "SYSTEM",
+            "userType": "OTHERS",
+            "planCode": "NFI SUPER ADMINISTRATOR",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'system_config_updated'",
+              "Invalid User Type 'SUCCESS'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 6,
+            "name": "26/8/2026, 2:55:41 pm",
+            "email": "monograph_published",
+            "phoneNumber": "CONTENT",
+            "userType": "OTHERS",
+            "planCode": "DR. S. K. GUPTA",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'monograph_published'",
+              "Invalid User Type 'SUCCESS'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 7,
+            "name": "26/8/2026, 10:55:41 am",
+            "email": "login_failed",
+            "phoneNumber": "AUTH",
+            "userType": "OTHERS",
+            "planCode": "UNKNOWN GUEST",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'login_failed'",
+              "Invalid User Type 'FAILURE'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 8,
+            "name": "26/8/2026, 4:55:41 am",
+            "email": "order_refund_authorized",
+            "phoneNumber": "ORDERS",
+            "userType": "OTHERS",
+            "planCode": "NFI SUPER ADMINISTRATOR",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'order_refund_authorized'",
+              "Invalid User Type 'SUCCESS'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 9,
+            "name": "25/8/2026, 4:55:41 am",
+            "email": "plan_pricing_updated",
+            "phoneNumber": "PLANS",
+            "userType": "OTHERS",
+            "planCode": "NFI SUPER ADMINISTRATOR",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'plan_pricing_updated'",
+              "Invalid User Type 'SUCCESS'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 10,
+            "name": "24/8/2026, 4:55:41 pm",
+            "email": "role_permissions_updated",
+            "phoneNumber": "ROLES",
+            "userType": "OTHERS",
+            "planCode": "NFI SUPER ADMINISTRATOR",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'role_permissions_updated'",
+              "Invalid User Type 'SUCCESS'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          },
+          {
+            "rowNumber": 11,
+            "name": "23/8/2026, 4:55:41 pm",
+            "email": "login_success",
+            "phoneNumber": "AUTH",
+            "userType": "OTHERS",
+            "planCode": "NFI SUPER ADMINISTRATOR",
+            "status": "invalid",
+            "errors": [
+              "Invalid email address format 'login_success'",
+              "Invalid User Type 'SUCCESS'. Allowed: STUDENT, DOCTOR, PHARMACIST, NURSE, INDUSTRY, OTHERS"
+            ],
+            "userId": null,
+            "subscriptionId": ""
+          }
+        ],
+        "importedBy": "6a8d5f2a385a03832538e707",
+        "completedAt": null,
+        "startedAt": "2026-08-27T11:05:49.726Z",
+        "createdAt": "2026-08-27T11:05:49.728Z",
+        "updatedAt": "2026-08-27T11:05:49.728Z",
+        "__v": 0
+      }
+    ],
+    "subscribers": [
+      {
+        "_id": "6a8d8d2fc8e012745f314c0a",
+        "name": "Rohan Deshmukh",
+        "email": "rohan.d@student.aiims.edu",
+        "username": "rohan_d",
+        "phoneNumber": "+91 91234 56789",
+        "password": "$2b$10$KXntKCuJRnXgnPheuVo7eeWoA8gGRNraIAzpN8FW/p6sGioGosr3.",
+        "userType": "STUDENT",
+        "userTypeRef": "6a8d8d2e3bfcc0d69d6e3d48",
+        "dynamicFields": {
+          "apaarId": "9876-5432-1098",
+          "institution": "AIIMS New Delhi - MBBS Batch 2024"
+        },
+        "subscription": {
+          "status": "trial",
+          "planName": "14-Day Promotional Trial",
+          "startDate": "2026-08-25T12:40:15.373Z",
+          "endDate": "2026-09-08T12:40:15.373Z",
+          "isTrial": true,
+          "isComplimentary": false
+        },
+        "isActive": true,
+        "lastLogin": null,
+        "lastLoginIP": null,
+        "lastLoginDevice": null,
+        "notes": "",
+        "orderHistory": [],
+        "createdAt": "2026-08-25T12:40:15.198Z",
+        "updatedAt": "2026-08-25T12:40:15.375Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8d8d2fc8e012745f314c0b",
+        "name": "Dr. Meera Nambiar",
+        "email": "dr.meera@medanta.org",
+        "username": "dr_meera",
+        "phoneNumber": "+91 98765 43210",
+        "password": "$2b$10$bdzXqcg3DzJDFGSAWx/mR.yAjOWH1adSmcKgdiu12T4vEr6Jka5g6",
+        "userType": "DOCTOR",
+        "userTypeRef": "6a8d8d2e3bfcc0d69d6e3d49",
+        "dynamicFields": {
+          "registrationNo": "DMC-2018-4921",
+          "stateCouncil": "Delhi Medical Council"
+        },
+        "subscription": {
+          "status": "expired",
+          "planName": "NFI 14-Day Free Evaluation Pass",
+          "startDate": "2026-08-26T06:06:22.463Z",
+          "endDate": "2031-12-31T23:59:59.999Z",
+          "isTrial": true,
+          "isComplimentary": false,
+          "discountPercent": 0,
+          "discountNotes": "Promotional evaluation"
+        },
+        "isActive": true,
+        "lastLogin": null,
+        "lastLoginIP": null,
+        "lastLoginDevice": null,
+        "notes": "",
+        "orderHistory": [
+          {
+            "orderId": "COMP-615387",
+            "planName": "VIP Senior Clinician Pass",
+            "amount": 0,
+            "date": "2026-08-25T12:40:15.387Z",
+            "paymentStatus": "Success"
+          },
+          {
+            "orderId": "SUB-2026-00001",
+            "planName": "NFI 9th Edition Formulary - Individual Pass",
+            "amount": 3500,
+            "date": "2026-08-26T06:06:22.448Z",
+            "paymentStatus": "Success"
+          },
+          {
+            "orderId": "SUB-2026-00002",
+            "planName": "NFI 14-Day Free Evaluation Pass",
+            "amount": 0,
+            "date": "2026-08-26T06:06:22.470Z",
+            "paymentStatus": "Success"
+          }
+        ],
+        "createdAt": "2026-08-25T12:40:15.274Z",
+        "updatedAt": "2026-08-26T06:06:22.503Z",
+        "__v": 3
+      },
+      {
+        "_id": "6a8e85754bc3a57bed2fcd4d",
+        "name": "Dr. Arvind Kumar",
+        "email": "arvind.kumar@apollo.org",
+        "username": "arvindkumar_d492",
+        "phoneNumber": "+919811002233",
+        "password": "$2b$10$QQsjhTtg9rQ4rtlJGMkRMOHrHEZgQeexo8JVoAo6o3BIMJj8G3CgG",
+        "userType": "DOCTOR",
+        "userTypeRef": null,
+        "dynamicFields": {
+          "registrationNo": "MCI-DL-9821",
+          "registrationState": "Delhi"
+        },
+        "subscription": {
+          "status": "active",
+          "planName": "NFI 9th Edition Formulary - Individual Pass",
+          "startDate": "2026-08-26T06:19:33.299Z",
+          "endDate": "2031-12-31T23:59:59.999Z",
+          "isTrial": false,
+          "isComplimentary": false,
+          "discountPercent": 0,
+          "discountNotes": ""
+        },
+        "isActive": true,
+        "lastLogin": null,
+        "lastLoginIP": null,
+        "lastLoginDevice": null,
+        "notes": "",
+        "orderHistory": [],
+        "createdAt": "2026-08-26T06:19:33.301Z",
+        "updatedAt": "2026-08-26T06:19:33.301Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8e85754bc3a57bed2fcd4f",
+        "name": "Kavita Nair",
+        "email": "kavita.nair@aiims.edu",
+        "username": "kavitanair_458e",
+        "phoneNumber": "+919822003344",
+        "password": "$2b$10$7hhNsmtNEZmkwPh3jS6XIemLa2kYt5DXy8tuDedKtt03bs1YSEbey",
+        "userType": "STUDENT",
+        "userTypeRef": null,
+        "dynamicFields": {
+          "apaarId": "APAAR-2026-0091"
+        },
+        "subscription": {
+          "status": "active",
+          "planName": "NFI 9th Edition Formulary - Individual Pass",
+          "startDate": "2026-08-26T06:19:33.424Z",
+          "endDate": "2031-12-31T23:59:59.999Z",
+          "isTrial": false,
+          "isComplimentary": false,
+          "discountPercent": 0,
+          "discountNotes": ""
+        },
+        "isActive": true,
+        "lastLogin": null,
+        "lastLoginIP": null,
+        "lastLoginDevice": null,
+        "notes": "",
+        "orderHistory": [],
+        "createdAt": "2026-08-26T06:19:33.424Z",
+        "updatedAt": "2026-08-26T06:19:33.424Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8fc71cbc8751a5439f24a0",
+        "name": "Test Valid Pharma Corp",
+        "email": "valid1787807515572@pharma.com",
+        "username": "vpharma1787807515572",
+        "phoneNumber": "",
+        "password": "$2b$10$.alGnRjsTFZnNfRElM1XNeJXPYPfIatFtl6Peot4G8nzzBBkg3rpy",
+        "userType": "INDUSTRY",
+        "userTypeRef": "6a8d8d2f3bfcc0d69d6e3d4c",
+        "dynamicFields": {
+          "companyName": "Valid Pharma Ltd",
+          "gstin": "22AAAAA0000A1Z5",
+          "pan": "AAAAA9999A"
+        },
+        "subscription": {
+          "status": "none",
+          "planName": "Free Access Tier",
+          "startDate": null,
+          "endDate": null,
+          "isTrial": false,
+          "isComplimentary": false,
+          "discountPercent": 0,
+          "discountNotes": ""
+        },
+        "isActive": true,
+        "lastLogin": null,
+        "lastLoginIP": null,
+        "lastLoginDevice": null,
+        "notes": "",
+        "orderHistory": [],
+        "createdAt": "2026-08-27T05:11:56.112Z",
+        "updatedAt": "2026-08-27T05:11:56.112Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8ff01dac16daf1eb3759af",
+        "name": "Dr. R. K. Sharma",
+        "email": "doctor1787818013063@hospital.org",
+        "username": "doc1787818013063",
+        "phoneNumber": "",
+        "password": "$2b$10$TCuPBgSSpV.VOea2gnlVpeukNzujC6BxrQ5yX1WkJAEIdJAPyC54K",
+        "userType": "DOCTOR",
+        "userTypeRef": "6a8d8d2e3bfcc0d69d6e3d49",
+        "dynamicFields": {
+          "registrationNo": "MCI-2026-9812",
+          "stateCouncil": "Delhi Medical Council"
+        },
+        "subscription": {
+          "status": "none",
+          "planName": "Free Access Tier",
+          "startDate": null,
+          "endDate": null,
+          "isTrial": false,
+          "isComplimentary": false,
+          "discountPercent": 0,
+          "discountNotes": ""
+        },
+        "isActive": true,
+        "lastLogin": "2026-08-27T08:06:53.271Z",
+        "lastLoginIP": "::1",
+        "lastLoginDevice": "node",
+        "notes": "",
+        "orderHistory": [],
+        "createdAt": "2026-08-27T08:06:53.079Z",
+        "updatedAt": "2026-08-27T08:06:53.271Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a90133bb365bf3850ef1084",
+        "name": "Test User",
+        "email": "test@gmail.com",
+        "username": "test123",
+        "phoneNumber": "+91 82659 46942",
+        "password": "$2b$10$nfs6HknslsRtWGc5asvaquecW0hhJEa.dJHwaLp09elS1St6rMW7K",
+        "userType": "STUDENT",
+        "userTypeRef": "6a8d8d2e3bfcc0d69d6e3d48",
+        "dynamicFields": {
+          "apaarId": "APAAR-2026-0091"
+        },
+        "subscription": {
+          "status": "none",
+          "planName": "Free Access Tier",
+          "startDate": null,
+          "endDate": null,
+          "isTrial": false,
+          "isComplimentary": false,
+          "discountPercent": 0,
+          "discountNotes": ""
+        },
+        "isActive": true,
+        "lastLogin": "2026-08-27T10:37:04.865Z",
+        "lastLoginIP": "::1",
+        "lastLoginDevice": "Windows PC",
+        "notes": "",
+        "orderHistory": [],
+        "createdAt": "2026-08-27T10:36:43.832Z",
+        "updatedAt": "2026-08-27T11:09:58.619Z",
+        "__v": 0
+      }
+    ],
+    "subscriptions": [
+      {
+        "_id": "6a8e825e90898dc552c93f4f",
+        "subscriptionId": "SUB-2026-00001",
+        "user": "6a8d8d2fc8e012745f314c0b",
+        "planName": "NFI 9th Edition Formulary - Individual Pass",
+        "planCode": "NFI-INDIVIDUAL",
+        "tier": "Individual",
+        "type": "paid",
+        "status": "active",
+        "startDate": "2026-08-26T06:06:22.435Z",
+        "endDate": "2031-12-31T23:59:59.999Z",
+        "amount": 3500,
+        "discountPercent": 0,
+        "discountAmount": 0,
+        "finalAmount": 3500,
+        "paymentMethod": "UPI / BharatPay",
+        "paymentStatus": "success",
+        "transactionRef": "TXN-9841203",
+        "invoiceNumber": "INV-2026-00001",
+        "assignedBy": "6a8d5f2a385a03832538e707",
+        "notes": "Commercial extension verification",
+        "timeline": [
+          {
+            "action": "ASSIGNED",
+            "statusFrom": "NONE",
+            "statusTo": "ACTIVE",
+            "performedBy": "NFI Super Administrator",
+            "reason": "Manual administrative provisioning (PAID - Valid until 2031-12-31)",
+            "timestamp": "2026-08-26T06:06:22.440Z"
+          },
+          {
+            "action": "RENEWED",
+            "statusFrom": "ACTIVE",
+            "statusTo": "ACTIVE",
+            "performedBy": "NFI Super Administrator",
+            "reason": "Subscription renewed/extended until 2031-12-31. Commercial extension verification",
+            "timestamp": "2026-08-26T06:06:22.483Z"
+          }
+        ],
+        "createdAt": "2026-08-26T06:06:22.444Z",
+        "updatedAt": "2026-08-26T06:06:22.485Z",
+        "__v": 1
+      },
+      {
+        "_id": "6a8e825e90898dc552c93f50",
+        "subscriptionId": "SUB-2026-00002",
+        "user": "6a8d8d2fc8e012745f314c0b",
+        "planName": "NFI 14-Day Free Evaluation Pass",
+        "planCode": "NFI-TRIAL",
+        "tier": "Individual",
+        "type": "trial",
+        "status": "cancelled",
+        "startDate": "2026-08-26T06:06:22.463Z",
+        "endDate": "2026-09-09T06:06:22.463Z",
+        "amount": 5000,
+        "discountPercent": 0,
+        "discountAmount": 0,
+        "finalAmount": 0,
+        "paymentMethod": "Admin Grant",
+        "paymentStatus": "waived",
+        "transactionRef": "TXN-24382465",
+        "invoiceNumber": "INV-2026-00002",
+        "assignedBy": "6a8d5f2a385a03832538e707",
+        "notes": "Promotional evaluation",
+        "timeline": [
+          {
+            "action": "ASSIGNED",
+            "statusFrom": "NONE",
+            "statusTo": "ACTIVE",
+            "performedBy": "NFI Super Administrator",
+            "reason": "Manual administrative provisioning (TRIAL - Valid until 2026-09-09)",
+            "timestamp": "2026-08-26T06:06:22.465Z"
+          },
+          {
+            "action": "CANCELLED",
+            "statusFrom": "ACTIVE",
+            "statusTo": "CANCELLED",
+            "performedBy": "NFI Super Administrator",
+            "reason": "Evaluation completed, subscriber upgrading to Institutional tier",
+            "timestamp": "2026-08-26T06:06:22.499Z"
+          }
+        ],
+        "createdAt": "2026-08-26T06:06:22.466Z",
+        "updatedAt": "2026-08-26T06:06:22.500Z",
+        "__v": 1
+      },
+      {
+        "_id": "6a8e85754bc3a57bed2fcd4e",
+        "subscriptionId": "SUB-2026-73626",
+        "user": "6a8e85754bc3a57bed2fcd4d",
+        "planName": "NFI 9th Edition Formulary - Individual Pass",
+        "planCode": "NFI-INDIVIDUAL",
+        "tier": "Individual",
+        "type": "paid",
+        "status": "active",
+        "startDate": "2026-08-26T06:19:33.363Z",
+        "endDate": "2031-12-31T23:59:59.999Z",
+        "amount": 3500,
+        "discountPercent": 0,
+        "discountAmount": 0,
+        "finalAmount": 3500,
+        "paymentMethod": "Consolidated Institutional License",
+        "paymentStatus": "success",
+        "transactionRef": "",
+        "invoiceNumber": "C-INV-2026-084A2F",
+        "assignedBy": "6a8d5f2a385a03832538e707",
+        "notes": "",
+        "timeline": [
+          {
+            "action": "ASSIGNED",
+            "statusFrom": "none",
+            "statusTo": "active",
+            "performedBy": "NFI Super Administrator",
+            "reason": "Bulk enrollment via Batch Job BLK-2026-75842C for Apollo Tertiary Hospital Network",
+            "timestamp": "2026-08-26T06:19:33.363Z"
+          }
+        ],
+        "createdAt": "2026-08-26T06:19:33.364Z",
+        "updatedAt": "2026-08-26T06:19:33.364Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8e85754bc3a57bed2fcd50",
+        "subscriptionId": "SUB-2026-56904",
+        "user": "6a8e85754bc3a57bed2fcd4f",
+        "planName": "NFI 9th Edition Formulary - Individual Pass",
+        "planCode": "NFI-INDIVIDUAL",
+        "tier": "Individual",
+        "type": "paid",
+        "status": "active",
+        "startDate": "2026-08-26T06:19:33.483Z",
+        "endDate": "2031-12-31T23:59:59.999Z",
+        "amount": 3500,
+        "discountPercent": 0,
+        "discountAmount": 0,
+        "finalAmount": 3500,
+        "paymentMethod": "Consolidated Institutional License",
+        "paymentStatus": "success",
+        "transactionRef": "",
+        "invoiceNumber": "C-INV-2026-084A2F",
+        "assignedBy": "6a8d5f2a385a03832538e707",
+        "notes": "",
+        "timeline": [
+          {
+            "action": "ASSIGNED",
+            "statusFrom": "none",
+            "statusTo": "active",
+            "performedBy": "NFI Super Administrator",
+            "reason": "Bulk enrollment via Batch Job BLK-2026-75842C for Apollo Tertiary Hospital Network",
+            "timestamp": "2026-08-26T06:19:33.483Z"
+          }
+        ],
+        "createdAt": "2026-08-26T06:19:33.484Z",
+        "updatedAt": "2026-08-26T06:19:33.484Z",
+        "__v": 0
+      }
+    ],
+    "notifications": [
+      {
+        "_id": "6a8eba813bfcc0d69d6e3d5b",
+        "title": "Release of NFI 9th Edition Monograph Addendum 2026",
+        "__v": 0,
+        "actionLabel": "Read Official Addendum",
+        "actionUrl": "/admin/content",
+        "category": "NEW_CONTENT",
+        "channels": [
+          "in_app",
+          "email",
+          "broadcast_banner"
+        ],
+        "createdAt": "2026-08-26T10:05:53.695Z",
+        "createdBy": null,
+        "deliveryLogs": [],
+        "deliveryStats": {
+          "targetCount": 1250,
+          "deliveredCount": 1240,
+          "readCount": 890,
+          "failedCount": 10,
+          "channelsSummary": {
+            "in_app": {
+              "sent": 1240,
+              "read": 890
+            },
+            "email": {
+              "sent": 1240,
+              "opened": 720
+            },
+            "sms": {
+              "sent": 0,
+              "delivered": 0
+            },
+            "broadcast_banner": {
+              "views": 3400
+            }
+          }
+        },
+        "endDate": null,
+        "isActive": true,
+        "message": "The Indian Pharmacopoeia Commission has published the official 2026 Monograph Addendum including 45 updated therapeutic monographs and pediatric dosage schedules.",
+        "priority": "high",
+        "readBy": [],
+        "scheduledAt": null,
+        "sentAt": "2026-08-24T10:05:53.695Z",
+        "startDate": "2026-08-26T10:05:53.701Z",
+        "status": "sent",
+        "targetAudience": {
+          "type": "ALL"
+        },
+        "updatedAt": "2026-08-26T10:05:53.695Z"
+      },
+      {
+        "_id": "6a8eba813bfcc0d69d6e3d5c",
+        "title": "Formulary License Expiry & Renewal Advisory",
+        "__v": 0,
+        "actionLabel": "Renew Pass Now",
+        "actionUrl": "/admin/subscriptions",
+        "category": "SUBSCRIPTION_EXPIRY",
+        "channels": [
+          "in_app",
+          "email",
+          "sms"
+        ],
+        "createdAt": "2026-08-26T10:05:53.711Z",
+        "createdBy": null,
+        "deliveryLogs": [],
+        "deliveryStats": {
+          "targetCount": 340,
+          "deliveredCount": 338,
+          "readCount": 295,
+          "failedCount": 2,
+          "channelsSummary": {
+            "in_app": {
+              "sent": 338,
+              "read": 295
+            },
+            "email": {
+              "sent": 338,
+              "opened": 260
+            },
+            "sms": {
+              "sent": 338,
+              "delivered": 330
+            },
+            "broadcast_banner": {
+              "views": 0
+            }
+          }
+        },
+        "endDate": null,
+        "isActive": true,
+        "message": "Your institutional evaluation license is expiring in 15 days. Please coordinate with IPC commercial secretariat to renew your campus access.",
+        "priority": "urgent",
+        "readBy": [],
+        "scheduledAt": null,
+        "sentAt": "2026-08-21T10:05:53.695Z",
+        "startDate": "2026-08-26T10:05:53.713Z",
+        "status": "sent",
+        "targetAudience": {
+          "type": "USER_TYPES",
+          "userTypes": [
+            "INDUSTRY",
+            "OTHERS"
+          ]
+        },
+        "updatedAt": "2026-08-26T10:05:53.711Z"
+      },
+      {
+        "_id": "6a8eba813bfcc0d69d6e3d5d",
+        "title": "National Pharmacovigilance & Drug Safety Symposium 2026",
+        "__v": 0,
+        "actionLabel": "Register Attendance",
+        "actionUrl": "https://ipc.gov.in/events",
+        "category": "EVENTS",
+        "channels": [
+          "in_app",
+          "email"
+        ],
+        "createdAt": "2026-08-26T10:05:53.718Z",
+        "createdBy": null,
+        "deliveryLogs": [],
+        "deliveryStats": {
+          "targetCount": 850,
+          "deliveredCount": 845,
+          "readCount": 610,
+          "failedCount": 5,
+          "channelsSummary": {
+            "in_app": {
+              "sent": 845,
+              "read": 610
+            },
+            "email": {
+              "sent": 845,
+              "opened": 480
+            },
+            "sms": {
+              "sent": 0,
+              "delivered": 0
+            },
+            "broadcast_banner": {
+              "views": 0
+            }
+          }
+        },
+        "endDate": null,
+        "isActive": true,
+        "message": "Join clinical specialists and Ministry delegates at Vigyan Bhawan, New Delhi for the 14th National Drug Safety Symposium on 15th October 2026.",
+        "priority": "medium",
+        "readBy": [],
+        "scheduledAt": null,
+        "sentAt": "2026-08-19T10:05:53.695Z",
+        "startDate": "2026-08-26T10:05:53.719Z",
+        "status": "sent",
+        "targetAudience": {
+          "type": "USER_TYPES",
+          "userTypes": [
+            "DOCTOR",
+            "PHARMACIST"
+          ]
+        },
+        "updatedAt": "2026-08-26T10:05:53.718Z"
+      },
+      {
+        "_id": "6a8eba813bfcc0d69d6e3d5e",
+        "title": "Live Webinar: Pediatric & Geriatric Dosage Calculator Walkthrough",
+        "__v": 0,
+        "actionLabel": "Join Webinar Link",
+        "actionUrl": "https://webinar.ipc.gov.in/dosage-calculator",
+        "category": "WEBINARS",
+        "channels": [
+          "in_app",
+          "email"
+        ],
+        "createdAt": "2026-08-26T10:05:53.723Z",
+        "createdBy": null,
+        "deliveryLogs": [],
+        "deliveryStats": {
+          "targetCount": 1500,
+          "deliveredCount": 0,
+          "readCount": 0,
+          "failedCount": 0
+        },
+        "endDate": null,
+        "isActive": true,
+        "message": "Interactive digital masterclass demonstrating real-time renal adjustment and black-box safety checks in the 9th Edition formulary.",
+        "priority": "medium",
+        "readBy": [],
+        "scheduledAt": "2026-08-30T10:05:53.695Z",
+        "sentAt": null,
+        "startDate": "2026-08-26T10:05:53.724Z",
+        "status": "scheduled",
+        "targetAudience": {
+          "type": "ALL"
+        },
+        "updatedAt": "2026-08-26T10:05:53.723Z"
+      },
+      {
+        "_id": "6a8eba813bfcc0d69d6e3d5f",
+        "title": "Continuing Medical Education (CME) Pharmacology Modules Live",
+        "__v": 0,
+        "actionLabel": "Start CME Module",
+        "actionUrl": "/admin/content",
+        "category": "TRAINING",
+        "channels": [
+          "in_app",
+          "email"
+        ],
+        "createdAt": "2026-08-26T10:05:53.728Z",
+        "createdBy": null,
+        "deliveryLogs": [],
+        "deliveryStats": {
+          "targetCount": 900,
+          "deliveredCount": 0,
+          "readCount": 0,
+          "failedCount": 0
+        },
+        "endDate": null,
+        "isActive": true,
+        "message": "Accredited 5-credit CME modules for registered doctors and post-graduate scholars are now available for digital study.",
+        "priority": "low",
+        "readBy": [],
+        "scheduledAt": null,
+        "sentAt": null,
+        "startDate": "2026-08-26T10:05:53.729Z",
+        "status": "draft",
+        "targetAudience": {
+          "type": "USER_TYPES",
+          "userTypes": [
+            "DOCTOR",
+            "STUDENT"
+          ]
+        },
+        "updatedAt": "2026-08-26T10:05:53.728Z"
+      },
+      {
+        "_id": "6a8eba813bfcc0d69d6e3d60",
+        "title": "Critical Safety Broadcast: Central Drug Standard Control Alert",
+        "__v": 0,
+        "actionLabel": "Review Safety Bulletin",
+        "actionUrl": "/admin/dashboard",
+        "category": "ANNOUNCEMENT",
+        "channels": [
+          "in_app",
+          "email",
+          "sms",
+          "broadcast_banner"
+        ],
+        "createdAt": "2026-08-26T10:05:53.733Z",
+        "createdBy": null,
+        "deliveryLogs": [],
+        "deliveryStats": {
+          "targetCount": 2200,
+          "deliveredCount": 2190,
+          "readCount": 1850,
+          "failedCount": 10,
+          "channelsSummary": {
+            "in_app": {
+              "sent": 2190,
+              "read": 1850
+            },
+            "email": {
+              "sent": 2190,
+              "opened": 1620
+            },
+            "sms": {
+              "sent": 2190,
+              "delivered": 2150
+            },
+            "broadcast_banner": {
+              "views": 6800
+            }
+          }
+        },
+        "endDate": null,
+        "isActive": true,
+        "message": "Urgent regulatory safety advisory regarding revised contraindications for third-generation cephalosporin combinations in pediatric cohorts.",
+        "priority": "urgent",
+        "readBy": [],
+        "scheduledAt": null,
+        "sentAt": "2026-08-25T10:05:53.695Z",
+        "startDate": "2026-08-26T10:05:53.734Z",
+        "status": "sent",
+        "targetAudience": {
+          "type": "ALL"
+        },
+        "updatedAt": "2026-08-26T10:05:53.733Z"
+      },
+      {
+        "_id": "6a8eba813bfcc0d69d6e3d61",
+        "title": "Editorial Review Requested: Cardiovascular Monographs Section 4",
+        "__v": 0,
+        "actionLabel": "Open Editorial Desk",
+        "actionUrl": "/admin/workflow",
+        "category": "WORKFLOW",
+        "channels": [
+          "in_app",
+          "email"
+        ],
+        "createdAt": "2026-08-26T10:05:53.738Z",
+        "createdBy": null,
+        "deliveryLogs": [],
+        "deliveryStats": {
+          "targetCount": 15,
+          "deliveredCount": 15,
+          "readCount": 14,
+          "failedCount": 0,
+          "channelsSummary": {
+            "in_app": {
+              "sent": 15,
+              "read": 14
+            },
+            "email": {
+              "sent": 15,
+              "opened": 13
+            },
+            "sms": {
+              "sent": 0,
+              "delivered": 0
+            },
+            "broadcast_banner": {
+              "views": 0
+            }
+          }
+        },
+        "endDate": null,
+        "isActive": true,
+        "message": "4 new monograph drafts have been submitted by the Maker team and are pending review by the Cardiology Scientific Advisory Committee.",
+        "priority": "high",
+        "readBy": [],
+        "scheduledAt": null,
+        "sentAt": "2026-08-23T10:05:53.695Z",
+        "startDate": "2026-08-26T10:05:53.739Z",
+        "status": "sent",
+        "targetAudience": {
+          "type": "ROLES",
+          "roles": [
+            "reviewer",
+            "approver",
+            "admin",
+            "superadmin"
+          ]
+        },
+        "updatedAt": "2026-08-26T10:05:53.738Z"
+      },
+      {
+        "_id": "6a8eba816f35d3d32f9df1e6",
+        "title": "Automated Drug Interaction Advisory 2026",
+        "message": "New therapeutic contraindications between macrolides and statins published.",
+        "category": "NEW_CONTENT",
+        "channels": [
+          "in_app",
+          "email",
+          "sms",
+          "broadcast_banner"
+        ],
+        "priority": "high",
+        "targetAudience": {
+          "type": "USER_TYPES",
+          "userTypes": [
+            "DOCTOR",
+            "PHARMACIST"
+          ],
+          "roles": [],
+          "specificUsers": [],
+          "specificEmails": []
+        },
+        "actionUrl": "/admin/content",
+        "actionLabel": "Read Monograph",
+        "status": "sent",
+        "scheduledAt": null,
+        "sentAt": "2026-08-26T10:05:53.792Z",
+        "startDate": "2026-08-26T10:05:53.763Z",
+        "endDate": null,
+        "isActive": true,
+        "deliveryStats": {
+          "targetCount": 0,
+          "deliveredCount": 96,
+          "readCount": 1,
+          "failedCount": 0,
+          "channelsSummary": {
+            "in_app": {
+              "sent": 96,
+              "read": 1
+            },
+            "email": {
+              "sent": 96,
+              "opened": 0
+            },
+            "sms": {
+              "sent": 96,
+              "delivered": 0
+            },
+            "broadcast_banner": {
+              "views": 0
+            }
+          }
+        },
+        "createdBy": "6a8d5f2a385a03832538e707",
+        "deliveryLogs": [],
+        "readBy": [
+          {
+            "user": "6a8d5f2a385a03832538e707",
+            "readAt": "2026-08-26T10:05:53.817Z"
+          }
+        ],
+        "createdAt": "2026-08-26T10:05:53.775Z",
+        "updatedAt": "2026-08-26T10:05:53.819Z",
+        "__v": 1
+      }
+    ],
+    "coupons": [
+      {
+        "_id": "6a8e84343bfcc0d69d6e3d57",
+        "code": "NFI-IMA2026",
+        "__v": 0,
+        "applicablePlans": [
+          "ALL"
+        ],
+        "applicableUserTypes": [
+          "DOCTOR"
+        ],
+        "createdAt": "2026-08-26T06:14:12.217Z",
+        "createdBy": null,
+        "description": "National concession for verified clinical practitioners and IMA council members.",
+        "discountType": "percentage",
+        "discountValue": 25,
+        "endDate": "2028-12-31T23:59:59.999Z",
+        "isActive": true,
+        "maxDiscountINR": 2000,
+        "minOrderAmountINR": 3000,
+        "perUserLimit": 1,
+        "redemptionHistory": [],
+        "specificEmails": [],
+        "specificUsers": [],
+        "startDate": "2026-08-26T06:14:12.217Z",
+        "title": "Indian Medical Association 25% Concession",
+        "updatedAt": "2026-08-26T06:14:12.217Z",
+        "usageCount": 0,
+        "usageLimit": 1000
+      },
+      {
+        "_id": "6a8e84343bfcc0d69d6e3d58",
+        "code": "STUDENT-SPECIAL",
+        "__v": 0,
+        "applicablePlans": [
+          "NFI-STUDENT-SPECIAL",
+          "NFI-INDIVIDUAL"
+        ],
+        "applicableUserTypes": [
+          "STUDENT"
+        ],
+        "createdAt": "2026-08-26T06:14:12.226Z",
+        "createdBy": null,
+        "description": "Subsidized academic discount for medical and pharmacy undergraduate scholars.",
+        "discountType": "percentage",
+        "discountValue": 30,
+        "endDate": "2029-12-31T23:59:59.999Z",
+        "isActive": true,
+        "maxDiscountINR": 1000,
+        "minOrderAmountINR": 1000,
+        "perUserLimit": 1,
+        "redemptionHistory": [],
+        "specificEmails": [],
+        "specificUsers": [],
+        "startDate": "2026-08-26T06:14:12.217Z",
+        "title": "Academic Scholar 30% Concession",
+        "updatedAt": "2026-08-26T06:14:12.226Z",
+        "usageCount": 0,
+        "usageLimit": 5000
+      },
+      {
+        "_id": "6a8e84343bfcc0d69d6e3d59",
+        "code": "CAMPUS-FLAT5000",
+        "__v": 0,
+        "applicablePlans": [
+          "NFI-INSTITUTIONAL"
+        ],
+        "applicableUserTypes": [
+          "INDUSTRY",
+          "OTHERS"
+        ],
+        "createdAt": "2026-08-26T06:14:12.229Z",
+        "createdBy": null,
+        "description": "Flat fee concession on multi-seat campus licenses for medical colleges.",
+        "discountType": "fixed_amount",
+        "discountValue": 5000,
+        "endDate": "2027-12-31T23:59:59.999Z",
+        "isActive": true,
+        "maxDiscountINR": 0,
+        "minOrderAmountINR": 40000,
+        "perUserLimit": 2,
+        "redemptionHistory": [],
+        "specificEmails": [],
+        "specificUsers": [],
+        "startDate": "2026-08-26T06:14:12.217Z",
+        "title": "Institutional Campus Flat ₹5,000 Grant",
+        "updatedAt": "2026-08-26T06:14:12.229Z",
+        "usageCount": 0,
+        "usageLimit": 200
+      },
+      {
+        "_id": "6a8e84343bfcc0d69d6e3d5a",
+        "code": "PHARMA-WELCOME15",
+        "__v": 0,
+        "applicablePlans": [
+          "ALL"
+        ],
+        "applicableUserTypes": [
+          "PHARMACIST",
+          "NURSE",
+          "OTHERS"
+        ],
+        "createdAt": "2026-08-26T06:14:12.233Z",
+        "createdBy": null,
+        "description": "Introductory concession for newly registered pharmacists and healthcare officers.",
+        "discountType": "percentage",
+        "discountValue": 15,
+        "endDate": "2028-06-30T23:59:59.999Z",
+        "isActive": true,
+        "maxDiscountINR": 1500,
+        "minOrderAmountINR": 2000,
+        "perUserLimit": 1,
+        "redemptionHistory": [],
+        "specificEmails": [],
+        "specificUsers": [],
+        "startDate": "2026-08-26T06:14:12.217Z",
+        "title": "Welcome Formulary 15% Pass",
+        "updatedAt": "2026-08-26T06:14:12.233Z",
+        "usageCount": 0,
+        "usageLimit": 2500
+      },
+      {
+        "_id": "6a8e8434a5457b1186be5515",
+        "code": "DOCTOR-SPECIAL30",
+        "title": "Doctor Specialty 30% Concession",
+        "description": "Promotional concession for all registered doctors.",
+        "discountType": "percentage",
+        "discountValue": 30,
+        "maxDiscountINR": 1500,
+        "minOrderAmountINR": 3000,
+        "startDate": "2026-08-26T06:14:12.272Z",
+        "endDate": "2028-12-31T23:59:59.999Z",
+        "usageLimit": 200,
+        "usageCount": 0,
+        "perUserLimit": 1,
+        "applicablePlans": [
+          "ALL"
+        ],
+        "applicableUserTypes": [
+          "DOCTOR"
+        ],
+        "specificUsers": [],
+        "specificEmails": [],
+        "isActive": true,
+        "createdBy": "6a8d5f2a385a03832538e707",
+        "redemptionHistory": [],
+        "createdAt": "2026-08-26T06:14:12.283Z",
+        "updatedAt": "2026-08-26T06:14:12.283Z",
+        "__v": 0
+      },
+      {
+        "_id": "6a8e8434a5457b1186be5516",
+        "code": "DIRECT-DR_MEERA",
+        "title": "Direct Concession for Dr. Meera Nambiar",
+        "description": "Direct VIP concession",
+        "discountType": "percentage",
+        "discountValue": 40,
+        "maxDiscountINR": 0,
+        "minOrderAmountINR": 0,
+        "startDate": "2026-08-26T06:14:12.363Z",
+        "endDate": "2026-11-24T06:14:12.363Z",
+        "usageLimit": 1,
+        "usageCount": 0,
+        "perUserLimit": 1,
+        "applicablePlans": [
+          "ALL"
+        ],
+        "applicableUserTypes": [
+          "ALL"
+        ],
+        "specificUsers": [
+          "6a8d8d2fc8e012745f314c0b"
+        ],
+        "specificEmails": [
+          "dr.meera@medanta.org"
+        ],
+        "isActive": true,
+        "createdBy": "6a8d5f2a385a03832538e707",
+        "redemptionHistory": [],
+        "createdAt": "2026-08-26T06:14:12.364Z",
+        "updatedAt": "2026-08-26T06:14:12.364Z",
+        "__v": 0
+      }
+    ],
+    "users": [
+      {
+        "_id": "6a8d5f2a385a03832538e707",
+        "name": "NFI Super Administrator",
+        "email": "admin@nfi.gov.in",
+        "username": "superadmin",
+        "password": "$2b$10$iwJrACzN26hbA03XcI1D7u1lEi/cbHG/NDHTxr1E88m3tCwC8HsWW",
+        "role": "superadmin",
+        "isActive": true,
+        "lastLogin": "2026-08-27T10:43:20.620Z",
+        "createdAt": "2026-08-25T09:23:54.218Z",
+        "updatedAt": "2026-08-27T10:43:20.621Z",
+        "__v": 1,
+        "failedLoginAttempts": 0,
+        "lastLoginDevice": "Windows PC",
+        "lastLoginIP": "::1",
+        "twoFactorEnabled": false,
+        "customPermissions": [],
+        "department": "Indian Pharmacopoeia Commission",
+        "designation": "Administrator",
+        "notes": "",
+        "phoneNumber": "",
+        "lockUntil": null,
+        "hasCustomPermissions": false
+      },
+      {
+        "_id": "6a8d8a26a791d7bef03e267c",
+        "name": "Ananya Sharma",
+        "email": "ananya.s@nfi.gov.in",
+        "username": "ananya_s",
+        "password": "$2b$10$En492cWmaV4djsSxiarZjuaU5Oholk6s5.gaql1EmXMDpEl5rUJo6",
+        "role": "subadmin",
+        "department": "Formulary Coordination Desk",
+        "designation": "Regional Coordinator",
+        "phoneNumber": "+91 99887 76655",
+        "notes": "",
+        "roleRef": "6a8d826f3bfcc0d69d6e3d44",
+        "customPermissions": [
+          "CONTENT:MONOGRAPHS:VIEW",
+          "CONTENT:MONOGRAPHS:ADD",
+          "CONTENT:MONOGRAPHS:EDIT",
+          "CONTENT:MONOGRAPHS:DELETE",
+          "USERS:USERS:VIEW",
+          "USERS:USERS:ADD"
+        ],
+        "isActive": true,
+        "lastLogin": "2026-08-26T05:53:48.660Z",
+        "lastLoginIP": "::1",
+        "lastLoginDevice": "Windows PC",
+        "failedLoginAttempts": 0,
+        "lockUntil": null,
+        "twoFactorEnabled": false,
+        "createdAt": "2026-08-25T12:27:18.401Z",
+        "updatedAt": "2026-08-27T07:33:20.377Z",
+        "__v": 1
+      },
+      {
+        "_id": "6a8fec94bc8751a5439f24ac",
+        "name": "Dr. Virat kohli",
+        "email": "kohli@gmail.om",
+        "username": "kohli123",
+        "password": "$2b$10$MhW0WafiE9mM55.5benRuO60Tjadg7ps4H/cgddgkf3sEUfL9HB62",
+        "role": "admin",
+        "department": "Indian Pharmacopoeia Commission",
+        "designation": "Administrator",
+        "phoneNumber": "+91 99887 76655",
+        "notes": "Testing Purpose only",
+        "roleRef": "6a8d826f3bfcc0d69d6e3d43",
+        "customPermissions": [
+          "COMMERCIAL:PLANS:VIEW",
+          "COMMERCIAL:DISCOUNTS:VIEW",
+          "COMMERCIAL:COUPONS:VIEW"
+        ],
+        "isActive": true,
+        "lastLogin": "2026-08-27T10:05:15.011Z",
+        "lastLoginIP": "::1",
+        "lastLoginDevice": "node",
+        "failedLoginAttempts": 0,
+        "lockUntil": null,
+        "twoFactorEnabled": false,
+        "createdAt": "2026-08-27T07:51:48.814Z",
+        "updatedAt": "2026-08-27T10:05:15.012Z",
+        "__v": 13,
+        "hasCustomPermissions": true
+      },
+      {
+        "_id": "6a900d3cdfa9264e56006b90",
+        "name": "Dr. Rohit sharma",
+        "email": "rohit@gmail.com",
+        "username": "rohit123",
+        "password": "$2b$10$lOMD78Ug1X/Lx2OD0N.IOeTk5kz58waXHdKbCQw3BRzSH6p9bB7bW",
+        "role": "subadmin",
+        "department": "Indian Pharmacopoeia Commission",
+        "designation": "Administrator",
+        "phoneNumber": "8265946942",
+        "notes": "Rohit test century",
+        "roleRef": "6a8d826f3bfcc0d69d6e3d44",
+        "customPermissions": [
+          "USERS:USERS:ADD",
+          "USERS:USERS:DELETE",
+          "USERS:USERS:EDIT",
+          "USERS:USERS:EXPORT",
+          "USERS:USERS:VIEW"
+        ],
+        "hasCustomPermissions": true,
+        "isActive": true,
+        "lastLogin": "2026-08-27T10:27:43.702Z",
+        "lastLoginIP": "::1",
+        "lastLoginDevice": "Windows PC",
+        "failedLoginAttempts": 0,
+        "lockUntil": null,
+        "twoFactorEnabled": false,
+        "createdAt": "2026-08-27T10:11:08.489Z",
+        "updatedAt": "2026-08-27T10:35:56.954Z",
+        "__v": 3
+      }
+    ],
+    "permissions": [
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3ce3",
+        "code": "OVERVIEW:DASHBOARD:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.428Z",
+        "description": "Allow user to view in OVERVIEW / DASHBOARD",
+        "isActive": true,
+        "module": "OVERVIEW",
+        "name": "VIEW DASHBOARD",
+        "section": "DASHBOARD",
+        "updatedAt": "2026-08-25T11:54:23.428Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3ce4",
+        "code": "OVERVIEW:DASHBOARD:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.439Z",
+        "description": "Allow user to export in OVERVIEW / DASHBOARD",
+        "isActive": true,
+        "module": "OVERVIEW",
+        "name": "EXPORT DASHBOARD",
+        "section": "DASHBOARD",
+        "updatedAt": "2026-08-25T11:54:23.439Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3ce5",
+        "code": "USERS:USERS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.442Z",
+        "description": "Allow user to view in USERS / USERS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "VIEW USERS",
+        "section": "USERS",
+        "updatedAt": "2026-08-25T11:54:23.442Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3ce6",
+        "code": "USERS:USERS:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.445Z",
+        "description": "Allow user to add in USERS / USERS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "ADD USERS",
+        "section": "USERS",
+        "updatedAt": "2026-08-25T11:54:23.445Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3ce7",
+        "code": "USERS:USERS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.448Z",
+        "description": "Allow user to edit in USERS / USERS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "EDIT USERS",
+        "section": "USERS",
+        "updatedAt": "2026-08-25T11:54:23.448Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3ce8",
+        "code": "USERS:USERS:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.451Z",
+        "description": "Allow user to delete in USERS / USERS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "DELETE USERS",
+        "section": "USERS",
+        "updatedAt": "2026-08-25T11:54:23.451Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3ce9",
+        "code": "USERS:USERS:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.454Z",
+        "description": "Allow user to export in USERS / USERS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "EXPORT USERS",
+        "section": "USERS",
+        "updatedAt": "2026-08-25T11:54:23.454Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cea",
+        "code": "USERS:ADMINS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.456Z",
+        "description": "Allow user to view in USERS / ADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "VIEW ADMINS",
+        "section": "ADMINS",
+        "updatedAt": "2026-08-25T11:54:23.456Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3ceb",
+        "code": "USERS:ADMINS:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.458Z",
+        "description": "Allow user to add in USERS / ADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "ADD ADMINS",
+        "section": "ADMINS",
+        "updatedAt": "2026-08-25T11:54:23.458Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cec",
+        "code": "USERS:ADMINS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.461Z",
+        "description": "Allow user to edit in USERS / ADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "EDIT ADMINS",
+        "section": "ADMINS",
+        "updatedAt": "2026-08-25T11:54:23.461Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3ced",
+        "code": "USERS:ADMINS:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.465Z",
+        "description": "Allow user to delete in USERS / ADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "DELETE ADMINS",
+        "section": "ADMINS",
+        "updatedAt": "2026-08-25T11:54:23.465Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cee",
+        "code": "USERS:ADMINS:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.467Z",
+        "description": "Allow user to export in USERS / ADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "EXPORT ADMINS",
+        "section": "ADMINS",
+        "updatedAt": "2026-08-25T11:54:23.467Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cef",
+        "code": "USERS:SUBADMINS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.470Z",
+        "description": "Allow user to view in USERS / SUBADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "VIEW SUBADMINS",
+        "section": "SUBADMINS",
+        "updatedAt": "2026-08-25T11:54:23.470Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf0",
+        "code": "USERS:SUBADMINS:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.472Z",
+        "description": "Allow user to add in USERS / SUBADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "ADD SUBADMINS",
+        "section": "SUBADMINS",
+        "updatedAt": "2026-08-25T11:54:23.472Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf1",
+        "code": "USERS:SUBADMINS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.475Z",
+        "description": "Allow user to edit in USERS / SUBADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "EDIT SUBADMINS",
+        "section": "SUBADMINS",
+        "updatedAt": "2026-08-25T11:54:23.475Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf2",
+        "code": "USERS:SUBADMINS:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.477Z",
+        "description": "Allow user to delete in USERS / SUBADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "DELETE SUBADMINS",
+        "section": "SUBADMINS",
+        "updatedAt": "2026-08-25T11:54:23.477Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf3",
+        "code": "USERS:SUBADMINS:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.480Z",
+        "description": "Allow user to export in USERS / SUBADMINS",
+        "isActive": true,
+        "module": "USERS",
+        "name": "EXPORT SUBADMINS",
+        "section": "SUBADMINS",
+        "updatedAt": "2026-08-25T11:54:23.480Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf4",
+        "code": "USERS:ROLES:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.483Z",
+        "description": "Allow user to view in USERS / ROLES",
+        "isActive": true,
+        "module": "USERS",
+        "name": "VIEW ROLES",
+        "section": "ROLES",
+        "updatedAt": "2026-08-25T11:54:23.483Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf5",
+        "code": "USERS:ROLES:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.485Z",
+        "description": "Allow user to add in USERS / ROLES",
+        "isActive": true,
+        "module": "USERS",
+        "name": "ADD ROLES",
+        "section": "ROLES",
+        "updatedAt": "2026-08-25T11:54:23.485Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf6",
+        "code": "USERS:ROLES:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.488Z",
+        "description": "Allow user to edit in USERS / ROLES",
+        "isActive": true,
+        "module": "USERS",
+        "name": "EDIT ROLES",
+        "section": "ROLES",
+        "updatedAt": "2026-08-25T11:54:23.488Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf7",
+        "code": "USERS:ROLES:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.490Z",
+        "description": "Allow user to delete in USERS / ROLES",
+        "isActive": true,
+        "module": "USERS",
+        "name": "DELETE ROLES",
+        "section": "ROLES",
+        "updatedAt": "2026-08-25T11:54:23.490Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf8",
+        "code": "CONTENT:MONOGRAPHS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.492Z",
+        "description": "Allow user to view in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "VIEW MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.492Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cf9",
+        "code": "CONTENT:MONOGRAPHS:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.495Z",
+        "description": "Allow user to add in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "ADD MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.495Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cfa",
+        "code": "CONTENT:MONOGRAPHS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.498Z",
+        "description": "Allow user to edit in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "EDIT MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.498Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cfb",
+        "code": "CONTENT:MONOGRAPHS:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.500Z",
+        "description": "Allow user to delete in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "DELETE MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.500Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cfc",
+        "code": "CONTENT:MONOGRAPHS:APPROVE",
+        "__v": 0,
+        "action": "APPROVE",
+        "createdAt": "2026-08-25T11:54:23.502Z",
+        "description": "Allow user to approve in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "APPROVE MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.502Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cfd",
+        "code": "CONTENT:MONOGRAPHS:REJECT",
+        "__v": 0,
+        "action": "REJECT",
+        "createdAt": "2026-08-25T11:54:23.504Z",
+        "description": "Allow user to reject in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "REJECT MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.504Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cfe",
+        "code": "CONTENT:MONOGRAPHS:PUBLISH",
+        "__v": 0,
+        "action": "PUBLISH",
+        "createdAt": "2026-08-25T11:54:23.507Z",
+        "description": "Allow user to publish in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "PUBLISH MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.507Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3cff",
+        "code": "CONTENT:MONOGRAPHS:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.509Z",
+        "description": "Allow user to export in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "EXPORT MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.509Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d00",
+        "code": "CONTENT:MONOGRAPHS:DOWNLOAD",
+        "__v": 0,
+        "action": "DOWNLOAD",
+        "createdAt": "2026-08-25T11:54:23.512Z",
+        "description": "Allow user to download in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "DOWNLOAD MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.512Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d01",
+        "code": "CONTENT:MONOGRAPHS:PRINT",
+        "__v": 0,
+        "action": "PRINT",
+        "createdAt": "2026-08-25T11:54:23.515Z",
+        "description": "Allow user to print in CONTENT / MONOGRAPHS",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "PRINT MONOGRAPHS",
+        "section": "MONOGRAPHS",
+        "updatedAt": "2026-08-25T11:54:23.515Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d02",
+        "code": "CONTENT:WORKFLOW:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.518Z",
+        "description": "Allow user to view in CONTENT / WORKFLOW",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "VIEW WORKFLOW",
+        "section": "WORKFLOW",
+        "updatedAt": "2026-08-25T11:54:23.518Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d03",
+        "code": "CONTENT:WORKFLOW:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.521Z",
+        "description": "Allow user to add in CONTENT / WORKFLOW",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "ADD WORKFLOW",
+        "section": "WORKFLOW",
+        "updatedAt": "2026-08-25T11:54:23.521Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d04",
+        "code": "CONTENT:WORKFLOW:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.524Z",
+        "description": "Allow user to edit in CONTENT / WORKFLOW",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "EDIT WORKFLOW",
+        "section": "WORKFLOW",
+        "updatedAt": "2026-08-25T11:54:23.524Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d05",
+        "code": "CONTENT:WORKFLOW:APPROVE",
+        "__v": 0,
+        "action": "APPROVE",
+        "createdAt": "2026-08-25T11:54:23.526Z",
+        "description": "Allow user to approve in CONTENT / WORKFLOW",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "APPROVE WORKFLOW",
+        "section": "WORKFLOW",
+        "updatedAt": "2026-08-25T11:54:23.526Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d06",
+        "code": "CONTENT:WORKFLOW:REJECT",
+        "__v": 0,
+        "action": "REJECT",
+        "createdAt": "2026-08-25T11:54:23.529Z",
+        "description": "Allow user to reject in CONTENT / WORKFLOW",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "REJECT WORKFLOW",
+        "section": "WORKFLOW",
+        "updatedAt": "2026-08-25T11:54:23.529Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d07",
+        "code": "CONTENT:WORKFLOW:PUBLISH",
+        "__v": 0,
+        "action": "PUBLISH",
+        "createdAt": "2026-08-25T11:54:23.532Z",
+        "description": "Allow user to publish in CONTENT / WORKFLOW",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "PUBLISH WORKFLOW",
+        "section": "WORKFLOW",
+        "updatedAt": "2026-08-25T11:54:23.532Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d08",
+        "code": "CONTENT:SEARCH_INDEX:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.535Z",
+        "description": "Allow user to view in CONTENT / SEARCH_INDEX",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "VIEW SEARCH_INDEX",
+        "section": "SEARCH_INDEX",
+        "updatedAt": "2026-08-25T11:54:23.535Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d09",
+        "code": "CONTENT:SEARCH_INDEX:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.537Z",
+        "description": "Allow user to edit in CONTENT / SEARCH_INDEX",
+        "isActive": true,
+        "module": "CONTENT",
+        "name": "EDIT SEARCH_INDEX",
+        "section": "SEARCH_INDEX",
+        "updatedAt": "2026-08-25T11:54:23.537Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d0a",
+        "code": "COMMERCIAL:SUBSCRIPTIONS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.539Z",
+        "description": "Allow user to view in COMMERCIAL / SUBSCRIPTIONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "VIEW SUBSCRIPTIONS",
+        "section": "SUBSCRIPTIONS",
+        "updatedAt": "2026-08-25T11:54:23.539Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d0b",
+        "code": "COMMERCIAL:SUBSCRIPTIONS:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.541Z",
+        "description": "Allow user to add in COMMERCIAL / SUBSCRIPTIONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "ADD SUBSCRIPTIONS",
+        "section": "SUBSCRIPTIONS",
+        "updatedAt": "2026-08-25T11:54:23.541Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d0c",
+        "code": "COMMERCIAL:SUBSCRIPTIONS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.543Z",
+        "description": "Allow user to edit in COMMERCIAL / SUBSCRIPTIONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "EDIT SUBSCRIPTIONS",
+        "section": "SUBSCRIPTIONS",
+        "updatedAt": "2026-08-25T11:54:23.543Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d0d",
+        "code": "COMMERCIAL:SUBSCRIPTIONS:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.547Z",
+        "description": "Allow user to delete in COMMERCIAL / SUBSCRIPTIONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "DELETE SUBSCRIPTIONS",
+        "section": "SUBSCRIPTIONS",
+        "updatedAt": "2026-08-25T11:54:23.547Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d0e",
+        "code": "COMMERCIAL:SUBSCRIPTIONS:APPROVE",
+        "__v": 0,
+        "action": "APPROVE",
+        "createdAt": "2026-08-25T11:54:23.549Z",
+        "description": "Allow user to approve in COMMERCIAL / SUBSCRIPTIONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "APPROVE SUBSCRIPTIONS",
+        "section": "SUBSCRIPTIONS",
+        "updatedAt": "2026-08-25T11:54:23.549Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d0f",
+        "code": "COMMERCIAL:SUBSCRIPTIONS:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.551Z",
+        "description": "Allow user to export in COMMERCIAL / SUBSCRIPTIONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "EXPORT SUBSCRIPTIONS",
+        "section": "SUBSCRIPTIONS",
+        "updatedAt": "2026-08-25T11:54:23.551Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d10",
+        "code": "COMMERCIAL:PLANS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.553Z",
+        "description": "Allow user to view in COMMERCIAL / PLANS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "VIEW PLANS",
+        "section": "PLANS",
+        "updatedAt": "2026-08-25T11:54:23.553Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d11",
+        "code": "COMMERCIAL:PLANS:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.555Z",
+        "description": "Allow user to add in COMMERCIAL / PLANS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "ADD PLANS",
+        "section": "PLANS",
+        "updatedAt": "2026-08-25T11:54:23.555Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d12",
+        "code": "COMMERCIAL:PLANS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.558Z",
+        "description": "Allow user to edit in COMMERCIAL / PLANS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "EDIT PLANS",
+        "section": "PLANS",
+        "updatedAt": "2026-08-25T11:54:23.558Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d13",
+        "code": "COMMERCIAL:PLANS:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.560Z",
+        "description": "Allow user to delete in COMMERCIAL / PLANS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "DELETE PLANS",
+        "section": "PLANS",
+        "updatedAt": "2026-08-25T11:54:23.560Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d14",
+        "code": "COMMERCIAL:DISCOUNTS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.563Z",
+        "description": "Allow user to view in COMMERCIAL / DISCOUNTS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "VIEW DISCOUNTS",
+        "section": "DISCOUNTS",
+        "updatedAt": "2026-08-25T11:54:23.563Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d15",
+        "code": "COMMERCIAL:DISCOUNTS:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.566Z",
+        "description": "Allow user to add in COMMERCIAL / DISCOUNTS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "ADD DISCOUNTS",
+        "section": "DISCOUNTS",
+        "updatedAt": "2026-08-25T11:54:23.566Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d16",
+        "code": "COMMERCIAL:DISCOUNTS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.568Z",
+        "description": "Allow user to edit in COMMERCIAL / DISCOUNTS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "EDIT DISCOUNTS",
+        "section": "DISCOUNTS",
+        "updatedAt": "2026-08-25T11:54:23.568Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d17",
+        "code": "COMMERCIAL:DISCOUNTS:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.570Z",
+        "description": "Allow user to delete in COMMERCIAL / DISCOUNTS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "DELETE DISCOUNTS",
+        "section": "DISCOUNTS",
+        "updatedAt": "2026-08-25T11:54:23.570Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d18",
+        "code": "COMMERCIAL:COUPONS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.573Z",
+        "description": "Allow user to view in COMMERCIAL / COUPONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "VIEW COUPONS",
+        "section": "COUPONS",
+        "updatedAt": "2026-08-25T11:54:23.573Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d19",
+        "code": "COMMERCIAL:COUPONS:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.575Z",
+        "description": "Allow user to add in COMMERCIAL / COUPONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "ADD COUPONS",
+        "section": "COUPONS",
+        "updatedAt": "2026-08-25T11:54:23.575Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d1a",
+        "code": "COMMERCIAL:COUPONS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.577Z",
+        "description": "Allow user to edit in COMMERCIAL / COUPONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "EDIT COUPONS",
+        "section": "COUPONS",
+        "updatedAt": "2026-08-25T11:54:23.577Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d1b",
+        "code": "COMMERCIAL:COUPONS:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.580Z",
+        "description": "Allow user to delete in COMMERCIAL / COUPONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "DELETE COUPONS",
+        "section": "COUPONS",
+        "updatedAt": "2026-08-25T11:54:23.580Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d1c",
+        "code": "COMMERCIAL:COUPONS:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.582Z",
+        "description": "Allow user to export in COMMERCIAL / COUPONS",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "EXPORT COUPONS",
+        "section": "COUPONS",
+        "updatedAt": "2026-08-25T11:54:23.582Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d1d",
+        "code": "COMMERCIAL:BULK_SUBSCRIPTION:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.585Z",
+        "description": "Allow user to view in COMMERCIAL / BULK_SUBSCRIPTION",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "VIEW BULK_SUBSCRIPTION",
+        "section": "BULK_SUBSCRIPTION",
+        "updatedAt": "2026-08-25T11:54:23.585Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d1e",
+        "code": "COMMERCIAL:BULK_SUBSCRIPTION:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.587Z",
+        "description": "Allow user to add in COMMERCIAL / BULK_SUBSCRIPTION",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "ADD BULK_SUBSCRIPTION",
+        "section": "BULK_SUBSCRIPTION",
+        "updatedAt": "2026-08-25T11:54:23.587Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d1f",
+        "code": "COMMERCIAL:BULK_SUBSCRIPTION:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.590Z",
+        "description": "Allow user to edit in COMMERCIAL / BULK_SUBSCRIPTION",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "EDIT BULK_SUBSCRIPTION",
+        "section": "BULK_SUBSCRIPTION",
+        "updatedAt": "2026-08-25T11:54:23.590Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d20",
+        "code": "COMMERCIAL:BULK_SUBSCRIPTION:APPROVE",
+        "__v": 0,
+        "action": "APPROVE",
+        "createdAt": "2026-08-25T11:54:23.591Z",
+        "description": "Allow user to approve in COMMERCIAL / BULK_SUBSCRIPTION",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "APPROVE BULK_SUBSCRIPTION",
+        "section": "BULK_SUBSCRIPTION",
+        "updatedAt": "2026-08-25T11:54:23.591Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d21",
+        "code": "COMMERCIAL:BULK_SUBSCRIPTION:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.593Z",
+        "description": "Allow user to export in COMMERCIAL / BULK_SUBSCRIPTION",
+        "isActive": true,
+        "module": "COMMERCIAL",
+        "name": "EXPORT BULK_SUBSCRIPTION",
+        "section": "BULK_SUBSCRIPTION",
+        "updatedAt": "2026-08-25T11:54:23.593Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d22",
+        "code": "ENGAGEMENT:CRM:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.596Z",
+        "description": "Allow user to view in ENGAGEMENT / CRM",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "VIEW CRM",
+        "section": "CRM",
+        "updatedAt": "2026-08-25T11:54:23.596Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d23",
+        "code": "ENGAGEMENT:CRM:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.599Z",
+        "description": "Allow user to add in ENGAGEMENT / CRM",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "ADD CRM",
+        "section": "CRM",
+        "updatedAt": "2026-08-25T11:54:23.599Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d24",
+        "code": "ENGAGEMENT:CRM:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.601Z",
+        "description": "Allow user to edit in ENGAGEMENT / CRM",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "EDIT CRM",
+        "section": "CRM",
+        "updatedAt": "2026-08-25T11:54:23.601Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d25",
+        "code": "ENGAGEMENT:CRM:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.604Z",
+        "description": "Allow user to delete in ENGAGEMENT / CRM",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "DELETE CRM",
+        "section": "CRM",
+        "updatedAt": "2026-08-25T11:54:23.604Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d26",
+        "code": "ENGAGEMENT:CRM:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.606Z",
+        "description": "Allow user to export in ENGAGEMENT / CRM",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "EXPORT CRM",
+        "section": "CRM",
+        "updatedAt": "2026-08-25T11:54:23.606Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d27",
+        "code": "ENGAGEMENT:FEEDBACK:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.608Z",
+        "description": "Allow user to view in ENGAGEMENT / FEEDBACK",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "VIEW FEEDBACK",
+        "section": "FEEDBACK",
+        "updatedAt": "2026-08-25T11:54:23.608Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d28",
+        "code": "ENGAGEMENT:FEEDBACK:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.610Z",
+        "description": "Allow user to edit in ENGAGEMENT / FEEDBACK",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "EDIT FEEDBACK",
+        "section": "FEEDBACK",
+        "updatedAt": "2026-08-25T11:54:23.610Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d29",
+        "code": "ENGAGEMENT:FEEDBACK:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.613Z",
+        "description": "Allow user to delete in ENGAGEMENT / FEEDBACK",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "DELETE FEEDBACK",
+        "section": "FEEDBACK",
+        "updatedAt": "2026-08-25T11:54:23.613Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d2a",
+        "code": "ENGAGEMENT:FEEDBACK:REJECT",
+        "__v": 0,
+        "action": "REJECT",
+        "createdAt": "2026-08-25T11:54:23.615Z",
+        "description": "Allow user to reject in ENGAGEMENT / FEEDBACK",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "REJECT FEEDBACK",
+        "section": "FEEDBACK",
+        "updatedAt": "2026-08-25T11:54:23.615Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d2b",
+        "code": "ENGAGEMENT:FEEDBACK:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.618Z",
+        "description": "Allow user to export in ENGAGEMENT / FEEDBACK",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "EXPORT FEEDBACK",
+        "section": "FEEDBACK",
+        "updatedAt": "2026-08-25T11:54:23.618Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d2c",
+        "code": "ENGAGEMENT:NOTIFICATIONS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.620Z",
+        "description": "Allow user to view in ENGAGEMENT / NOTIFICATIONS",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "VIEW NOTIFICATIONS",
+        "section": "NOTIFICATIONS",
+        "updatedAt": "2026-08-25T11:54:23.620Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d2d",
+        "code": "ENGAGEMENT:NOTIFICATIONS:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.622Z",
+        "description": "Allow user to add in ENGAGEMENT / NOTIFICATIONS",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "ADD NOTIFICATIONS",
+        "section": "NOTIFICATIONS",
+        "updatedAt": "2026-08-25T11:54:23.622Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d2e",
+        "code": "ENGAGEMENT:NOTIFICATIONS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.624Z",
+        "description": "Allow user to edit in ENGAGEMENT / NOTIFICATIONS",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "EDIT NOTIFICATIONS",
+        "section": "NOTIFICATIONS",
+        "updatedAt": "2026-08-25T11:54:23.624Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d2f",
+        "code": "ENGAGEMENT:NOTIFICATIONS:DELETE",
+        "__v": 0,
+        "action": "DELETE",
+        "createdAt": "2026-08-25T11:54:23.627Z",
+        "description": "Allow user to delete in ENGAGEMENT / NOTIFICATIONS",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "DELETE NOTIFICATIONS",
+        "section": "NOTIFICATIONS",
+        "updatedAt": "2026-08-25T11:54:23.627Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d30",
+        "code": "ENGAGEMENT:NOTIFICATIONS:PUBLISH",
+        "__v": 0,
+        "action": "PUBLISH",
+        "createdAt": "2026-08-25T11:54:23.630Z",
+        "description": "Allow user to publish in ENGAGEMENT / NOTIFICATIONS",
+        "isActive": true,
+        "module": "ENGAGEMENT",
+        "name": "PUBLISH NOTIFICATIONS",
+        "section": "NOTIFICATIONS",
+        "updatedAt": "2026-08-25T11:54:23.630Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d31",
+        "code": "INTEGRATED:DIKSHA:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.632Z",
+        "description": "Allow user to view in INTEGRATED / DIKSHA",
+        "isActive": true,
+        "module": "INTEGRATED",
+        "name": "VIEW DIKSHA",
+        "section": "DIKSHA",
+        "updatedAt": "2026-08-25T11:54:23.632Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d32",
+        "code": "INTEGRATED:DIKSHA:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.635Z",
+        "description": "Allow user to add in INTEGRATED / DIKSHA",
+        "isActive": true,
+        "module": "INTEGRATED",
+        "name": "ADD DIKSHA",
+        "section": "DIKSHA",
+        "updatedAt": "2026-08-25T11:54:23.635Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d33",
+        "code": "INTEGRATED:DIKSHA:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.637Z",
+        "description": "Allow user to edit in INTEGRATED / DIKSHA",
+        "isActive": true,
+        "module": "INTEGRATED",
+        "name": "EDIT DIKSHA",
+        "section": "DIKSHA",
+        "updatedAt": "2026-08-25T11:54:23.637Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d34",
+        "code": "INTEGRATED:DIKSHA:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.639Z",
+        "description": "Allow user to export in INTEGRATED / DIKSHA",
+        "isActive": true,
+        "module": "INTEGRATED",
+        "name": "EXPORT DIKSHA",
+        "section": "DIKSHA",
+        "updatedAt": "2026-08-25T11:54:23.639Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d35",
+        "code": "INTEGRATED:KAYM:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.641Z",
+        "description": "Allow user to view in INTEGRATED / KAYM",
+        "isActive": true,
+        "module": "INTEGRATED",
+        "name": "VIEW KAYM",
+        "section": "KAYM",
+        "updatedAt": "2026-08-25T11:54:23.641Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d36",
+        "code": "INTEGRATED:KAYM:ADD",
+        "__v": 0,
+        "action": "ADD",
+        "createdAt": "2026-08-25T11:54:23.643Z",
+        "description": "Allow user to add in INTEGRATED / KAYM",
+        "isActive": true,
+        "module": "INTEGRATED",
+        "name": "ADD KAYM",
+        "section": "KAYM",
+        "updatedAt": "2026-08-25T11:54:23.643Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d37",
+        "code": "INTEGRATED:KAYM:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.645Z",
+        "description": "Allow user to edit in INTEGRATED / KAYM",
+        "isActive": true,
+        "module": "INTEGRATED",
+        "name": "EDIT KAYM",
+        "section": "KAYM",
+        "updatedAt": "2026-08-25T11:54:23.645Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d38",
+        "code": "INTEGRATED:KAYM:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.648Z",
+        "description": "Allow user to export in INTEGRATED / KAYM",
+        "isActive": true,
+        "module": "INTEGRATED",
+        "name": "EXPORT KAYM",
+        "section": "KAYM",
+        "updatedAt": "2026-08-25T11:54:23.648Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d39",
+        "code": "SYSTEM:REPORTS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.651Z",
+        "description": "Allow user to view in SYSTEM / REPORTS",
+        "isActive": true,
+        "module": "SYSTEM",
+        "name": "VIEW REPORTS",
+        "section": "REPORTS",
+        "updatedAt": "2026-08-25T11:54:23.651Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d3a",
+        "code": "SYSTEM:REPORTS:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.653Z",
+        "description": "Allow user to export in SYSTEM / REPORTS",
+        "isActive": true,
+        "module": "SYSTEM",
+        "name": "EXPORT REPORTS",
+        "section": "REPORTS",
+        "updatedAt": "2026-08-25T11:54:23.653Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d3b",
+        "code": "SYSTEM:REPORTS:DOWNLOAD",
+        "__v": 0,
+        "action": "DOWNLOAD",
+        "createdAt": "2026-08-25T11:54:23.655Z",
+        "description": "Allow user to download in SYSTEM / REPORTS",
+        "isActive": true,
+        "module": "SYSTEM",
+        "name": "DOWNLOAD REPORTS",
+        "section": "REPORTS",
+        "updatedAt": "2026-08-25T11:54:23.655Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d3c",
+        "code": "SYSTEM:REPORTS:PRINT",
+        "__v": 0,
+        "action": "PRINT",
+        "createdAt": "2026-08-25T11:54:23.657Z",
+        "description": "Allow user to print in SYSTEM / REPORTS",
+        "isActive": true,
+        "module": "SYSTEM",
+        "name": "PRINT REPORTS",
+        "section": "REPORTS",
+        "updatedAt": "2026-08-25T11:54:23.657Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d3d",
+        "code": "SYSTEM:AUDIT_LOGS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.659Z",
+        "description": "Allow user to view in SYSTEM / AUDIT_LOGS",
+        "isActive": true,
+        "module": "SYSTEM",
+        "name": "VIEW AUDIT_LOGS",
+        "section": "AUDIT_LOGS",
+        "updatedAt": "2026-08-25T11:54:23.659Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d3e",
+        "code": "SYSTEM:AUDIT_LOGS:EXPORT",
+        "__v": 0,
+        "action": "EXPORT",
+        "createdAt": "2026-08-25T11:54:23.661Z",
+        "description": "Allow user to export in SYSTEM / AUDIT_LOGS",
+        "isActive": true,
+        "module": "SYSTEM",
+        "name": "EXPORT AUDIT_LOGS",
+        "section": "AUDIT_LOGS",
+        "updatedAt": "2026-08-25T11:54:23.661Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d3f",
+        "code": "SYSTEM:AUDIT_LOGS:PRINT",
+        "__v": 0,
+        "action": "PRINT",
+        "createdAt": "2026-08-25T11:54:23.664Z",
+        "description": "Allow user to print in SYSTEM / AUDIT_LOGS",
+        "isActive": true,
+        "module": "SYSTEM",
+        "name": "PRINT AUDIT_LOGS",
+        "section": "AUDIT_LOGS",
+        "updatedAt": "2026-08-25T11:54:23.664Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d40",
+        "code": "SYSTEM:SETTINGS:VIEW",
+        "__v": 0,
+        "action": "VIEW",
+        "createdAt": "2026-08-25T11:54:23.666Z",
+        "description": "Allow user to view in SYSTEM / SETTINGS",
+        "isActive": true,
+        "module": "SYSTEM",
+        "name": "VIEW SETTINGS",
+        "section": "SETTINGS",
+        "updatedAt": "2026-08-25T11:54:23.666Z"
+      },
+      {
+        "_id": "6a8d826f3bfcc0d69d6e3d41",
+        "code": "SYSTEM:SETTINGS:EDIT",
+        "__v": 0,
+        "action": "EDIT",
+        "createdAt": "2026-08-25T11:54:23.668Z",
+        "description": "Allow user to edit in SYSTEM / SETTINGS",
+        "isActive": true,
+        "module": "SYSTEM",
+        "name": "EDIT SETTINGS",
+        "section": "SETTINGS",
+        "updatedAt": "2026-08-25T11:54:23.668Z"
+      }
+    ],
+    "plans": [
+      {
+        "_id": "6a8e833d3bfcc0d69d6e3d52",
+        "code": "NFI-INDIVIDUAL",
+        "__v": 0,
+        "applicableUserTypes": [
+          "DOCTOR",
+          "PHARMACIST",
+          "NURSE",
+          "OTHERS"
+        ],
+        "auditLogs": [
+          {
+            "changedBy": "System Seeder",
+            "changeType": "CREATED",
+            "previousValues": null,
+            "newValues": null,
+            "reason": "Initial default NFI plan configuration",
+            "timestamp": "2026-08-26T06:10:05.520Z"
+          }
+        ],
+        "complimentaryEligibility": {
+          "isAllowed": true,
+          "defaultMonths": 12
+        },
+        "createdAt": "2026-08-26T06:10:05.514Z",
+        "description": "Complete digital formulary monograph database for individual healthcare practitioners & pharmacists.",
+        "discountRules": {
+          "isDiscountAllowed": true,
+          "maxDiscountPercent": 50,
+          "defaultDiscountPercent": 0
+        },
+        "durationValue": 365,
+        "features": [
+          "Full Digital Monograph Formulary (9th Edition)",
+          "Drug Interaction Checker & Clinical Alerts",
+          "Pediatric & Geriatric Dosage Calculator",
+          "Periodic Addendum & Safety Broadcast Updates"
+        ],
+        "fixedDate": "2031-12-31T23:59:59.999Z",
+        "isActive": true,
+        "isPopular": true,
+        "name": "NFI 9th Edition Formulary - Individual Pass",
+        "priceINR": 3500,
+        "seatQuota": 1,
+        "sortOrder": 1,
+        "tier": "Individual",
+        "trialEligibility": {
+          "isAllowed": true,
+          "trialDays": 14
+        },
+        "updatedAt": "2026-08-26T06:10:05.514Z",
+        "validityType": "fixed_date"
+      },
+      {
+        "_id": "6a8e833d3bfcc0d69d6e3d53",
+        "code": "NFI-INSTITUTIONAL",
+        "__v": 0,
+        "applicableUserTypes": [
+          "INDUSTRY",
+          "OTHERS",
+          "DOCTOR"
+        ],
+        "auditLogs": [
+          {
+            "changedBy": "System Seeder",
+            "changeType": "CREATED",
+            "previousValues": null,
+            "newValues": null,
+            "reason": "Initial default NFI plan configuration",
+            "timestamp": "2026-08-26T06:10:05.527Z"
+          }
+        ],
+        "complimentaryEligibility": {
+          "isAllowed": true,
+          "defaultMonths": 24
+        },
+        "createdAt": "2026-08-26T06:10:05.526Z",
+        "description": "Comprehensive campus-wide digital formulary subscription for medical colleges, universities, and tertiary teaching hospitals.",
+        "discountRules": {
+          "isDiscountAllowed": true,
+          "maxDiscountPercent": 40,
+          "defaultDiscountPercent": 10
+        },
+        "durationValue": 1,
+        "features": [
+          "Up to 50 Concurrent Institutional Workstation Seats",
+          "IP Range & Institutional SSO Authentication Support",
+          "Bulk PDF & Monograph Chapter Export Tools",
+          "Institutional Usage & Utilization Analytics Dashboard"
+        ],
+        "fixedDate": "2031-12-31T23:59:59.999Z",
+        "isActive": true,
+        "isPopular": false,
+        "name": "NFI Institutional Campus License (Multi-Seat)",
+        "priceINR": 45000,
+        "seatQuota": 50,
+        "sortOrder": 2,
+        "tier": "Institutional",
+        "trialEligibility": {
+          "isAllowed": true,
+          "trialDays": 30
+        },
+        "updatedAt": "2026-08-26T06:10:05.526Z",
+        "validityType": "duration_years"
+      },
+      {
+        "_id": "6a8e833d3bfcc0d69d6e3d54",
+        "code": "NFI-STUDENT-SPECIAL",
+        "__v": 0,
+        "applicableUserTypes": [
+          "STUDENT"
+        ],
+        "auditLogs": [
+          {
+            "changedBy": "System Seeder",
+            "changeType": "CREATED",
+            "previousValues": null,
+            "newValues": null,
+            "reason": "Initial default NFI plan configuration",
+            "timestamp": "2026-08-26T06:10:05.532Z"
+          }
+        ],
+        "complimentaryEligibility": {
+          "isAllowed": true,
+          "defaultMonths": 12
+        },
+        "createdAt": "2026-08-26T06:10:05.531Z",
+        "description": "Subsidized academic edition exclusively for verified undergraduate & postgraduate MBBS, B.Pharm, and Nursing scholars.",
+        "discountRules": {
+          "isDiscountAllowed": true,
+          "maxDiscountPercent": 25,
+          "defaultDiscountPercent": 20
+        },
+        "durationValue": 365,
+        "features": [
+          "Standard Formulary Monographs & Index Search",
+          "Therapeutic Classification & Pharmacology Notes",
+          "Verified APAAR / Edu-ID Integration",
+          "Mobile & Tablet Browser Optimized Access"
+        ],
+        "fixedDate": "2031-12-31T23:59:59.999Z",
+        "isActive": true,
+        "isPopular": false,
+        "name": "NFI Scholar Pass (Academic Special)",
+        "priceINR": 1200,
+        "seatQuota": 1,
+        "sortOrder": 3,
+        "tier": "Student",
+        "trialEligibility": {
+          "isAllowed": true,
+          "trialDays": 14
+        },
+        "updatedAt": "2026-08-26T06:10:05.531Z",
+        "validityType": "fixed_date"
+      },
+      {
+        "_id": "6a8e833d3bfcc0d69d6e3d55",
+        "code": "NFI-DOCTOR-PRO",
+        "__v": 0,
+        "applicableUserTypes": [
+          "DOCTOR"
+        ],
+        "auditLogs": [
+          {
+            "changedBy": "System Seeder",
+            "changeType": "CREATED",
+            "previousValues": null,
+            "newValues": null,
+            "reason": "Initial default NFI plan configuration",
+            "timestamp": "2026-08-26T06:10:05.536Z"
+          }
+        ],
+        "complimentaryEligibility": {
+          "isAllowed": true,
+          "defaultMonths": 12
+        },
+        "createdAt": "2026-08-26T06:10:05.536Z",
+        "description": "Advanced therapeutic formulary suite tailored for clinical consultants, super-specialists, and medical directors.",
+        "discountRules": {
+          "isDiscountAllowed": true,
+          "maxDiscountPercent": 30,
+          "defaultDiscountPercent": 0
+        },
+        "durationValue": 365,
+        "features": [
+          "High-Risk Drug Monitoring & Black-Box Warnings",
+          "Renal & Hepatic Dose Adjustment Guidelines",
+          "Pharmacovigilance Direct Reporting Portal Link",
+          "Priority Scientific Advisory Notifications"
+        ],
+        "fixedDate": "2031-12-31T23:59:59.999Z",
+        "isActive": true,
+        "isPopular": false,
+        "name": "NFI Clinical Consultant & Specialist Edition",
+        "priceINR": 6000,
+        "seatQuota": 1,
+        "sortOrder": 4,
+        "tier": "Doctor Professional",
+        "trialEligibility": {
+          "isAllowed": true,
+          "trialDays": 14
+        },
+        "updatedAt": "2026-08-26T06:10:05.536Z",
+        "validityType": "fixed_date"
+      },
+      {
+        "_id": "6a8e833d3bfcc0d69d6e3d56",
+        "code": "NFI-CORPORATE",
+        "__v": 0,
+        "applicableUserTypes": [
+          "INDUSTRY"
+        ],
+        "auditLogs": [
+          {
+            "changedBy": "System Seeder",
+            "changeType": "CREATED",
+            "previousValues": null,
+            "newValues": null,
+            "reason": "Initial default NFI plan configuration",
+            "timestamp": "2026-08-26T06:10:05.540Z"
+          }
+        ],
+        "complimentaryEligibility": {
+          "isAllowed": true,
+          "defaultMonths": 12
+        },
+        "createdAt": "2026-08-26T06:10:05.540Z",
+        "description": "Enterprise commercial license for pharmaceutical manufacturers, contract laboratories, and regulatory consultancies.",
+        "discountRules": {
+          "isDiscountAllowed": true,
+          "maxDiscountPercent": 20,
+          "defaultDiscountPercent": 0
+        },
+        "durationValue": 1,
+        "features": [
+          "Official IPC Monograph Standards & Specifications",
+          "Bulk Regulatory Compliance Export Pack",
+          "Dedicated Technical Account Manager",
+          "Enterprise REST API & Integration Webhooks"
+        ],
+        "fixedDate": "2031-12-31T23:59:59.999Z",
+        "isActive": true,
+        "isPopular": false,
+        "name": "NFI Corporate & Manufacturing Formulary License",
+        "priceINR": 85000,
+        "seatQuota": 100,
+        "sortOrder": 5,
+        "tier": "Corporate",
+        "trialEligibility": {
+          "isAllowed": false,
+          "trialDays": 0
+        },
+        "updatedAt": "2026-08-26T06:10:05.540Z",
+        "validityType": "duration_years"
+      },
+      {
+        "_id": "6a8e833da9c009ee44a6b11f",
+        "name": "NFI AYUSH Healthcare Specialist Pass",
+        "code": "NFI-AYUSH-SPECIALIST",
+        "description": "Exclusive formulary monograph suite for registered AYUSH clinical consultants.",
+        "tier": "Doctor Professional",
+        "priceINR": 4999,
+        "validityType": "fixed_date",
+        "fixedDate": "2031-12-31T23:59:59.999Z",
+        "durationValue": 365,
+        "applicableUserTypes": [
+          "DOCTOR",
+          "OTHERS"
+        ],
+        "features": [
+          "Herbal & Ayurvedic Monograph Indices",
+          "Drug Interaction Checker",
+          "Clinical Dosage Schedules"
+        ],
+        "trialEligibility": {
+          "isAllowed": true,
+          "trialDays": 14
+        },
+        "complimentaryEligibility": {
+          "isAllowed": true,
+          "defaultMonths": 12
+        },
+        "discountRules": {
+          "isDiscountAllowed": true,
+          "maxDiscountPercent": 20,
+          "defaultDiscountPercent": 0
+        },
+        "seatQuota": 1,
+        "isActive": true,
+        "isPopular": false,
+        "sortOrder": 0,
+        "auditLogs": [
+          {
+            "changedBy": "NFI Super Administrator",
+            "changeType": "CREATED",
+            "previousValues": null,
+            "newValues": {
+              "priceINR": 4500,
+              "tier": "Doctor Professional",
+              "validityType": "fixed_date"
+            },
+            "reason": "Initial plan provisioning",
+            "timestamp": "2026-08-26T06:10:05.763Z"
+          },
+          {
+            "changedBy": "NFI Super Administrator",
+            "changeType": "PRICING_UPDATED",
+            "previousValues": {
+              "priceINR": 4500,
+              "validityType": "fixed_date",
+              "fixedDate": "2031-12-31T23:59:59.999Z",
+              "durationValue": 365,
+              "discountRules": {
+                "isDiscountAllowed": true,
+                "maxDiscountPercent": 20,
+                "defaultDiscountPercent": 0
+              },
+              "seatQuota": 1
+            },
+            "newValues": {
+              "priceINR": 4999,
+              "validityType": "fixed_date",
+              "fixedDate": "2031-12-31T23:59:59.999Z",
+              "durationValue": 365,
+              "discountRules": {
+                "isDiscountAllowed": true,
+                "maxDiscountPercent": 20,
+                "defaultDiscountPercent": 0
+              },
+              "seatQuota": 1
+            },
+            "reason": "IPC Pricing Commission Index revision 2026",
+            "timestamp": "2026-08-26T06:10:05.785Z"
+          }
+        ],
+        "createdAt": "2026-08-26T06:10:05.770Z",
+        "updatedAt": "2026-08-26T06:10:05.787Z",
+        "__v": 1
+      }
+    ]
+  }
+}
