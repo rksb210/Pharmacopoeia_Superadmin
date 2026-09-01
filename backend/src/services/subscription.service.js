@@ -231,11 +231,12 @@ export const subscriptionService = {
   },
 
   /**
-   * Manually Provision / Assign Subscription
+   * Manually Provision / Assign Subscription (Single or Multiple Subscribers)
    */
   assignSubscriptionManually: async (data, adminUser) => {
     const {
       userId,
+      userIds,
       type = 'paid',
       planName = 'NFI 9th Edition Formulary - Individual Pass',
       planCode = 'NFI-INDIVIDUAL',
@@ -249,9 +250,14 @@ export const subscriptionService = {
       customMonths = null,
     } = data;
 
-    const subscriber = await Subscriber.findById(userId);
-    if (!subscriber) {
-      throw new Error('Selected subscriber does not exist');
+    const targetUserIds = Array.isArray(userIds) && userIds.length > 0
+      ? userIds
+      : userId
+      ? [userId]
+      : [];
+
+    if (targetUserIds.length === 0) {
+      throw new Error('Please select at least one subscriber.');
     }
 
     const startDate = new Date();
@@ -300,65 +306,76 @@ export const subscriptionService = {
       finalAmount = Math.max(0, Number(amount) - discountAmount);
     }
 
-    const counter = await Subscription.countDocuments();
-    const subscriptionId = `SUB-${new Date().getFullYear()}-${String(counter + 1).padStart(5, '0')}`;
-    const invoiceNumber = `INV-${new Date().getFullYear()}-${String(counter + 1).padStart(5, '0')}`;
+    let firstSubscription = null;
 
-    const newSubscription = await Subscription.create({
-      subscriptionId,
-      user: subscriber._id,
-      planName,
-      planCode,
-      tier,
-      type,
-      status: 'active',
-      startDate,
-      endDate,
-      amount: Number(amount),
-      discountPercent: type === 'discounted' ? Number(discountPercent) : 0,
-      discountAmount,
-      finalAmount,
-      paymentMethod: type === 'trial' || type === 'complimentary' ? 'Admin Grant' : paymentMethod,
-      paymentStatus,
-      transactionRef: transactionRef || `TXN-${Date.now().toString().slice(-8)}`,
-      invoiceNumber,
-      assignedBy: adminUser?._id || null,
-      notes: notes.trim(),
-      timeline: [
-        {
-          action: 'ASSIGNED',
-          statusFrom: 'NONE',
-          statusTo: 'ACTIVE',
-          performedBy: adminUser?.name || 'Super Admin',
-          reason: `Manual administrative provisioning (${type.toUpperCase()} - Valid until ${endDate.toISOString().split('T')[0]})`,
-          timestamp: new Date(),
-        },
-      ],
-    });
+    for (const singleUserId of targetUserIds) {
+      const subscriber = await Subscriber.findById(singleUserId);
+      if (!subscriber) continue;
 
-    // Update Subscriber's top-level subscription and order history
-    subscriber.subscription = {
-      status: type === 'trial' ? 'trial' : type === 'complimentary' ? 'complimentary' : 'active',
-      planName,
-      startDate,
-      endDate,
-      isTrial: type === 'trial',
-      isComplimentary: type === 'complimentary',
-      discountPercent: Number(discountPercent),
-      discountNotes: notes,
-    };
+      const counter = await Subscription.countDocuments();
+      const subscriptionId = `SUB-${new Date().getFullYear()}-${String(counter + 1).padStart(5, '0')}`;
+      const invoiceNumber = `INV-${new Date().getFullYear()}-${String(counter + 1).padStart(5, '0')}`;
 
-    subscriber.orderHistory.push({
-      orderId: subscriptionId,
-      planName,
-      amount: finalAmount,
-      date: new Date(),
-      paymentStatus: 'Success',
-    });
+      const newSubscription = await Subscription.create({
+        subscriptionId,
+        user: subscriber._id,
+        planName,
+        planCode,
+        tier,
+        type,
+        status: 'active',
+        startDate,
+        endDate,
+        amount: Number(amount),
+        discountPercent: type === 'discounted' ? Number(discountPercent) : 0,
+        discountAmount,
+        finalAmount,
+        paymentMethod: type === 'trial' || type === 'complimentary' ? 'Admin Grant' : paymentMethod,
+        paymentStatus,
+        transactionRef: transactionRef || `TXN-${Date.now().toString().slice(-8)}`,
+        invoiceNumber,
+        assignedBy: adminUser?._id || null,
+        notes: notes.trim(),
+        timeline: [
+          {
+            action: 'ASSIGNED',
+            statusFrom: 'NONE',
+            statusTo: 'ACTIVE',
+            performedBy: adminUser?.name || 'Super Admin',
+            reason: `Manual administrative provisioning (${type.toUpperCase()} - Valid until ${endDate.toISOString().split('T')[0]})`,
+            timestamp: new Date(),
+          },
+        ],
+      });
 
-    await subscriber.save();
+      // Update Subscriber's top-level subscription and order history
+      subscriber.subscription = {
+        status: type === 'trial' ? 'trial' : type === 'complimentary' ? 'complimentary' : 'active',
+        planName,
+        startDate,
+        endDate,
+        isTrial: type === 'trial',
+        isComplimentary: type === 'complimentary',
+        discountPercent: Number(discountPercent),
+        discountNotes: notes,
+      };
 
-    return newSubscription;
+      subscriber.orderHistory.push({
+        orderId: subscriptionId,
+        planName,
+        amount: finalAmount,
+        date: new Date(),
+        paymentStatus: 'Success',
+      });
+
+      await subscriber.save();
+
+      if (!firstSubscription) {
+        firstSubscription = newSubscription;
+      }
+    }
+
+    return firstSubscription;
   },
 
   /**

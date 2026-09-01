@@ -3,6 +3,45 @@ import InputField from '../../common/InputField';
 import { Badge } from '../../ui/badge';
 import { FileBadge2, Building2, User, Stethoscope } from 'lucide-react';
 
+const INDIAN_STATES = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+  'Andaman and Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
+];
+
 export const DynamicUserTypeFields = ({
   userType = 'STUDENT',
   dynamicFields = {},
@@ -85,16 +124,30 @@ export const DynamicUserTypeFields = ({
             required
           />
 
-          <InputField
-            id="stateCouncil"
-            name="stateCouncil"
-            label="State Professional Council"
-            placeholder="e.g. Delhi Medical Council / State Council"
-            value={dynamicFields.stateCouncil || ''}
-            onChange={(e) => handleChange('stateCouncil', e.target.value)}
-            error={errors.stateCouncil}
-            required
-          />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="stateCouncil" className="text-xs font-semibold text-slate-700">
+              States <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="stateCouncil"
+              name="stateCouncil"
+              value={dynamicFields.stateCouncil || ''}
+              onChange={(e) => handleChange('stateCouncil', e.target.value)}
+              className={`h-10 px-3 bg-white border rounded-xl font-medium text-xs text-slate-800 outline-none transition-all focus:border-[#E76120] focus:ring-1 focus:ring-[#E76120] cursor-pointer ${
+                errors.stateCouncil ? 'border-red-400' : 'border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              <option value="">Select State</option>
+              {INDIAN_STATES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+            {errors.stateCouncil && (
+              <span className="text-[11px] text-red-600 font-medium">{errors.stateCouncil}</span>
+            )}
+          </div>
         </div>
       )}
 
@@ -121,9 +174,8 @@ export const DynamicUserTypeFields = ({
               value={dynamicFields.gstin || ''}
               onChange={(e) => handleChange('gstin', e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 15))}
               error={errors.gstin}
-              helperText="Format: 2 digits + 10-char PAN + 1 entity + Z + 1 check digit"
+              helperText="Either GSTIN or PAN is required (15 chars)"
               maxLength={15}
-              required
             />
 
             <InputField
@@ -134,9 +186,8 @@ export const DynamicUserTypeFields = ({
               value={dynamicFields.pan || ''}
               onChange={(e) => handleChange('pan', e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 10))}
               error={errors.pan}
-              helperText="Format: 5 letters + 4 digits + 1 letter"
+              helperText="Either PAN or GSTIN is required (10 chars)"
               maxLength={10}
-              required
             />
           </div>
         </div>

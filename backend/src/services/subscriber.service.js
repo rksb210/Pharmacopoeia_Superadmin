@@ -43,10 +43,10 @@ export const subscriberService = {
           },
           {
             fieldKey: 'stateCouncil',
-            label: 'State Medical Council',
-            type: 'text',
+            label: 'States',
+            type: 'select',
             required: true,
-            placeholder: 'e.g. Delhi Medical Council',
+            placeholder: 'Select State',
           },
         ],
       },
@@ -64,10 +64,10 @@ export const subscriberService = {
           },
           {
             fieldKey: 'stateCouncil',
-            label: 'State Pharmacy Council',
-            type: 'text',
+            label: 'States',
+            type: 'select',
             required: true,
-            placeholder: 'e.g. Maharashtra State Pharmacy Council',
+            placeholder: 'Select State',
           },
         ],
       },
@@ -85,10 +85,10 @@ export const subscriberService = {
           },
           {
             fieldKey: 'stateCouncil',
-            label: 'State Nursing Council',
-            type: 'text',
+            label: 'States',
+            type: 'select',
             required: true,
-            placeholder: 'e.g. Karnataka Nursing Council',
+            placeholder: 'Select State',
           },
         ],
       },
@@ -106,16 +106,16 @@ export const subscriberService = {
           },
           {
             fieldKey: 'gstin',
-            label: 'GSTIN Number',
+            label: 'GSTIN Number (Optional if PAN is provided)',
             type: 'text',
-            required: true,
+            required: false,
             placeholder: 'e.g. 07AAAAA0000A1Z5',
           },
           {
             fieldKey: 'pan',
-            label: 'Company PAN',
+            label: 'Company PAN (Optional if GSTIN is provided)',
             type: 'text',
-            required: true,
+            required: false,
             placeholder: 'e.g. ABCDE1234F',
           },
         ],
@@ -187,6 +187,35 @@ export const subscriberService = {
   },
 
   /**
+   * Get distinct Industry Companies with employee counts
+   */
+  getIndustriesGrouped: async ({ search = '' } = {}) => {
+    const match = { userType: 'INDUSTRY' };
+    if (search && search.trim()) {
+      match['dynamicFields.companyName'] = {
+        $regex: escapeRegex(search.trim()),
+        $options: 'i',
+      };
+    }
+
+    const industries = await Subscriber.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { $ifNull: ['$dynamicFields.companyName', 'Unnamed Industry'] },
+          companyName: { $first: { $ifNull: ['$dynamicFields.companyName', 'Unnamed Industry'] } },
+          gstin: { $first: '$dynamicFields.gstin' },
+          pan: { $first: '$dynamicFields.pan' },
+          subscribersCount: { $sum: 1 },
+        },
+      },
+      { $sort: { companyName: 1 } },
+    ]);
+
+    return industries;
+  },
+
+  /**
    * Get filtered, searchable, paginated subscribers
    */
   getSubscribersList: async ({
@@ -194,6 +223,7 @@ export const subscriberService = {
     limit = 10,
     search = '',
     userType = '',
+    companyName = '',
     subscriptionStatus = '',
     status = '',
     dateFrom = '',
@@ -218,6 +248,11 @@ export const subscriberService = {
     // User Type filter
     if (userType && userType !== 'all') {
       query.userType = userType.toUpperCase().trim();
+    }
+
+    // Filter by Company Name (for Industry subscribers)
+    if (companyName && companyName.trim()) {
+      query['dynamicFields.companyName'] = new RegExp(`^${escapeRegex(companyName.trim())}$`, 'i');
     }
 
     // Subscription Status filter
