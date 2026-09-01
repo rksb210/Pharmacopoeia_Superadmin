@@ -87,6 +87,85 @@ export const authorizeRoles = (...roles) => {
 };
 
 /**
+ * Scans-specific Auth: authenticates via `users` OR `subscribers` table.
+ * Used for `api/scans` — token from POST http://localhost:5001/api/auth/login
+ * with payload {id, email, username, role, userType}. Pharma login checks Users
+ * then Subscribers, so scans must accept both. Subscriber is primary since
+ * divyansh.singh@intileo.com and all current users live in `subscribers`.
+ */
+export const authenticateForScans = async (req, res, next) => {
+  try {
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please log in.',
+      });
+    }
+
+    const decoded = verifyToken(token);
+    const userId = decoded?.id || decoded?.sub;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired authentication token.',
+      });
+    }
+
+    // Try User table first, then Subscriber (matches auth.controller.js login order)
+    let user = await User.findById(userId);
+    let source = 'User';
+    if (!user) {
+      user = await Subscriber.findById(userId);
+      if (user) {
+        user.role = user.role || 'subscriber'; // normalize for RBAC
+        source = 'Subscriber';
+      }
+    }
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User belonging to this token no longer exists.',
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account has been deactivated. Please contact administrator.',
+      });
+    }
+
+    if (user.isLocked && typeof user.isLocked === 'function' && user.isLocked()) {
+      const mins = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(423).json({
+        success: false,
+        message: `Account temporarily locked. Try again in ${mins} minute(s).`,
+      });
+    }
+
+    req.user = user;
+    req.user._authSource = source;
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired token.',
+      error: error.message,
+    });
+  }
+};
+
+// Backward compat alias — scans route should import authenticateForScans
+export const authenticateScans = authenticateForScans;
+
+/**
  * Optional Authentication Middleware
  * Attaches req.user if valid token provided, but doesn't block unauthenticated requests
  */

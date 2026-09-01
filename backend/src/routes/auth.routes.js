@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   login,
+  signup,
   getMe,
   logout,
   seedSuperAdmin,
@@ -10,6 +11,7 @@ import {
 } from '../controllers/auth.controller.js';
 import {
   validateLogin,
+  validateSignup,
   validateChangePassword,
   validateForgotPassword,
   validateResetPassword,
@@ -21,6 +23,7 @@ const router = Router();
 
 // Public Authentication Routes (Rate Limited)
 router.post('/login', authLimiter, validateLogin, login);
+router.post('/signup', authLimiter, validateSignup, signup);
 router.post('/logout', logout);
 router.post('/seed', seedSuperAdmin);
 router.post('/forgot-password', authLimiter, validateForgotPassword, forgotPassword);

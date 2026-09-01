@@ -57,10 +57,20 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: 'Indian Pharmacopoeia Commission',
     },
+    departmentRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Department',
+      default: null,
+    },
     designation: {
       type: String,
       trim: true,
       default: 'Administrator',
+    },
+    designationRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Designation',
+      default: null,
     },
     phoneNumber: {
       type: String,

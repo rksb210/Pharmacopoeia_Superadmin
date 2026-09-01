@@ -17,6 +17,8 @@ import reportRoutes from './report.routes.js';
 import auditRoutes from './audit.routes.js';
 import configRoutes from './config.routes.js';
 import marqueeAlertRoutes from './marqueeAlert.routes.js';
+import departmentRoutes from './department.routes.js';
+import designationRoutes from './designation.routes.js';
 
 const router = Router();
 
@@ -82,5 +84,9 @@ router.use('/config', configRoutes);
 
 // CRM Marquee Broadcast Alerts routes
 router.use('/marquee-alerts', marqueeAlertRoutes);
+
+// Department & Designation Masters
+router.use('/departments', departmentRoutes);
+router.use('/designations', designationRoutes);
 
 export default router;

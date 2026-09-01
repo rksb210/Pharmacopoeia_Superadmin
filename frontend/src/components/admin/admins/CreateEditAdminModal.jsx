@@ -3,6 +3,8 @@ import AdminModal from '../common/AdminModal';
 import InputField from '../../common/InputField';
 import { useAuth } from '../../../context/AuthContext';
 import { AlertCircle } from 'lucide-react';
+import departmentService from '../../../services/department.service';
+import designationService from '../../../services/designation.service';
 
 const ADMIN_ROLES = [
   { value: 'admin', label: 'Admin (Full Departmental Operations)' },
@@ -27,8 +29,8 @@ export const CreateEditAdminModal = ({
     username: '',
     password: '',
     role: 'admin',
-    department: 'Indian Pharmacopoeia Commission',
-    designation: 'Administrator',
+    departmentRef: '',
+    designationRef: '',
     phoneNumber: '',
     notes: '',
   });
@@ -36,8 +38,45 @@ export const CreateEditAdminModal = ({
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [deptLoading, setDeptLoading] = useState(false);
 
   const isEditMode = !!admin;
+
+  useEffect(() => {
+    const loadDepts = async () => {
+      setDeptLoading(true);
+      try {
+        const res = await departmentService.getActiveDepartments();
+        if (res?.departments) setDepartments(res.departments);
+      } catch {}
+      setDeptLoading(false);
+    };
+    if (isOpen) loadDepts();
+  }, [isOpen]);
+
+  useEffect(() => {
+    const deptId = formData.departmentRef;
+    if (!deptId) { setDesignations([]); return; }
+    const loadDes = async () => {
+      try {
+        const res = await designationService.getByDepartment(deptId);
+        if (res?.designations) setDesignations(res.designations);
+      } catch { setDesignations([]); }
+    };
+    loadDes();
+  }, [formData.departmentRef]);
+
+  // Preload designations for edit mode initial department
+  useEffect(() => {
+    if (admin && admin.departmentRef && isOpen) {
+      const deptId = admin.departmentRef?._id || admin.departmentRef;
+      if (deptId) {
+        designationService.getByDepartment(deptId).then((res) => { if (res?.designations) setDesignations(res.designations); }).catch(() => {});
+      }
+    }
+  }, [admin, isOpen]);
 
   useEffect(() => {
     if (admin) {
@@ -47,8 +86,8 @@ export const CreateEditAdminModal = ({
         username: admin.username || '',
         password: '',
         role: admin.role || 'admin',
-        department: admin.department || 'Indian Pharmacopoeia Commission',
-        designation: admin.designation || 'Administrator',
+        departmentRef: admin.departmentRef?._id || admin.departmentRef || '',
+        designationRef: admin.designationRef?._id || admin.designationRef || '',
         phoneNumber: admin.phoneNumber || '',
         notes: admin.notes || '',
       });
@@ -59,8 +98,8 @@ export const CreateEditAdminModal = ({
         username: '',
         password: '',
         role: 'admin',
-        department: 'Indian Pharmacopoeia Commission',
-        designation: 'Administrator',
+        departmentRef: '',
+        designationRef: '',
         phoneNumber: '',
         notes: '',
       });
@@ -71,7 +110,11 @@ export const CreateEditAdminModal = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'departmentRef') {
+      setFormData((prev) => ({ ...prev, departmentRef: value, designationRef: '' }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
     if (apiError) setApiError('');
   };
@@ -200,23 +243,23 @@ export const CreateEditAdminModal = ({
             </select>
           </div>
 
-          <InputField
-            id="department"
-            name="department"
-            label="Department / Committee"
-            placeholder="e.g. Monograph Review Committee"
-            value={formData.department}
-            onChange={handleChange}
-          />
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-slate-700 select-none text-left">Department / Committee</label>
+            <select name="departmentRef" value={formData.departmentRef} onChange={handleChange} className="w-full h-11 px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white outline-none focus:border-[#E76120] focus:ring-2 focus:ring-[#E76120]/15 cursor-pointer">
+              <option value="">{deptLoading ? 'Loading...' : 'Select department'}</option>
+              {departments.map((d) => (<option key={d._id} value={d._id}>{d.name} ({d.code})</option>))}
+            </select>
+            {errors.departmentRef && <span className="text-[11px] text-red-600">{errors.departmentRef}</span>}
+          </div>
 
-          <InputField
-            id="designation"
-            name="designation"
-            label="Designation / Title"
-            placeholder="e.g. Principal Scientific Officer"
-            value={formData.designation}
-            onChange={handleChange}
-          />
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-slate-700 select-none text-left">Designation / Title</label>
+            <select name="designationRef" value={formData.designationRef} onChange={handleChange} disabled={!formData.departmentRef} className="w-full h-11 px-3 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white outline-none focus:border-[#E76120] focus:ring-2 focus:ring-[#E76120]/15 cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed">
+              <option value="">{!formData.departmentRef ? 'Select department first' : designations.length ? 'Select designation' : 'No designations in this department'}</option>
+              {designations.map((d) => (<option key={d._id} value={d._id}>{d.name} ({d.code})</option>))}
+            </select>
+            {errors.designationRef && <span className="text-[11px] text-red-600">{errors.designationRef}</span>}
+          </div>
 
           <InputField
             id="phoneNumber"

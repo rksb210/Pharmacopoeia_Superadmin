@@ -24,6 +24,8 @@ import OrdersPage from './pages/admin/OrdersPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import AuditLogsPage from './pages/admin/AuditLogsPage';
 import SettingsPage from './pages/admin/SettingsPage';
+import DepartmentsPage from './pages/admin/DepartmentsPage';
+import DesignationsPage from './pages/admin/DesignationsPage';
 import AdminModulePlaceholderPage from './pages/admin/AdminModulePlaceholderPage';
 
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -334,6 +336,22 @@ function AppRoutes() {
           element={
             <PermissionGuard module="SYSTEM" section="REPORTS" action="VIEW" pageLevel>
               <ReportsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="departments"
+          element={
+            <PermissionGuard module="SYSTEM" section="DEPARTMENTS" action="VIEW" pageLevel>
+              <DepartmentsPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="designations"
+          element={
+            <PermissionGuard module="SYSTEM" section="DESIGNATIONS" action="VIEW" pageLevel>
+              <DesignationsPage />
             </PermissionGuard>
           }
         />

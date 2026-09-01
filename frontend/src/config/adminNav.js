@@ -20,6 +20,7 @@ import {
   Search,
   History,
   Settings,
+  Award,
 } from 'lucide-react';
 
 /**
@@ -73,6 +74,22 @@ export const ADMIN_NAV_SECTIONS = [
         icon: KeyRound,
         permission: { module: 'USERS', section: 'ROLES', action: 'VIEW' },
         roles: ['superadmin'],
+      },
+      {
+        id: 'departments',
+        title: 'Departments',
+        path: '/admin/departments',
+        icon: Building2,
+        permission: { module: 'SYSTEM', section: 'DEPARTMENTS', action: 'VIEW' },
+        roles: ['superadmin', 'admin', 'subadmin'],
+      },
+      {
+        id: 'designations',
+        title: 'Designations',
+        path: '/admin/designations',
+        icon: Award,
+        permission: { module: 'SYSTEM', section: 'DESIGNATIONS', action: 'VIEW' },
+        roles: ['superadmin', 'admin', 'subadmin'],
       },
     ],
   },

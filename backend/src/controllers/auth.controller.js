@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import User from '../models/user.model.js';
 import Subscriber from '../models/subscriber.model.js';
+import UserType from '../models/userType.model.js';
 import { generateToken } from '../utils/jwt.js';
 
 /**
@@ -167,6 +168,115 @@ export const login = async (req, res, next) => {
         lastLogin: user.lastLogin,
         lastLoginIP: user.lastLoginIP,
         lastLoginDevice: user.lastLoginDevice,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Public signup for subscribers (end users)
+ * @route   POST /api/auth/signup
+ * @access  Public
+ */
+export const signup = async (req, res, next) => {
+  try {
+    const { name, email, username, password, phoneNumber, userType, dynamicFields } = req.body;
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanUsername = username.toLowerCase().trim();
+    const cleanUserType = userType.toUpperCase().trim();
+
+    // Ensure credentials are not already used by a User or Subscriber (login searches both)
+    const existingUser = await User.findOne({
+      $or: [{ email: cleanEmail }, { username: cleanUsername }],
+    }).select('_id email username');
+
+    if (existingUser) {
+      if (existingUser.email === cleanEmail) {
+        return res.status(409).json({
+          success: false,
+          message: 'An account with this email address already exists.',
+        });
+      }
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this username already exists.',
+      });
+    }
+
+    const existingSubscriber = await Subscriber.findOne({
+      $or: [{ email: cleanEmail }, { username: cleanUsername }],
+    }).select('_id email username');
+
+    if (existingSubscriber) {
+      if (existingSubscriber.email === cleanEmail) {
+        return res.status(409).json({
+          success: false,
+          message: 'An account with this email address already exists.',
+        });
+      }
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this username already exists.',
+      });
+    }
+
+    const userTypeDoc = await UserType.findOne({ code: cleanUserType });
+    if (!userTypeDoc) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user type. Please choose a valid user type from the registration form.',
+      });
+    }
+
+    const newSubscriber = await Subscriber.create({
+      name: name.trim(),
+      email: cleanEmail,
+      username: cleanUsername,
+      phoneNumber: (phoneNumber || '').trim(),
+      password,
+      userType: cleanUserType,
+      userTypeRef: userTypeDoc._id,
+      dynamicFields: dynamicFields || {},
+      notes: '',
+      subscription: {
+        status: 'none',
+        planName: 'Free Access Tier',
+      },
+      isActive: true,
+    });
+
+    const token = generateToken({
+      id: newSubscriber._id,
+      email: newSubscriber.email,
+      username: newSubscriber.username,
+      role: 'subscriber',
+      userType: newSubscriber.userType,
+    });
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    };
+
+    res.cookie('token', token, cookieOptions);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Account created successfully. Welcome to the NFI Pharmacopoeia!',
+      token,
+      user: {
+        id: newSubscriber._id,
+        name: newSubscriber.name,
+        email: newSubscriber.email,
+        username: newSubscriber.username,
+        phoneNumber: newSubscriber.phoneNumber,
+        role: 'subscriber',
+        userType: newSubscriber.userType,
       },
     });
   } catch (error) {
