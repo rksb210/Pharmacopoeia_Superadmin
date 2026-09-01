@@ -238,7 +238,7 @@ export const subscriptionService = {
       userId,
       userIds,
       type = 'paid',
-      planName = 'NFI 9th Edition Formulary - Individual Pass',
+      planName = 'NFI 9th Edition Formulary - Universal Access Pass',
       planCode = 'NFI-INDIVIDUAL',
       tier = 'Individual',
       amount = 5000,
