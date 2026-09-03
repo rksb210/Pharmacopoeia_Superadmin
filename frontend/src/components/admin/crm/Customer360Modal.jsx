@@ -94,7 +94,7 @@ export const Customer360Modal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Customer 360 Dossier: ${c.name}`}
+      title={`Customer Profile & Details: ${c.name}`}
       description={`Unified relationship timeline and commercial ledger for ${c.email}.`}
       confirmLabel="Close"
       onConfirm={onClose}

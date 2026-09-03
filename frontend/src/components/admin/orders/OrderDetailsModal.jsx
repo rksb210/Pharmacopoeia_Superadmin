@@ -58,7 +58,7 @@ export const OrderDetailsModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Order Dossier: ${o.orderNumber}`}
+      title={`Order Details: ${o.orderNumber}`}
       description={`Transaction telemetry, tax splits, and ledger history.`}
       confirmLabel="Close"
       onConfirm={onClose}
@@ -210,7 +210,7 @@ export const OrderDetailsModal = ({
 
               {o.refund?.isRefunded && (
                 <div className="p-3 bg-purple-50 border border-purple-200 text-purple-900 rounded-xl space-y-0.5 mt-2">
-                  <span className="font-bold block">Refund Dossier:</span>
+                  <span className="font-bold block">Refund Details:</span>
                   <p className="text-[11px]">
                     Refund of <strong>₹{o.refund.refundAmount?.toLocaleString('en-IN')}</strong> processed on{' '}
                     {new Date(o.refund.refundedAt).toLocaleString('en-IN')} (Ref: {o.refund.refundTransactionId}).

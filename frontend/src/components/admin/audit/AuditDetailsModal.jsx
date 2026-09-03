@@ -26,7 +26,7 @@ export const AuditDetailsModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Audit Event Dossier"
+      title="Audit Event Details"
       description={`Tamper-evident system log recorded on ${new Date(log.createdAt).toLocaleString('en-IN')}.`}
       confirmLabel="Close"
       onConfirm={onClose}

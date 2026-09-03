@@ -64,7 +64,7 @@ export const FeedbackDetailsModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Ticket Dossier: ${t.ticketId}`}
+      title={`Ticket Details: ${t.ticketId}`}
       description={`Subscriber content comment and lifecycle review for ${t.userName}.`}
       confirmLabel="Close"
       onConfirm={onClose}

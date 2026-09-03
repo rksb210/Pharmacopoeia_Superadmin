@@ -701,12 +701,12 @@ export const SubscriptionsPage = () => {
                   {/* Actions */}
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {/* View Dossier & Timeline */}
+                      {/* View Details & Timeline */}
                       <button
                         type="button"
                         onClick={() => setViewingSubscription(sub)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                        title="View Subscription Dossier & Timeline"
+                        title="View Subscription Details & Timeline"
                       >
                         <Eye className="w-4 h-4" />
                       </button>

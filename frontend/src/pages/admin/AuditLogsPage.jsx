@@ -407,7 +407,7 @@ export const AuditLogsPage = () => {
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 cursor-pointer shadow-2xs transition-all"
                     >
                       <Eye className="w-3.5 h-3.5 text-[#284661]" />
-                      <span>Dossier</span>
+                      <span>View Details</span>
                     </button>
                   </TableCell>
                 </TableRow>
@@ -417,7 +417,7 @@ export const AuditLogsPage = () => {
         )}
       </div>
 
-      {/* Audit Dossier Modal */}
+      {/* Audit Details Modal */}
       <AuditDetailsModal
         isOpen={!!selectedLog}
         onClose={() => setSelectedLog(null)}

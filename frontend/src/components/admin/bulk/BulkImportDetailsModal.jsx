@@ -47,7 +47,7 @@ export const BulkImportDetailsModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Bulk Batch Dossier: ${job?.jobId || jobId}`}
+      title={`Bulk Batch Details: ${job?.jobId || jobId}`}
       description={`Subscriber enrollment roster and institutional billing records for ${job?.institutionName || 'Batch'}.`}
       confirmLabel="Close"
       onConfirm={onClose}

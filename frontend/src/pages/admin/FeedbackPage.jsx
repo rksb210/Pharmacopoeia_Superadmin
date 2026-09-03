@@ -508,12 +508,12 @@ export const FeedbackPage = () => {
                         </button>
                       </PermissionGuard>
 
-                      {/* Details Dossier */}
+                      {/* Details */}
                       <button
                         type="button"
                         onClick={() => setViewingTicket(t)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
-                        title="View Full Ticket Dossier"
+                        title="View Ticket Details"
                       >
                         <FileText className="w-4 h-4" />
                       </button>
