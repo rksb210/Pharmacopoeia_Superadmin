@@ -17,9 +17,7 @@ import {
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
 import StatCard from '../../components/admin/common/StatCard';
-import AdminLoader from '../../components/admin/common/AdminLoader';
-import AdminErrorState from '../../components/admin/common/AdminErrorState';
-import AdminEmptyState from '../../components/admin/common/AdminEmptyState';
+import AdminTableWrapper from '../../components/admin/common/AdminTableWrapper';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import {
@@ -101,7 +99,7 @@ export const AuditLogsPage = () => {
     try {
       const res = await auditService.getAuditLogs({
         page: currentPage,
-        limit: 12,
+        limit: 10,
         search: searchQuery,
         module: selectedModule,
         status: selectedStatus,
@@ -230,192 +228,181 @@ export const AuditLogsPage = () => {
         />
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-2xs space-y-3.5">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          {/* Search */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
+      {/* Audit Logs Table with Full Pagination & Filters */}
+      <AdminTableWrapper
+        title="System Events & Operations Ledger"
+        subtitle={`Showing page ${currentPage} of ${totalPages} (${totalItems} total events)`}
+        searchQuery={searchQuery}
+        onSearchChange={(val) => {
+          setSearchQuery(val);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search action, email, entity ID, IP..."
+        filters={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Module Filter */}
+            <select
+              value={selectedModule}
               onChange={(e) => {
-                setSearchQuery(e.target.value);
+                setSelectedModule(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Search action, email, entity ID, IP..."
-              className="w-full h-9 pl-8 pr-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120]"
-            />
-          </div>
-
-          {/* Module Filter */}
-          <select
-            value={selectedModule}
-            onChange={(e) => {
-              setSelectedModule(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
-          >
-            {MODULES.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={selectedStatus}
-            onChange={(e) => {
-              setSelectedStatus(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
-          >
-            <option value="all">All Execution Statuses</option>
-            <option value="SUCCESS">Success Only</option>
-            <option value="FAILURE">Failures / Errors</option>
-            <option value="WARNING">Warnings</option>
-          </select>
-
-          {/* Date Range Inputs */}
-          <div className="flex items-center gap-1.5">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-9 px-2 bg-slate-50/80 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120] w-1/2"
-              title="Start Date"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-9 px-2 bg-slate-50/80 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120] w-1/2"
-              title="End Date"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Audit Logs Table */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden font-sans select-none text-xs">
-        {loading ? (
-          <AdminLoader text="Retrieving tamper-evident audit logs &amp; diff snapshots..." />
-        ) : error ? (
-          <AdminErrorState
-            title="Could not load audit logs"
-            message={error}
-            onRetry={fetchLogs}
-          />
-        ) : logs.length === 0 ? (
-          <AdminEmptyState
-            title="No audit events found"
-            description="No system activity matches your current filter parameters."
-          />
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Action &amp; Module</TableHead>
-                <TableHead>Operator Identity</TableHead>
-                <TableHead>Target Entity</TableHead>
-                <TableHead>Client IP Address</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logs.map((l) => (
-                <TableRow key={l._id}>
-                  {/* Timestamp */}
-                  <TableCell>
-                    <div className="font-mono text-slate-700">
-                      <span className="font-bold block text-slate-900">
-                        {new Date(l.createdAt).toLocaleTimeString('en-IN')}
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        {new Date(l.createdAt).toLocaleDateString('en-IN')}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  {/* Action & Module */}
-                  <TableCell>
-                    <div>
-                      <span className="font-mono font-bold text-slate-900 text-xs block">
-                        {l.action}
-                      </span>
-                      <div className="mt-0.5">
-                        <AuditModuleBadge module={l.module} />
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Operator */}
-                  <TableCell>
-                    <div>
-                      <span className="font-bold text-slate-900 text-xs block truncate" title={l.userName}>
-                        {l.userName}
-                      </span>
-                      <span className="text-[10px] text-slate-400 block truncate">
-                        {l.userEmail} · <strong className="text-slate-600">{l.userRole}</strong>
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  {/* Target Entity */}
-                  <TableCell>
-                    <div>
-                      <span className="font-bold text-slate-800 text-xs block">
-                        {l.entity}
-                      </span>
-                      <span className="font-mono text-[10px] text-slate-400">
-                        {l.entityId || 'N/A'}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  {/* IP Address */}
-                  <TableCell>
-                    <span className="font-mono text-slate-700 font-bold text-xs block">
-                      {l.ipAddress}
-                    </span>
-                    <span className="text-[10px] text-slate-400 block truncate max-w-[130px]" title={l.requestUrl}>
-                      {l.requestMethod} {l.requestUrl || '/'}
-                    </span>
-                  </TableCell>
-
-                  {/* Status */}
-                  <TableCell>
-                    <AuditStatusBadge status={l.status} />
-                  </TableCell>
-
-                  {/* Actions */}
-                  <TableCell className="text-right">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedLog(l)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 cursor-pointer shadow-2xs transition-all"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-[#284661]" />
-                      <span>View Details</span>
-                    </button>
-                  </TableCell>
-                </TableRow>
+              className="h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
+            >
+              {MODULES.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
               ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => {
+                setSelectedStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
+            >
+              <option value="all">All Statuses</option>
+              <option value="SUCCESS">Success Only</option>
+              <option value="FAILURE">Failures / Errors</option>
+              <option value="WARNING">Warnings</option>
+            </select>
+
+            {/* Date Range Inputs */}
+            <div className="flex items-center gap-1">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="h-9 px-2 bg-slate-50/80 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120]"
+                title="Start Date"
+              />
+              <span className="text-slate-400 text-xs">-</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="h-9 px-2 bg-slate-50/80 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120]"
+                title="End Date"
+              />
+            </div>
+          </div>
+        }
+        loading={loading}
+        error={error}
+        onRetry={fetchLogs}
+        isEmpty={logs.length === 0}
+        emptyTitle="No audit events found"
+        emptyDescription="No system activity matches your current filter parameters."
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={10}
+        onPageChange={(p) => setCurrentPage(p)}
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Timestamp</TableHead>
+              <TableHead>Action &amp; Module</TableHead>
+              <TableHead>Operator Identity</TableHead>
+              <TableHead>Target Entity</TableHead>
+              <TableHead>Client IP Address</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {logs.map((l) => (
+              <TableRow key={l._id}>
+                {/* Timestamp */}
+                <TableCell>
+                  <div className="font-mono text-slate-700">
+                    <span className="font-bold block text-slate-900">
+                      {new Date(l.createdAt).toLocaleTimeString('en-IN')}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {new Date(l.createdAt).toLocaleDateString('en-IN')}
+                    </span>
+                  </div>
+                </TableCell>
+
+                {/* Action & Module */}
+                <TableCell>
+                  <div>
+                    <span className="font-mono font-bold text-slate-900 text-xs block">
+                      {l.action}
+                    </span>
+                    <div className="mt-0.5">
+                      <AuditModuleBadge module={l.module} />
+                    </div>
+                  </div>
+                </TableCell>
+
+                {/* Operator */}
+                <TableCell>
+                  <div>
+                    <span className="font-bold text-slate-900 text-xs block truncate max-w-[160px]" title={l.userName}>
+                      {l.userName}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block truncate max-w-[160px]">
+                      {l.userEmail} · <strong className="text-slate-600">{l.userRole}</strong>
+                    </span>
+                  </div>
+                </TableCell>
+
+                {/* Target Entity */}
+                <TableCell>
+                  <div>
+                    <span className="font-bold text-slate-800 text-xs block">
+                      {l.entity}
+                    </span>
+                    <span className="font-mono text-[10px] text-slate-400">
+                      {l.entityId || 'N/A'}
+                    </span>
+                  </div>
+                </TableCell>
+
+                {/* IP Address */}
+                <TableCell>
+                  <span className="font-mono text-slate-700 font-bold text-xs block">
+                    {l.ipAddress}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block truncate max-w-[130px]" title={l.requestUrl}>
+                    {l.requestMethod} {l.requestUrl || '/'}
+                  </span>
+                </TableCell>
+
+                {/* Status */}
+                <TableCell>
+                  <AuditStatusBadge status={l.status} />
+                </TableCell>
+
+                {/* Actions */}
+                <TableCell className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedLog(l)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 cursor-pointer shadow-2xs transition-all"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#284661]" />
+                    <span>View Details</span>
+                  </button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </AdminTableWrapper>
 
       {/* Audit Details Modal */}
       <AuditDetailsModal

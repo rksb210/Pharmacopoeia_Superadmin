@@ -1,4 +1,5 @@
 import adminService from '../services/admin.service.js';
+import { auditService } from '../services/audit.service.js';
 
 /**
  * @desc    Get Admin dashboard KPI statistics
@@ -70,6 +71,24 @@ export const getAdminById = async (req, res, next) => {
 export const createAdmin = async (req, res, next) => {
   try {
     const newAdmin = await adminService.createAdmin(req.body, req.user);
+
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ADMIN_CREATED',
+      module: 'ADMINS',
+      entity: 'User',
+      entityId: newAdmin._id,
+      status: 'SUCCESS',
+      details: `Created new ${newAdmin.role} account for ${newAdmin.name} (${newAdmin.email}).`,
+      newValues: {
+        name: newAdmin.name,
+        email: newAdmin.email,
+        role: newAdmin.role,
+        department: newAdmin.department,
+        designation: newAdmin.designation,
+      },
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Administrator created successfully.',
@@ -91,6 +110,24 @@ export const createAdmin = async (req, res, next) => {
 export const updateAdmin = async (req, res, next) => {
   try {
     const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body, req.user);
+
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ADMIN_UPDATED',
+      module: 'ADMINS',
+      entity: 'User',
+      entityId: updatedAdmin._id,
+      status: 'SUCCESS',
+      details: `Updated details for ${updatedAdmin.role} account ${updatedAdmin.name}.`,
+      newValues: {
+        name: updatedAdmin.name,
+        email: updatedAdmin.email,
+        role: updatedAdmin.role,
+        department: updatedAdmin.department,
+        designation: updatedAdmin.designation,
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Administrator updated successfully.',
@@ -114,6 +151,17 @@ export const toggleAdminStatus = async (req, res, next) => {
     const { isActive } = req.body;
     const admin = await adminService.toggleAdminStatus(req.params.id, isActive, req.user);
 
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ADMIN_STATUS_CHANGED',
+      module: 'ADMINS',
+      entity: 'User',
+      entityId: admin._id,
+      status: 'SUCCESS',
+      details: `Administrator ${admin.name} (${admin.email}) ${isActive ? 'activated' : 'deactivated'}.`,
+      newValues: { isActive },
+    });
+
     return res.status(200).json({
       success: true,
       message: `Administrator account ${isActive ? 'activated' : 'deactivated'} successfully.`,
@@ -136,6 +184,16 @@ export const resetAdminPassword = async (req, res, next) => {
   try {
     const { newPassword } = req.body;
     const admin = await adminService.resetAdminPassword(req.params.id, newPassword, req.user);
+
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ADMIN_PASSWORD_RESET',
+      module: 'ADMINS',
+      entity: 'User',
+      entityId: admin._id,
+      status: 'SUCCESS',
+      details: `Password reset performed for administrator ${admin.name} (${admin.email}).`,
+    });
 
     return res.status(200).json({
       success: true,
@@ -167,6 +225,17 @@ export const updateAdminPermissions = async (req, res, next) => {
       customPermissions,
       req.user
     );
+
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ADMIN_PERMISSIONS_UPDATED',
+      module: 'ADMINS',
+      entity: 'User',
+      entityId: admin._id,
+      status: 'SUCCESS',
+      details: `Assigned direct custom permissions to ${admin.name} (${admin.email}).`,
+      newValues: { customPermissions },
+    });
 
     return res.status(200).json({
       success: true,

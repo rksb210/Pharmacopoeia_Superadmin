@@ -3,6 +3,7 @@ import User from '../models/user.model.js';
 import Subscriber from '../models/subscriber.model.js';
 import UserType from '../models/userType.model.js';
 import { generateToken } from '../utils/jwt.js';
+import { auditService } from '../services/audit.service.js';
 
 /**
  * Extract client IP address from request
@@ -152,6 +153,22 @@ export const login = async (req, res, next) => {
 
     // Set cookie & send response
     res.cookie('token', token, cookieOptions);
+
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'LOGIN_SUCCESS',
+      module: 'AUTH',
+      entity: isSubscriber ? 'Subscriber' : 'User',
+      entityId: user._id,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: role,
+      },
+      status: 'SUCCESS',
+      details: `User ${user.name} (${user.email}) logged in successfully as ${role}.`,
+    });
 
     return res.status(200).json({
       success: true,
@@ -458,6 +475,17 @@ export const logout = async (req, res) => {
     httpOnly: true,
     expires: new Date(0),
   });
+
+  if (req.user) {
+    await auditService.log(req, {
+      action: 'USER_LOGOUT',
+      module: 'AUTH',
+      entity: 'User',
+      entityId: req.user._id,
+      status: 'SUCCESS',
+      details: `User ${req.user.name} logged out.`,
+    });
+  }
 
   return res.status(200).json({
     success: true,
