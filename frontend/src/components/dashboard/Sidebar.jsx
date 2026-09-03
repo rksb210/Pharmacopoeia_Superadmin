@@ -18,7 +18,7 @@ export const Sidebar = ({ activeTab = 'Dashboard', onTabChange, isMobileOpen, se
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard },
     { name: 'NFI Library', icon: Search },
-    { name: 'Kaym', icon: Scan },
+    // { name: 'Kaym', icon: Scan },
     { name: 'Adit', icon: Info },
     { name: 'Diksha', icon: GraduationCap },
     { name: 'Bookmarks', icon: Bookmark },

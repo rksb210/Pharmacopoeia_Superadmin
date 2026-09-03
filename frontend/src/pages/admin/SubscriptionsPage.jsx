@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   CreditCard,
   CheckCircle2,
@@ -16,7 +16,13 @@ import {
   FileText,
   TrendingUp,
   Users,
+  Download,
+  ChevronDown,
+  FileSpreadsheet,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
 import StatCard from '../../components/admin/common/StatCard';
@@ -56,8 +62,11 @@ export const SubscriptionsPage = () => {
 
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState({ message: '', type: '' });
+  const exportMenuRef = useRef(null);
 
   // Filters State
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'active' | 'expiring_soon' | 'trial' | 'complimentary' | 'discounted' | 'expired'
@@ -134,9 +143,186 @@ export const SubscriptionsPage = () => {
     fetchSubscriptions();
   }, [fetchSubscriptions]);
 
-  const showFeedback = (message, type = 'success') => {
-    setFeedback({ message, type });
-    setTimeout(() => setFeedback({ message: '', type: '' }), 4000);
+  // Close export dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchAllForExport = async () => {
+    let computedStatus = 'all';
+    let computedType = typeFilter;
+
+    if (activeTab === 'active') computedStatus = 'active';
+    else if (activeTab === 'expired') computedStatus = 'expired';
+    else if (activeTab === 'expiring_soon') computedStatus = 'expiring_soon';
+    else if (activeTab === 'trial') computedType = 'trial';
+    else if (activeTab === 'complimentary') computedType = 'complimentary';
+    else if (activeTab === 'discounted') computedType = 'discounted';
+
+    try {
+      const res = await subscriptionService.getSubscriptions({
+        page: 1,
+        limit: 1000,
+        search: searchQuery,
+        type: computedType,
+        status: computedStatus,
+        dateFrom,
+        dateTo,
+      });
+      return res?.subscriptions || subscriptions;
+    } catch {
+      return subscriptions;
+    }
+  };
+
+  // Export as Excel (.xlsx)
+  const handleExportExcel = async () => {
+    setExporting(true);
+    setShowExportMenu(false);
+    try {
+      const records = await fetchAllForExport();
+      const wsData = [
+        ['Indian Pharmacopoeia Commission - Subscriptions & Access Register'],
+        [`Generated On: ${new Date().toLocaleString('en-IN')}`],
+        [
+          `Total Subscriptions: ${stats.totalSubscriptions}`,
+          `Active: ${stats.activeSubscriptions}`,
+          `Free Trials: ${stats.trialSubscriptions}`,
+          `Discounted: ${stats.discountedSubscriptions}`,
+          `Total Revenue: ₹${(stats.totalRevenueINR || 0).toLocaleString('en-IN')}`,
+        ],
+        [],
+        [
+          'Subscription ID',
+          'Subscriber Name',
+          'Email Address',
+          'Phone Number',
+          'Plan Name',
+          'Tier',
+          'Type',
+          'Original Amount (₹)',
+          'Discount (₹)',
+          'Final Amount (₹)',
+          'Access Status',
+          'Start Date',
+          'Expiry Date',
+          'Created Date',
+        ],
+        ...records.map((s) => [
+          s.subscriptionId || 'N/A',
+          s.user?.name || s.userName || 'N/A',
+          s.user?.email || s.userEmail || 'N/A',
+          s.user?.phoneNumber || 'N/A',
+          s.planName || 'NFI Universal Access Pass',
+          s.tier || 'Individual',
+          (s.type || 'paid').toUpperCase(),
+          s.amount || 0,
+          s.discountApplied || 0,
+          s.finalAmount || 0,
+          (s.status || 'active').toUpperCase(),
+          s.startDate ? new Date(s.startDate).toLocaleDateString('en-IN') : 'N/A',
+          s.endDate ? new Date(s.endDate).toLocaleDateString('en-IN') : 'N/A',
+          s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : 'N/A',
+        ]),
+      ];
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      XLSX.utils.book_append_sheet(wb, ws, 'Subscriptions');
+      XLSX.writeFile(
+        wb,
+        `NFI_Subscriptions_Register_${new Date().toISOString().split('T')[0]}.xlsx`
+      );
+      showFeedback(`Exported ${records.length} subscriptions to Excel (.xlsx) successfully.`);
+    } catch (err) {
+      showFeedback(err.message || 'Excel export failed', 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Export as PDF (.pdf)
+  const handleExportPDF = async () => {
+    setExporting(true);
+    setShowExportMenu(false);
+    try {
+      const records = await fetchAllForExport();
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+      // Title & Branding
+      doc.setFontSize(14);
+      doc.setTextColor(40, 70, 97); // #284661
+      doc.text('Indian Pharmacopoeia Commission - Subscriptions & Access Register', 14, 15);
+
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(
+        `Generated: ${new Date().toLocaleString('en-IN')} | Total: ${records.length} | Active: ${stats.activeSubscriptions} | Free Trials: ${stats.trialSubscriptions} | Discounted: ${stats.discountedSubscriptions} | Revenue: ₹${(stats.totalRevenueINR || 0).toLocaleString('en-IN')}`,
+        14,
+        22
+      );
+
+      const tableRows = records.map((s) => [
+        s.subscriptionId || 'N/A',
+        s.user?.name || s.userName || 'N/A',
+        s.user?.email || s.userEmail || 'N/A',
+        s.planName || 'NFI Access Pass',
+        s.tier || 'Individual',
+        (s.type || 'paid').toUpperCase(),
+        `₹${(s.finalAmount || 0).toLocaleString('en-IN')}`,
+        (s.status || 'active').toUpperCase(),
+        s.startDate ? new Date(s.startDate).toLocaleDateString('en-IN') : 'N/A',
+        s.endDate ? new Date(s.endDate).toLocaleDateString('en-IN') : 'N/A',
+      ]);
+
+      autoTable(doc, {
+        startY: 26,
+        head: [
+          [
+            'Sub ID',
+            'Subscriber Name',
+            'Email',
+            'Plan',
+            'Tier',
+            'Type',
+            'Amount (₹)',
+            'Status',
+            'Start Date',
+            'Expiry Date',
+          ],
+        ],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [40, 70, 97],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 8,
+        },
+        styles: {
+          fontSize: 7.5,
+          cellPadding: 2,
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252],
+        },
+      });
+
+      doc.save(
+        `NFI_Subscriptions_Register_${new Date().toISOString().split('T')[0]}.pdf`
+      );
+      showFeedback(`Exported ${records.length} subscriptions to PDF document successfully.`);
+    } catch (err) {
+      showFeedback(err.message || 'PDF export failed', 'error');
+    } finally {
+      setExporting(false);
+    }
   };
 
   // Handlers
@@ -172,6 +358,47 @@ export const SubscriptionsPage = () => {
         title="Subscription &amp; License Management"
         subtitle="Manage commercial subscriber passes, promotional trials, VIP complimentary grants, and BRD fixed validity tracking."
       >
+        {/* Export Dropdown Menu */}
+        <div className="relative" ref={exportMenuRef}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowExportMenu(!showExportMenu)}
+            disabled={exporting}
+            className="rounded-xl text-xs font-semibold border-slate-200 hover:border-slate-300 text-slate-700 cursor-pointer"
+            title="Export subscriptions list"
+          >
+            <Download
+              className={`w-3.5 h-3.5 mr-1.5 text-[#E76120] ${
+                exporting ? 'animate-bounce' : ''
+              }`}
+            />
+            <span>{exporting ? 'Exporting...' : 'Export'}</span>
+            <ChevronDown className="w-3.5 h-3.5 ml-1 text-slate-400" />
+          </Button>
+
+          {showExportMenu && (
+            <div className="absolute right-0 mt-1.5 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1.5 animate-in fade-in-0 duration-100">
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <span>Export as Excel (.xlsx)</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExportPDF}
+                className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-red-50 hover:text-red-700 flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-red-600" />
+                <span>Export as PDF (.pdf)</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         <Button
           variant="outline"
           size="sm"
