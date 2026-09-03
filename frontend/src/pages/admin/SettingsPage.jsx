@@ -29,13 +29,13 @@ import PermissionGuard from '../../components/admin/common/PermissionGuard';
 
 const TABS = [
   { id: 'subscription', label: '1. Subscriptions & BRD', icon: CreditCard },
-  { id: 'userRegistration', label: '2. User Registration', icon: Users },
-  { id: 'trial', label: '3. Trial Licenses', icon: Sparkles },
-  { id: 'contentAndSearch', label: '4. Content & Search', icon: Search },
-  { id: 'securityAndSessions', label: '5. Security & Sessions', icon: Lock },
-  { id: 'notificationsAndComms', label: '6. Notifications & Comms', icon: Bell },
-  { id: 'maintenanceAndGeneral', label: '7. Maintenance & Banners', icon: AlertTriangle },
-  { id: 'history', label: '8. Version History & Rollback', icon: History },
+  // { id: 'userRegistration', label: '2. User Registration', icon: Users },
+  { id: 'trial', label: '2. Trial Licenses', icon: Sparkles },
+  { id: 'contentAndSearch', label: '3. Content & Search', icon: Search },
+  { id: 'securityAndSessions', label: '4. Security & Sessions', icon: Lock },
+  { id: 'notificationsAndComms', label: '5. Notifications & Comms', icon: Bell },
+  { id: 'maintenanceAndGeneral', label: '6. Maintenance & Banners', icon: AlertTriangle },
+  { id: 'history', label: '7. Version History & Rollback', icon: History },
 ];
 
 const ALL_USER_TYPES = ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'OTHERS'];
@@ -323,7 +323,17 @@ export const SettingsPage = () => {
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 space-y-1">
                 <span className="font-bold block">BRD Fixed Subscription Validity Policy</span>
                 <p className="text-[11px] text-amber-800 leading-relaxed">
-                  As per Indian Pharmacopoeia platform rules, all standard commercial subscriptions remain valid until <strong>31 December 2031</strong> irrespective of purchase date.
+                  As per Indian Pharmacopoeia platform rules, all standard commercial subscriptions remain valid until{' '}
+                  <strong className="font-bold text-amber-950 underline decoration-amber-400">
+                    {formData.subscription.fixedExpiryDate
+                      ? new Date(formData.subscription.fixedExpiryDate).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })
+                      : '31 December 2031'}
+                  </strong>{' '}
+                  irrespective of purchase date.
                 </p>
               </div>
 
@@ -390,9 +400,9 @@ export const SettingsPage = () => {
           )}
 
           {/* ========================================================= */}
-          {/* TAB 2: USER REGISTRATION & COHORTS */}
+          {/* TAB 2: USER REGISTRATION & COHORTS (Commented out) */}
           {/* ========================================================= */}
-          {activeTab === 'userRegistration' && (
+          {/* {activeTab === 'userRegistration' && (
             <div className="space-y-4 max-w-2xl animate-in fade-in-0 duration-150">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -456,7 +466,7 @@ export const SettingsPage = () => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* ========================================================= */}
           {/* TAB 3: TRIAL LICENSES */}
@@ -493,7 +503,7 @@ export const SettingsPage = () => {
                 />
               </div>
 
-              <label className="flex items-center gap-2 pt-2 cursor-pointer">
+              {/* <label className="flex items-center gap-2 pt-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.trial.allowTrialExtension}
@@ -508,7 +518,7 @@ export const SettingsPage = () => {
                 <span className="font-bold text-slate-800">
                   Allow Manual Trial Extensions by Administrative Reviewers
                 </span>
-              </label>
+              </label> */}
             </div>
           )}
 
