@@ -25,36 +25,35 @@ export const ChartCard = ({
   const maxVal = Math.max(...dataValues, metric === 'registrations' ? 5 : 5000);
 
   const isRevenue = metric === 'revenue';
-  const themeColor = isRevenue ? '#E76120' : '#284661';
   const themeGradient = isRevenue
     ? 'from-[#E76120] to-[#f97316]'
     : 'from-[#284661] to-[#3b678e]';
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-5 select-none font-sans">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4 sm:space-y-5 select-none font-sans overflow-hidden min-w-0">
       {/* Header with Title & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="space-y-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+        <div className="space-y-1 min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-bold text-slate-900 text-sm tracking-tight">{title}</h3>
             <Badge variant="nfiNavy" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
               {trendData.fiscalYearLabel || 'April – March'}
             </Badge>
           </div>
-          <p className="text-slate-400 text-xs">
+          <p className="text-slate-400 text-xs truncate block">
             {isRevenue ? 'Monthly commercial revenue realization' : 'Monthly public & institutional subscriber enrollments'}
           </p>
         </div>
 
         {/* Metric Selector Tabs */}
-        <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl self-start sm:self-auto border border-slate-200/60">
+        <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl shrink-0 self-start sm:self-auto border border-slate-200/60">
           <button
             type="button"
             onClick={() => {
               setMetric('registrations');
               setHoveredIdx(null);
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               !isRevenue
                 ? 'bg-white text-[#284661] shadow-2xs'
                 : 'text-slate-500 hover:text-slate-900'
@@ -69,7 +68,7 @@ export const ChartCard = ({
               setMetric('revenue');
               setHoveredIdx(null);
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               isRevenue
                 ? 'bg-white text-[#E76120] shadow-2xs'
                 : 'text-slate-500 hover:text-slate-900'
@@ -82,31 +81,31 @@ export const ChartCard = ({
       </div>
 
       {/* Summary Highlight Banner */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-50/80 rounded-xl border border-slate-100">
-        <div className="flex items-center gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 sm:p-3.5 bg-slate-50/80 rounded-xl border border-slate-100 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-2xs shrink-0 ${
+            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold shadow-2xs shrink-0 ${
               isRevenue ? 'bg-[#FFF5EE] text-[#E76120]' : 'bg-blue-50 text-[#284661]'
             }`}
           >
-            {isRevenue ? <TrendingUp className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+            {isRevenue ? <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" /> : <Users className="w-4 h-4 sm:w-5 sm:h-5" />}
           </div>
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 block uppercase tracking-wider truncate">
               {isRevenue ? 'Total FY Realized Revenue' : 'Total FY Registrations'}
             </span>
-            <span className="text-lg font-black text-slate-900 tracking-tight">
+            <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate block">
               {isRevenue ? `₹${totalSum.toLocaleString('en-IN')}` : `${totalSum} Subscribers`}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center justify-end sm:border-l sm:border-slate-200/60 sm:pl-4 text-right">
-          <div>
+        <div className="flex items-center justify-start sm:justify-end sm:border-l sm:border-slate-200/60 sm:pl-4 text-left sm:text-right min-w-0">
+          <div className="min-w-0">
             <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
               Selected Horizon
             </span>
-            <span className="text-xs font-bold text-[#284661] flex items-center gap-1 justify-end">
+            <span className="text-xs font-bold text-[#284661] flex items-center gap-1 justify-start sm:justify-end">
               <Calendar className="w-3 h-3 text-[#E76120]" />
               <span>12 Months (April – March)</span>
             </span>
@@ -114,14 +113,22 @@ export const ChartCard = ({
         </div>
       </div>
 
-      {/* Bar Chart Container */}
-      <div className="pt-2">
-        <div className="h-48 flex items-end justify-between gap-1.5 sm:gap-3 px-1 sm:px-2 border-b border-slate-100 pb-3">
+      {/* Bar Chart Container with Horizontal Scroll Wrapper for Small Mobile */}
+      <div className="pt-2 w-full overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 pb-1">
+        <div className="h-44 sm:h-48 min-w-[340px] sm:min-w-full flex items-end justify-between gap-1 sm:gap-2 px-1 sm:px-2 border-b border-slate-100 pb-3">
           {labels.map((monthLabel, idx) => {
             const rawVal = Number(dataValues[idx]) || 0;
             const heightPercent = maxVal > 0 ? (rawVal / maxVal) * 100 : 0;
             const isHovered = hoveredIdx === idx;
             const hasData = rawVal > 0;
+
+            // Safe Tooltip alignment
+            const tooltipPosClass =
+              idx === 0
+                ? 'left-0 translate-x-0'
+                : idx === labels.length - 1
+                ? 'right-0 left-auto translate-x-0'
+                : 'left-1/2 -translate-x-1/2';
 
             return (
               <div
@@ -132,7 +139,7 @@ export const ChartCard = ({
               >
                 {/* Floating Tooltip */}
                 {isHovered && (
-                  <div className="absolute -top-12 z-20 transition-all transform -translate-x-1/2 left-1/2 bg-slate-900 text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-lg pointer-events-none whitespace-nowrap animate-in fade-in-0 duration-150">
+                  <div className={`absolute -top-12 z-20 ${tooltipPosClass} bg-slate-900 text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-lg pointer-events-none whitespace-nowrap animate-in fade-in-0 duration-150`}>
                     <span className="font-bold text-white block">
                       {monthLabel}: {isRevenue ? `₹${rawVal.toLocaleString('en-IN')}` : `${rawVal} user(s)`}
                     </span>
@@ -141,7 +148,7 @@ export const ChartCard = ({
                 )}
 
                 {/* Track (Background Column) */}
-                <div className="w-full max-w-[28px] h-full flex items-end justify-center bg-slate-100/50 rounded-t-lg p-0.5">
+                <div className="w-full max-w-[24px] sm:max-w-[28px] h-full flex items-end justify-center bg-slate-100/60 rounded-t-lg p-0.5">
                   {/* Active Bar Fill */}
                   <div
                     style={{
@@ -157,7 +164,7 @@ export const ChartCard = ({
 
                 {/* Month Label */}
                 <span
-                  className={`text-[10px] font-bold mt-2 transition-colors ${
+                  className={`text-[9px] sm:text-[10px] font-bold mt-1.5 transition-colors block text-center ${
                     isHovered
                       ? 'text-slate-900 scale-105 font-black'
                       : hasData
@@ -174,12 +181,12 @@ export const ChartCard = ({
       </div>
 
       {/* Footer Legend / Real-Time Telemetry */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 pt-1">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 text-xs text-slate-500 pt-1 min-w-0">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-[#284661]" />
-          <span className="font-medium text-slate-600">Active Financial Year Aggregation</span>
+          <span className="font-medium text-slate-600 text-[11px] sm:text-xs">Active Financial Year Aggregation</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+        <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400">
           <Sparkles className="w-3.5 h-3.5 text-[#E76120]" />
           <span>Real-time database sync</span>
         </div>

@@ -99,19 +99,12 @@ export const AdminDashboardPage = () => {
         title={`Welcome back, ${displayName}`}
         subtitle="Official Indian Pharmacopoeia Commission Portal · ADMIN OPERATIONAL DESK"
       >
-        <div className="flex items-center gap-2">
-          {/* <Badge
-            variant={roleType === 'superadmin' ? 'nfiYellow' : 'nfiNavy'}
-            className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5"
-          >
-            {roleType.toUpperCase()}
-          </Badge> */}
-
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
             onClick={fetchDashboard}
-            className="rounded-xl text-xs font-semibold"
+            className="rounded-xl text-xs font-semibold cursor-pointer"
             title="Refresh dashboard"
           >
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
@@ -123,7 +116,7 @@ export const AdminDashboardPage = () => {
               <Button
                 variant="nfiYellow"
                 size="sm"
-                className="rounded-xl text-xs font-bold shadow-2xs"
+                className="rounded-xl text-xs font-bold shadow-2xs cursor-pointer"
               >
                 <Plus className="w-4 h-4 mr-1" />
                 <span>New Monograph Draft</span>
@@ -135,7 +128,7 @@ export const AdminDashboardPage = () => {
 
       {/* Role-Specific KPI Grid */}
       {roleType === 'maker' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             title="My Active Drafts"
             value="8"
@@ -172,7 +165,7 @@ export const AdminDashboardPage = () => {
       )}
 
       {roleType === 'reviewer' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             title="Pending Reviews"
             value="14"
@@ -209,7 +202,7 @@ export const AdminDashboardPage = () => {
       )}
 
       {roleType === 'approver' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             title="Pending Final Approvals"
             value="8"
@@ -246,7 +239,7 @@ export const AdminDashboardPage = () => {
       )}
 
       {(roleType === 'superadmin' || roleType === 'admin' || roleType === 'subadmin') && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
             title="Total Registered Subscribers"
             value={data?.stats?.totalSubscribers || 0}
@@ -314,10 +307,10 @@ export const AdminDashboardPage = () => {
         </div>
       )}
 
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* Main Responsive Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 min-w-0">
         {/* Left 2 Columns: Chart & Workflow Queues */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5 min-w-0">
           <ChartCard
             title="Subscriber Registrations & Revenue Velocity"
             subtitle={data?.trendData?.fiscalYearLabel || 'Financial Year Performance (April – March)'}
@@ -381,7 +374,7 @@ export const AdminDashboardPage = () => {
         </div>
 
         {/* Right 1 Column: Notifications & Audit Timeline */}
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5 min-w-0">
           <NotificationWidget notifications={data?.notifications || []} />
 
           <ActivityList activities={data?.recentActivities || []} />

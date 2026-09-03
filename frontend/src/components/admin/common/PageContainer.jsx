@@ -5,7 +5,7 @@ import React from 'react';
  */
 export const PageContainer = ({ children, className = '', maxWidth = 'max-w-[1440px]' }) => {
   return (
-    <div className={`w-full ${maxWidth} mx-auto p-4 sm:p-6 lg:p-8 space-y-6 ${className}`}>
+    <div className={`w-full ${maxWidth} mx-auto p-3.5 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 min-w-0 max-w-full ${className}`}>
       {children}
     </div>
   );
