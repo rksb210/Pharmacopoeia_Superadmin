@@ -111,8 +111,8 @@ export const AuditDetailsModal = ({
           </div>
         </div>
 
-        {/* Target Entity Specs */}
-        <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between text-[11px]">
+        {/* Target Entity Specs (Commented out) */}
+        {/* <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between text-[11px]">
           <div>
             <span className="text-slate-400 block text-[10px]">Target Entity Type</span>
             <strong className="text-slate-900 font-mono text-xs">{log.entity}</strong>
@@ -122,7 +122,7 @@ export const AuditDetailsModal = ({
             <span className="text-slate-400 block text-[10px]">Entity Reference ID</span>
             <strong className="text-slate-900 font-mono text-xs">{log.entityId || 'N/A'}</strong>
           </div>
-        </div>
+        </div> */}
 
         {/* Error Message (if failed) */}
         {log.errorMessage && (
@@ -147,7 +147,7 @@ export const AuditDetailsModal = ({
               {/* Old Values */}
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase block">
-                  1. Previous State (Old Values)
+                  Old Values
                 </span>
                 <pre className="p-3 bg-slate-900 text-slate-200 rounded-xl font-mono text-[10px] overflow-x-auto max-h-40 border border-slate-800">
                   {log.oldValues ? JSON.stringify(log.oldValues, null, 2) : '// No previous state recorded'}
@@ -157,7 +157,7 @@ export const AuditDetailsModal = ({
               {/* New Values */}
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-emerald-600 uppercase block">
-                  2. Updated State (New Values)
+                  New Values
                 </span>
                 <pre className="p-3 bg-slate-900 text-emerald-300 rounded-xl font-mono text-[10px] overflow-x-auto max-h-40 border border-slate-800">
                   {log.newValues ? JSON.stringify(log.newValues, null, 2) : '// No new state snapshot'}

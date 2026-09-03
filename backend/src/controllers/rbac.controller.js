@@ -5,6 +5,7 @@ import {
   getUserEffectivePermissions,
   invalidateRBACCache,
 } from '../middlewares/rbac.middleware.js';
+import { auditService } from '../services/audit.service.js';
 
 /**
  * @desc    Get all registered system roles with assigned user counts
@@ -164,6 +165,17 @@ export const createRole = async (req, res, next) => {
 
     invalidateRBACCache();
 
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ROLE_CREATED',
+      module: 'ROLES',
+      entity: 'Role',
+      entityId: role._id,
+      status: 'SUCCESS',
+      details: `Created new custom role '${role.name}' with ${role.permissionCodes.length} permissions.`,
+      newValues: { name: role.name, code: role.code, permissionCodes: role.permissionCodes },
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Role created successfully.',
@@ -191,6 +203,13 @@ export const updateRole = async (req, res, next) => {
       });
     }
 
+    const oldValues = {
+      name: role.name,
+      description: role.description,
+      permissionCodes: [...(role.permissionCodes || [])],
+      isActive: role.isActive,
+    };
+
     // Protect renaming system default roles
     if (name && !role.isSystemDefault) {
       role.name = name.trim();
@@ -209,6 +228,23 @@ export const updateRole = async (req, res, next) => {
 
     await role.save();
     invalidateRBACCache();
+
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ROLE_PERMISSIONS_UPDATED',
+      module: 'ROLES',
+      entity: 'Role',
+      entityId: role._id,
+      status: 'SUCCESS',
+      details: `Updated permissions and configuration for role '${role.name}'.`,
+      oldValues,
+      newValues: {
+        name: role.name,
+        description: role.description,
+        permissionCodes: role.permissionCodes,
+        isActive: role.isActive,
+      },
+    });
 
     return res.status(200).json({
       success: true,
@@ -258,6 +294,17 @@ export const deleteRole = async (req, res, next) => {
     await Role.findByIdAndDelete(req.params.id);
     invalidateRBACCache();
 
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ROLE_DELETED',
+      module: 'ROLES',
+      entity: 'Role',
+      entityId: role._id,
+      status: 'SUCCESS',
+      details: `Deleted custom role '${role.name}'.`,
+      oldValues: { name: role.name, code: role.code },
+    });
+
     return res.status(200).json({
       success: true,
       message: `Role '${role.name}' deleted successfully.`,
@@ -291,9 +338,22 @@ export const toggleRoleStatus = async (req, res, next) => {
       });
     }
 
+    const oldStatus = role.isActive;
     role.isActive = !!isActive;
     await role.save();
     invalidateRBACCache();
+
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ROLE_STATUS_CHANGED',
+      module: 'ROLES',
+      entity: 'Role',
+      entityId: role._id,
+      status: 'SUCCESS',
+      details: `Role '${role.name}' ${isActive ? 'activated' : 'deactivated'}.`,
+      oldValues: { isActive: oldStatus },
+      newValues: { isActive: role.isActive },
+    });
 
     return res.status(200).json({
       success: true,
@@ -342,6 +402,17 @@ export const assignRoleUsers = async (req, res, next) => {
       { _id: { $in: userIds } },
       { $set: { role: role.code, roleRef: role._id } }
     );
+
+    // Record Audit Log
+    await auditService.log(req, {
+      action: 'ROLE_USERS_ASSIGNED',
+      module: 'ROLES',
+      entity: 'Role',
+      entityId: role._id,
+      status: 'SUCCESS',
+      details: `Assigned ${updateResult.modifiedCount} user(s) to role '${role.name}'.`,
+      newValues: { userIds, roleName: role.name, roleCode: role.code, modifiedCount: updateResult.modifiedCount },
+    });
 
     return res.status(200).json({
       success: true,
