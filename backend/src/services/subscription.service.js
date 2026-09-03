@@ -98,7 +98,10 @@ export const subscriptionService = {
       Subscription.countDocuments({ status: 'expired' }),
       Subscription.countDocuments({ type: 'trial', status: 'active' }),
       Subscription.countDocuments({ type: 'complimentary', status: 'active' }),
-      Subscription.countDocuments({ type: 'discounted', status: 'active' }),
+      Subscription.countDocuments({
+        $or: [{ type: 'discounted' }, { discountApplied: { $gt: 0 } }],
+        status: { $ne: 'cancelled' },
+      }),
       Subscription.countDocuments({
         status: 'active',
         endDate: { $gte: now, $lte: expiringThreshold },

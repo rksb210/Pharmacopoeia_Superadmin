@@ -228,7 +228,7 @@ export const RolesPage = () => {
       {/* KPI Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total System Roles"
+          title="Total Roles"
           value={stats.totalRoles}
           subtitle="Defined authorization tiers"
           icon={KeyRound}
@@ -237,7 +237,7 @@ export const RolesPage = () => {
         />
 
         <StatCard
-          title="System Default Roles"
+          title="Default Roles"
           value={stats.systemRoles}
           subtitle="Protected governance roles"
           icon={Lock}

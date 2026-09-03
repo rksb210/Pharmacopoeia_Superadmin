@@ -213,8 +213,8 @@ export const SubscriptionsPage = () => {
         </div>
       )}
 
-      {/* 4 KPI Stat Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+      {/* 5 KPI Stat Cards Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-3.5">
         <StatCard
           title="Total Subscriptions"
           value={stats.totalSubscriptions}
@@ -240,6 +240,15 @@ export const SubscriptionsPage = () => {
           icon={Clock}
           iconColor="text-amber-600"
           iconBg="bg-amber-50"
+        />
+
+        <StatCard
+          title="Discounted Passes"
+          value={stats.discountedSubscriptions}
+          subtitle="Concession & promo licenses"
+          icon={Percent}
+          iconColor="text-[#E76120]"
+          iconBg="bg-[#FFF5EE]"
         />
 
         <StatCard

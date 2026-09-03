@@ -1,93 +1,171 @@
 import React, { useState } from 'react';
-import { TrendingUp, BarChart2, ArrowUpRight } from 'lucide-react';
+import { Users, TrendingUp, DollarSign, Calendar, Sparkles } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 
 export const ChartCard = ({
-  title = 'Monograph Traffic & Utilization',
-  subtitle = '7-day trend analysis',
+  title = 'Formulary Registrations & Revenue Velocity',
+  subtitle = 'Financial Year Performance (April – March)',
   trendData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    monographViews: [1240, 1580, 1890, 2100, 2450, 1720, 1450],
-    revenueINR: [25000, 42000, 38000, 65000, 89000, 31000, 28000],
+    labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+    monographViews: [0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0],
+    revenueINR: [0, 0, 0, 0, 14004, 0, 0, 0, 0, 0, 0, 0],
+    fiscalYearLabel: 'FY 2026-27 (April – March)',
   },
 }) => {
-  const [metric, setMetric] = useState('views'); // 'views' | 'revenue'
+  const [metric, setMetric] = useState('registrations'); // 'registrations' | 'revenue'
+  const [hoveredIdx, setHoveredIdx] = useState(null);
 
+  const labels = trendData.labels || ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
   const dataValues =
-    metric === 'views' ? trendData.monographViews : trendData.revenueINR;
-  const maxValue = Math.max(...dataValues, 1);
+    metric === 'registrations'
+      ? trendData.monographViews || []
+      : trendData.revenueINR || [];
+
+  const totalSum = dataValues.reduce((acc, v) => acc + (Number(v) || 0), 0);
+  const maxVal = Math.max(...dataValues, metric === 'registrations' ? 5 : 5000);
+
+  const isRevenue = metric === 'revenue';
+  const themeColor = isRevenue ? '#E76120' : '#284661';
+  const themeGradient = isRevenue
+    ? 'from-[#E76120] to-[#f97316]'
+    : 'from-[#284661] to-[#3b678e]';
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-4 select-none font-sans">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-slate-900 text-sm">{title}</h3>
-            <Badge variant="nfiNavy" className="text-[9px] px-1.5 py-0 font-bold uppercase">
-              Live Trend
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-5 select-none font-sans">
+      {/* Header with Title & Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-bold text-slate-900 text-sm tracking-tight">{title}</h3>
+            <Badge variant="nfiNavy" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
+              {trendData.fiscalYearLabel || 'April – March'}
             </Badge>
           </div>
-          <p className="text-slate-400 text-xs">{subtitle}</p>
+          <p className="text-slate-400 text-xs">
+            {isRevenue ? 'Monthly commercial revenue realization' : 'Monthly public & institutional subscriber enrollments'}
+          </p>
         </div>
 
-        {/* Metric Switcher */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
+        {/* Metric Selector Tabs */}
+        <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl self-start sm:self-auto border border-slate-200/60">
           <button
             type="button"
-            onClick={() => setMetric('views')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-              metric === 'views'
+            onClick={() => {
+              setMetric('registrations');
+              setHoveredIdx(null);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              !isRevenue
                 ? 'bg-white text-[#284661] shadow-2xs'
                 : 'text-slate-500 hover:text-slate-900'
             }`}
           >
-            Views (Traffic)
+            <Users className="w-3.5 h-3.5 text-sky-600" />
+            <span>Registrations</span>
           </button>
           <button
             type="button"
-            onClick={() => setMetric('revenue')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-              metric === 'revenue'
-                ? 'bg-white text-[#284661] shadow-2xs'
+            onClick={() => {
+              setMetric('revenue');
+              setHoveredIdx(null);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              isRevenue
+                ? 'bg-white text-[#E76120] shadow-2xs'
                 : 'text-slate-500 hover:text-slate-900'
             }`}
           >
-            Revenue (₹)
+            <DollarSign className="w-3.5 h-3.5 text-[#E76120]" />
+            <span>Revenue (₹)</span>
           </button>
         </div>
       </div>
 
-      {/* Chart Canvas / Bar Visualization */}
+      {/* Summary Highlight Banner */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-50/80 rounded-xl border border-slate-100">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-2xs shrink-0 ${
+              isRevenue ? 'bg-[#FFF5EE] text-[#E76120]' : 'bg-blue-50 text-[#284661]'
+            }`}
+          >
+            {isRevenue ? <TrendingUp className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+          </div>
+          <div>
+            <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">
+              {isRevenue ? 'Total FY Realized Revenue' : 'Total FY Registrations'}
+            </span>
+            <span className="text-lg font-black text-slate-900 tracking-tight">
+              {isRevenue ? `₹${totalSum.toLocaleString('en-IN')}` : `${totalSum} Subscribers`}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end sm:border-l sm:border-slate-200/60 sm:pl-4 text-right">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+              Selected Horizon
+            </span>
+            <span className="text-xs font-bold text-[#284661] flex items-center gap-1 justify-end">
+              <Calendar className="w-3 h-3 text-[#E76120]" />
+              <span>12 Months (April – March)</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bar Chart Container */}
       <div className="pt-2">
-        <div className="h-44 flex items-end justify-between gap-2 sm:gap-4 px-2 border-b border-slate-100 pb-2">
-          {dataValues.map((val, idx) => {
-            const heightPercent = Math.round((val / maxValue) * 100);
-            const label = trendData.labels[idx];
+        <div className="h-48 flex items-end justify-between gap-1.5 sm:gap-3 px-1 sm:px-2 border-b border-slate-100 pb-3">
+          {labels.map((monthLabel, idx) => {
+            const rawVal = Number(dataValues[idx]) || 0;
+            const heightPercent = maxVal > 0 ? (rawVal / maxVal) * 100 : 0;
+            const isHovered = hoveredIdx === idx;
+            const hasData = rawVal > 0;
 
             return (
               <div
-                key={label}
-                className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group"
+                key={monthLabel}
+                onMouseEnter={() => setHoveredIdx(idx)}
+                onMouseLeave={() => setHoveredIdx(null)}
+                className="flex-1 flex flex-col items-center h-full justify-end relative group cursor-pointer"
               >
-                {/* Tooltip on Hover */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-mono px-1.5 py-0.5 rounded shadow-xs mb-1 pointer-events-none whitespace-nowrap">
-                  {metric === 'revenue' ? `₹${val.toLocaleString('en-IN')}` : `${val} views`}
+                {/* Floating Tooltip */}
+                {isHovered && (
+                  <div className="absolute -top-12 z-20 transition-all transform -translate-x-1/2 left-1/2 bg-slate-900 text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-lg pointer-events-none whitespace-nowrap animate-in fade-in-0 duration-150">
+                    <span className="font-bold text-white block">
+                      {monthLabel}: {isRevenue ? `₹${rawVal.toLocaleString('en-IN')}` : `${rawVal} user(s)`}
+                    </span>
+                    <div className="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mb-2 mt-0.5" />
+                  </div>
+                )}
+
+                {/* Track (Background Column) */}
+                <div className="w-full max-w-[28px] h-full flex items-end justify-center bg-slate-100/50 rounded-t-lg p-0.5">
+                  {/* Active Bar Fill */}
+                  <div
+                    style={{
+                      height: hasData ? `${Math.max(8, heightPercent)}%` : '4px',
+                    }}
+                    className={`w-full rounded-t-md transition-all duration-300 ${
+                      hasData
+                        ? `bg-gradient-to-t ${themeGradient} shadow-xs`
+                        : 'bg-slate-200'
+                    } ${isHovered ? 'brightness-110 scale-x-105' : ''}`}
+                  />
                 </div>
 
-                {/* Animated Bar */}
-                <div
-                  style={{ height: `${Math.max(12, heightPercent)}%` }}
-                  className={`w-full rounded-t-lg transition-all duration-300 group-hover:brightness-95 ${
-                    metric === 'views'
-                      ? 'bg-gradient-to-t from-[#284661] to-[#3b678e]'
-                      : 'bg-gradient-to-t from-[#E76120] to-[#FFD243]'
+                {/* Month Label */}
+                <span
+                  className={`text-[10px] font-bold mt-2 transition-colors ${
+                    isHovered
+                      ? 'text-slate-900 scale-105 font-black'
+                      : hasData
+                      ? 'text-[#284661] font-bold'
+                      : 'text-slate-400'
                   }`}
-                />
-
-                {/* Day Label */}
-                <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-700">
-                  {label}
+                >
+                  {monthLabel}
                 </span>
               </div>
             );
@@ -95,15 +173,16 @@ export const ChartCard = ({
         </div>
       </div>
 
-      {/* Footer Insight */}
-      <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-        <div className="flex items-center gap-1.5">
-          <TrendingUp className="w-4 h-4 text-emerald-600" />
-          <span className="font-semibold text-slate-700">
-            {metric === 'views' ? '+18.4% weekly monograph access' : '+12.6% weekly license subscriptions'}
-          </span>
+      {/* Footer Legend / Real-Time Telemetry */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 pt-1">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#284661]" />
+          <span className="font-medium text-slate-600">Active Financial Year Aggregation</span>
         </div>
-        <span className="text-[11px] text-slate-400">Updated Real-Time</span>
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <Sparkles className="w-3.5 h-3.5 text-[#E76120]" />
+          <span>Real-time database sync</span>
+        </div>
       </div>
     </div>
   );

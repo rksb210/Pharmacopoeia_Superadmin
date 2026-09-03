@@ -216,7 +216,7 @@ export const AdminsPage = () => {
       )}
 
       {/* KPI Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           title="Total Administrators"
           value={stats.totalAdmins}
@@ -235,14 +235,14 @@ export const AdminsPage = () => {
           iconBg="bg-emerald-50"
         />
 
-        <StatCard
+        {/* <StatCard
           title="Super Administrators"
           value={stats.superAdmins}
           subtitle="Governance & core security"
           icon={ShieldCheck}
           iconColor="text-[#E76120]"
           iconBg="bg-[#FFF5EE]"
-        />
+        /> */}
 
         <StatCard
           title="Deactivated Accounts"

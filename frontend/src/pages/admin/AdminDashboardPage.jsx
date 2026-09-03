@@ -17,6 +17,9 @@ import {
   FileEdit,
   GitPullRequest,
   CheckCircle,
+  Building2,
+  Ticket,
+  MessageSquare,
 } from 'lucide-react';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
@@ -84,21 +87,25 @@ export const AdminDashboardPage = () => {
 
   const roleType = data?.userRole || user?.role || 'admin';
   const roleMetrics = data?.roleMetrics || {};
+  const rawName = user?.name || data?.userName || 'Administrator';
+  const displayName = rawName
+    .replace(/super\s*administrator/gi, 'Administrator')
+    .replace(/superadmin/gi, 'Admin');
 
   return (
     <PageContainer>
       {/* Header with Role Banner */}
       <PageHeader
-        title={`Welcome back, ${user?.name || 'Administrator'}`}
-        subtitle={`Official Indian Pharmacopoeia Commission Portal · ${roleType.toUpperCase()} OPERATIONAL DESK`}
+        title={`Welcome back, ${displayName}`}
+        subtitle="Official Indian Pharmacopoeia Commission Portal · ADMIN OPERATIONAL DESK"
       >
         <div className="flex items-center gap-2">
-          <Badge
+          {/* <Badge
             variant={roleType === 'superadmin' ? 'nfiYellow' : 'nfiNavy'}
             className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5"
           >
             {roleType.toUpperCase()}
-          </Badge>
+          </Badge> */}
 
           <Button
             variant="outline"
@@ -239,70 +246,70 @@ export const AdminDashboardPage = () => {
       )}
 
       {(roleType === 'superadmin' || roleType === 'admin' || roleType === 'subadmin') && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
-            title="Total Users &amp; Staff"
-            value={data?.contentStats?.totalUsers || 24}
-            subtitle="Registered internal accounts"
+            title="Total Registered Subscribers"
+            value={data?.stats?.totalSubscribers || 0}
+            subtitle="Public & institutional accounts"
             icon={Users}
             iconColor="text-sky-600"
             iconBg="bg-sky-50"
           />
           <StatCard
-            title="Active Subscribers"
-            value="234"
-            subtitle="Institutional &amp; Individual"
+            title="Active Subscriptions"
+            value={data?.stats?.activeSubscriptions || 0}
+            subtitle={`${data?.stats?.trialSubscriptions || 0} evaluation passes`}
             icon={UserCheck}
             iconColor="text-emerald-600"
             iconBg="bg-emerald-50"
           />
           <StatCard
-            title="Total Monographs"
-            value="1,845"
-            subtitle="1,794 active published"
-            icon={FileText}
+            title="Bulk Batch Imports"
+            value={data?.stats?.totalBulkJobs || 0}
+            subtitle="Institutional roster uploads"
+            icon={Building2}
             iconColor="text-[#284661]"
-            iconBg="bg-slate-100"
-          />
-          <StatCard
-            title="Pending Approvals"
-            value="8"
-            subtitle="Requires committee sign-off"
-            icon={Clock}
-            iconColor="text-[#E76120]"
-            iconBg="bg-[#FFF5EE]"
-          />
-          <StatCard
-            title="Content Under Review"
-            value="14"
-            subtitle="Editorial evaluation queue"
-            icon={GitPullRequest}
-            iconColor="text-indigo-600"
-            iconBg="bg-indigo-50"
-          />
-          <StatCard
-            title="Draft Monographs"
-            value="24"
-            subtitle="Author drafts in preparation"
-            icon={FileEdit}
-            iconColor="text-slate-600"
-            iconBg="bg-slate-50"
+            iconBg="bg-blue-50"
           />
           <StatCard
             title="Commercial Revenue"
-            value="₹24.58L"
-            subtitle="₹3.42L this month"
-            icon={CreditCard}
+            value={`₹${(data?.stats?.totalRevenueINR || 0).toLocaleString('en-IN')}`}
+            subtitle="Gross realized earnings"
+            icon={TrendingUp}
             iconColor="text-emerald-600"
             iconBg="bg-emerald-50"
           />
           <StatCard
-            title="Expiring Subscriptions"
-            value="18"
-            subtitle="Next 30 days renewal"
-            icon={AlertTriangle}
-            iconColor="text-amber-600"
-            iconBg="bg-amber-50"
+            title="Completed Orders"
+            value={data?.stats?.completedOrders || 0}
+            subtitle={`${data?.stats?.failedOrders || 0} failed attempts`}
+            icon={CreditCard}
+            iconColor="text-indigo-600"
+            iconBg="bg-indigo-50"
+          />
+          <StatCard
+            title="Active Coupons & Promos"
+            value={data?.stats?.activeCoupons || 0}
+            subtitle={`${data?.stats?.totalCoupons || 0} total campaigns`}
+            icon={Ticket}
+            iconColor="text-[#E76120]"
+            iconBg="bg-[#FFF5EE]"
+          />
+          <StatCard
+            title="Support & CRM Inquiries"
+            value={data?.stats?.totalTickets || 0}
+            subtitle={`${data?.stats?.resolutionRatePercent || 100}% resolution rate`}
+            icon={MessageSquare}
+            iconColor="text-purple-600"
+            iconBg="bg-purple-50"
+          />
+          <StatCard
+            title="Staff & Admin Accounts"
+            value={data?.stats?.totalStaffUsers || 0}
+            subtitle={`${data?.stats?.activeAdmins || 0} active managers`}
+            icon={Shield}
+            iconColor="text-slate-700"
+            iconBg="bg-slate-100"
           />
         </div>
       )}
@@ -312,8 +319,8 @@ export const AdminDashboardPage = () => {
         {/* Left 2 Columns: Chart & Workflow Queues */}
         <div className="lg:col-span-2 space-y-5">
           <ChartCard
-            title="Monograph Traffic &amp; Revenue Trends"
-            subtitle="7-day aggregated analytical trends"
+            title="Subscriber Registrations & Revenue Velocity"
+            subtitle={data?.trendData?.fiscalYearLabel || 'Financial Year Performance (April – March)'}
             trendData={data?.trendData}
           />
 
