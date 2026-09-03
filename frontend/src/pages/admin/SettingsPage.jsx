@@ -31,11 +31,11 @@ const TABS = [
   { id: 'subscription', label: '1. Subscriptions & BRD', icon: CreditCard },
   // { id: 'userRegistration', label: '2. User Registration', icon: Users },
   { id: 'trial', label: '2. Trial Licenses', icon: Sparkles },
-  { id: 'contentAndSearch', label: '3. Content & Search', icon: Search },
-  { id: 'securityAndSessions', label: '4. Security & Sessions', icon: Lock },
-  { id: 'notificationsAndComms', label: '5. Notifications & Comms', icon: Bell },
-  { id: 'maintenanceAndGeneral', label: '6. Maintenance & Banners', icon: AlertTriangle },
-  { id: 'history', label: '7. Version History & Rollback', icon: History },
+  // { id: 'contentAndSearch', label: '3. Content & Search', icon: Search },
+  { id: 'securityAndSessions', label: '3. Security & Sessions', icon: Lock },
+  { id: 'notificationsAndComms', label: '4. Notifications & Comms', icon: Bell },
+  { id: 'maintenanceAndGeneral', label: '5. Maintenance & Banners', icon: AlertTriangle },
+  { id: 'history', label: '6. Version History & Rollback', icon: History },
 ];
 
 const ALL_USER_TYPES = ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'OTHERS'];
@@ -523,9 +523,9 @@ export const SettingsPage = () => {
           )}
 
           {/* ========================================================= */}
-          {/* TAB 4: CONTENT & SEARCH */}
+          {/* TAB 4: CONTENT & SEARCH (Commented out) */}
           {/* ========================================================= */}
-          {activeTab === 'contentAndSearch' && (
+          {/* {activeTab === 'contentAndSearch' && (
             <div className="space-y-4 max-w-2xl animate-in fade-in-0 duration-150">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -623,7 +623,7 @@ export const SettingsPage = () => {
                 />
               </div>
             </div>
-          )}
+          )} */}
 
           {/* ========================================================= */}
           {/* TAB 5: SECURITY & SESSIONS */}
