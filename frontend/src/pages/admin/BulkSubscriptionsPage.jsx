@@ -370,7 +370,7 @@ export const BulkSubscriptionsPage = () => {
                           className="rounded-lg text-xs font-semibold h-8"
                         >
                           <Eye className="w-3.5 h-3.5 mr-1" />
-                          <span>Dossier</span>
+                          <span>View Details</span>
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -382,7 +382,7 @@ export const BulkSubscriptionsPage = () => {
         </div>
       )}
 
-      {/* Details & Dossier Modal */}
+      {/* Details Modal */}
       <BulkImportDetailsModal
         isOpen={!!viewingJobId}
         onClose={() => setViewingJobId(null)}

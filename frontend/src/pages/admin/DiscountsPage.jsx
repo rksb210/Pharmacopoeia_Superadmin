@@ -474,7 +474,7 @@ export const DiscountsPage = () => {
                         type="button"
                         onClick={() => setViewingCoupon(c)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
-                        title="View Dossier & Redemptions"
+                        title="View Coupon Details"
                       >
                         <Eye className="w-4 h-4" />
                       </button>

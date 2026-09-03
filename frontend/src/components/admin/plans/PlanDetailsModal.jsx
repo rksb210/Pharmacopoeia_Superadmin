@@ -55,7 +55,7 @@ export const PlanDetailsModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Plan Dossier &amp; Pricing Audit Trail"
+      title="Plan Details & Pricing Audit Trail"
       description={`Formulary tier specifications and price change history for ${p.name}.`}
       confirmLabel="Edit Plan Configurations"
       onConfirm={() => {

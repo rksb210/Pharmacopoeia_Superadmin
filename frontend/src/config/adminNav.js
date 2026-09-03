@@ -200,14 +200,14 @@ export const ADMIN_NAV_SECTIONS = [
         permission: { module: 'INTEGRATED', section: 'DIKSHA', action: 'VIEW' },
         roles: ['superadmin', 'admin', 'maker', 'editor'],
       },
-      {
-        id: 'kaym',
-        title: 'KAYM',
-        path: '/admin/kaym',
-        icon: Scan,
-        permission: { module: 'INTEGRATED', section: 'KAYM', action: 'VIEW' },
-        roles: ['superadmin', 'admin', 'maker', 'editor'],
-      },
+      // {
+      //   id: 'kaym',
+      //   title: 'KAYM',
+      //   path: '/admin/kaym',
+      //   icon: Scan,
+      //   permission: { module: 'INTEGRATED', section: 'KAYM', action: 'VIEW' },
+      //   roles: ['superadmin', 'admin', 'maker', 'editor'],
+      // },
     ],
   },
   {

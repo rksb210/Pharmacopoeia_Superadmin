@@ -62,7 +62,7 @@ export const NotificationDetailsModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Notification Campaign Dossier &amp; Delivery Tracking"
+      title="Notification Campaign Details & Delivery Tracking"
       description={`Multi-channel telemetry and delivery metrics for "${n.title}".`}
       confirmLabel="Close"
       onConfirm={onClose}

@@ -57,7 +57,7 @@ export const CouponDetailsModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Coupon Dossier: ${c.code}`}
+      title={`Coupon Details: ${c.code}`}
       description={`Promotional campaign parameters, targeting criteria, and redemption history.`}
       confirmLabel="Edit Voucher"
       onConfirm={() => {

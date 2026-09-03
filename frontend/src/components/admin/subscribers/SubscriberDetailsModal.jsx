@@ -38,7 +38,7 @@ export const SubscriberDetailsModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Subscriber Dossier &amp; Credentials"
+      title="Subscriber Details & Credentials"
       description={`Official verification and subscription details for ${subscriber.name}.`}
       confirmLabel="Manage Subscription"
       onConfirm={() => {

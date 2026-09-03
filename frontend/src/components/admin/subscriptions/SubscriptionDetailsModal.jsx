@@ -42,9 +42,9 @@ export const SubscriptionDetailsModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Subscription Dossier &amp; Lifecycle Audit"
+      title="Subscription Details & Lifecycle Audit"
       description={`Official digital pass registry for ${user.name || 'Subscriber'}.`}
-      confirmLabel="Close Dossier"
+      confirmLabel="Close Details"
       onConfirm={onClose}
       size="lg"
     >

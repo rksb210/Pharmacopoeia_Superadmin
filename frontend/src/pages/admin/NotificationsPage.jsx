@@ -503,12 +503,12 @@ export const NotificationsPage = () => {
                         </button>
                       </PermissionGuard>
 
-                      {/* Telemetry Dossier */}
+                      {/* Telemetry Details */}
                       <button
                         type="button"
                         onClick={() => setViewingNotification(n)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
-                        title="Campaign Telemetry Dossier"
+                        title="View Notification Details"
                       >
                         <TrendingUp className="w-4 h-4" />
                       </button>

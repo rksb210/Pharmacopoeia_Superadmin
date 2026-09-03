@@ -493,12 +493,12 @@ export const OrdersPage = () => {
                         </PermissionGuard>
                       )}
 
-                      {/* Transaction Dossier */}
+                      {/* Transaction Details */}
                       <button
                         type="button"
                         onClick={() => setViewingOrder(o)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
-                        title="Transaction Telemetry Dossier"
+                        title="View Order Details"
                       >
                         <FileText className="w-4 h-4" />
                       </button>

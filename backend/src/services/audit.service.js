@@ -81,7 +81,7 @@ export const auditService = {
         module: 'AUTH',
         entity: 'User',
         entityId: 'USR-ADMIN-001',
-        userName: 'NFI Super Administrator',
+        userName: 'NFI Administrator',
         userEmail: 'admin@nfi.gov.in',
         userRole: 'Superadmin',
         status: 'SUCCESS',

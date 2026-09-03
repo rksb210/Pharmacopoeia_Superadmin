@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { Search, Bell, Menu, PanelLeftClose, PanelLeftOpen, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Bell, Menu, PanelLeftClose, PanelLeftOpen, HelpCircle, ArrowRight } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import UserProfileDropdown from './UserProfileDropdown';
+import notificationService from '../../../services/notification.service';
 
 export const AdminHeader = ({
   onMobileMenuToggle,
@@ -8,21 +10,62 @@ export const AdminHeader = ({
   onSidebarCollapseToggle,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [readIds, setReadIds] = useState(new Set());
+  const notifRef = useRef(null);
 
-  // Mock initial admin notifications for notification indicator
-  const notifications = [
-    { id: 1, title: 'New Monograph Submission', time: '10m ago', unread: true },
-    { id: 2, title: 'Bulk Subscription Request', time: '1h ago', unread: true },
-    { id: 3, title: 'System Security Audit Completed', time: '3h ago', unread: false },
-  ];
+  // Fetch real notifications from Database
+  const fetchLiveNotifications = async () => {
+    try {
+      const res = await notificationService.getNotifications({ limit: 6 });
+      if (res && res.notifications) {
+        setNotifications(res.notifications);
+      }
+    } catch (err) {
+      console.warn('Failed to load header notifications:', err.message);
+    }
+  };
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  useEffect(() => {
+    fetchLiveNotifications();
+    const interval = setInterval(fetchLiveNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return 'Recently';
+    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+  };
+
+  const handleMarkAllRead = () => {
+    const allIds = new Set(notifications.map((n) => n._id));
+    setReadIds(allIds);
+  };
+
+  const unreadCount = notifications.filter(
+    (n) => !readIds.has(n._id) && (n.status === 'active' || n.status === 'sent')
+  ).length;
 
   return (
     <header className="w-full h-16 bg-white border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-3 select-none sticky top-0 z-30 shadow-2xs">
-      {/* Left Area: Mobile Drawer Toggle & Desktop Collapse Button & Global Search */}
+      {/* Left Area: Mobile Drawer Toggle & Desktop Collapse Button */}
       <div className="flex items-center gap-3 flex-1 max-w-xl">
         {/* Mobile Hamburger Button */}
         <button
@@ -49,8 +92,8 @@ export const AdminHeader = ({
           )}
         </button>
 
-        {/* Global Admin Search Bar */}
-        <div className="relative w-full max-w-md">
+        {/* Global Admin Search Bar (Commented out) */}
+        {/* <div className="relative w-full max-w-md">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -59,43 +102,34 @@ export const AdminHeader = ({
             placeholder="Search users, monographs, subscriptions..."
             className="w-full h-9.5 pl-9.5 pr-4 bg-slate-50/80 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#E76120] focus:bg-white focus:ring-2 focus:ring-[#E76120]/15 transition-all"
           />
-        </div>
+        </div> */}
       </div>
 
-      {/* Right Area: Theme Toggle, Notifications, User Dropdown */}
+      {/* Right Area: Notifications, User Dropdown */}
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-        {/* Theme Switcher */}
-        <div className="hidden md:flex items-center gap-2 text-xs font-medium text-slate-600">
+        {/* Theme Switcher (Commented out) */}
+        {/* <div className="hidden md:flex items-center gap-2 text-xs font-medium text-slate-600">
           <span className="text-slate-400">Theme</span>
           <button
             type="button"
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`
-              w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer relative flex items-center
-              ${isDarkMode ? 'bg-[#E76120]' : 'bg-slate-300'}
-            `}
+            className="w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer relative flex items-center bg-slate-300"
             aria-label="Toggle theme"
           >
-            <div
-              className={`
-                w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200
-                ${isDarkMode ? 'translate-x-4' : 'translate-x-0'}
-              `}
-            />
+            <div className="w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 translate-x-0" />
           </button>
-        </div>
+        </div> */}
 
-        {/* Help & Documentation */}
-        <button
+        {/* Help & Documentation (Commented out) */}
+        {/* <button
           type="button"
           className="hidden sm:flex p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
           title="Admin Documentation & Support"
         >
           <HelpCircle className="w-5 h-5" />
-        </button>
+        </button> */}
 
-        {/* Notification Icon & Dropdown Popover */}
-        <div className="relative">
+        {/* Notification Icon & Dynamic Dropdown Popover */}
+        <div className="relative" ref={notifRef}>
           <button
             type="button"
             onClick={() => setShowNotifications(!showNotifications)}
@@ -109,25 +143,71 @@ export const AdminHeader = ({
             )}
           </button>
 
-          {/* Notifications Flyout */}
+          {/* Dynamic Notifications Flyout */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 animate-in fade-in-0 zoom-in-95 duration-150 font-sans">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-800">Admin Alerts</span>
-                <span className="text-[11px] font-semibold text-[#E76120] hover:underline cursor-pointer">
-                  Mark all read
-                </span>
+                <span className="text-xs font-bold text-slate-800">System Broadcasts &amp; Alerts</span>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleMarkAllRead}
+                    className="text-[11px] font-semibold text-[#E76120] hover:underline cursor-pointer"
+                  >
+                    Mark all read
+                  </button>
+                )}
               </div>
-              <div className="divide-y divide-slate-100 my-1 max-h-60 overflow-y-auto">
-                {notifications.map((item) => (
-                  <div key={item.id} className="py-2.5 flex items-start gap-2.5">
-                    <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${item.unread ? 'bg-[#E76120]' : 'bg-slate-300'}`} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-slate-800 leading-tight">{item.title}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">{item.time}</p>
-                    </div>
-                  </div>
-                ))}
+
+              <div className="divide-y divide-slate-100 my-1 max-h-64 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-6">No recent system notifications.</p>
+                ) : (
+                  notifications.map((item) => {
+                    const isUnread = !readIds.has(item._id) && (item.status === 'active' || item.status === 'sent');
+                    return (
+                      <div
+                        key={item._id}
+                        onClick={() => {
+                          setReadIds((prev) => new Set([...prev, item._id]));
+                        }}
+                        className="py-2.5 flex items-start gap-2.5 hover:bg-slate-50/80 px-1 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                            isUnread ? 'bg-[#E76120]' : 'bg-slate-300'
+                          }`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-800 leading-tight truncate">
+                            {item.title}
+                          </p>
+                          <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">
+                            {item.message}
+                          </p>
+                          <div className="flex items-center justify-between mt-1 text-[10px] text-slate-400">
+                            <span className="uppercase font-semibold text-[9px] text-[#284661]">
+                              {item.category || item.channel || 'System'}
+                            </span>
+                            <span>{formatTimeAgo(item.createdAt)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* View All Footer */}
+              <div className="pt-2.5 border-t border-slate-100 text-center">
+                <NavLink
+                  to="/admin/notifications"
+                  onClick={() => setShowNotifications(false)}
+                  className="text-xs font-bold text-[#E76120] hover:underline inline-flex items-center gap-1"
+                >
+                  <span>Manage All Notifications</span>
+                  <ArrowRight className="w-3 h-3" />
+                </NavLink>
               </div>
             </div>
           )}
