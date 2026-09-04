@@ -26,6 +26,7 @@ import AuditLogsPage from './pages/admin/AuditLogsPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import DepartmentsPage from './pages/admin/DepartmentsPage';
 import DesignationsPage from './pages/admin/DesignationsPage';
+import DikshaPage from './pages/admin/DikshaPage';
 import AdminModulePlaceholderPage from './pages/admin/AdminModulePlaceholderPage';
 
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -309,11 +310,7 @@ function AppRoutes() {
           path="diksha"
           element={
             <PermissionGuard module="INTEGRATED" section="DIKSHA" action="VIEW" pageLevel>
-              <AdminModulePlaceholderPage
-                moduleId="diksha"
-                title="DIKSHA Integration"
-                description="E-learning course catalog, continuing medical education (CME), and certificates."
-              />
+              <DikshaPage />
             </PermissionGuard>
           }
         />

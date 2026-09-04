@@ -198,7 +198,7 @@ export const ADMIN_NAV_SECTIONS = [
         path: '/admin/diksha',
         icon: GraduationCap,
         permission: { module: 'INTEGRATED', section: 'DIKSHA', action: 'VIEW' },
-        roles: ['superadmin', 'admin', 'maker', 'editor'],
+        roles: ['superadmin', 'admin', 'subadmin', 'maker', 'editor'],
       },
       // {
       //   id: 'kaym',
