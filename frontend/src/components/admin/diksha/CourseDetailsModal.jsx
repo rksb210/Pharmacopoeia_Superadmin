@@ -12,6 +12,11 @@ import {
   ShieldCheck,
   Tag,
   BarChart3,
+  FileCheck,
+  XCircle,
+  History,
+  MessageSquare,
+  User,
 } from 'lucide-react';
 import { AdminModal } from '../common/AdminModal';
 import { Badge } from '../../ui/badge';
@@ -32,24 +37,47 @@ export const CourseDetailsModal = ({
     switch (status) {
       case 'PUBLISHED':
         return (
-          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold">
-            PUBLISHED
+          <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] font-bold">
+            PUBLISHED (LIVE)
           </Badge>
         );
-      case 'DRAFT':
+      case 'UNDER_REVIEW':
         return (
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-bold">
-            DRAFT
+          <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/30 text-[10px] font-bold">
+            UNDER REVIEW
+          </Badge>
+        );
+      case 'NEEDS_REVISION':
+        return (
+          <Badge className="bg-purple-500/15 text-purple-700 border-purple-500/30 text-[10px] font-bold">
+            NEEDS REVISION
+          </Badge>
+        );
+      case 'REVIEWED':
+        return (
+          <Badge className="bg-blue-500/15 text-blue-700 border-blue-500/30 text-[10px] font-bold">
+            REVIEWED (PENDING APPROVAL)
+          </Badge>
+        );
+      case 'REJECTED':
+        return (
+          <Badge className="bg-rose-500/15 text-rose-700 border-rose-500/30 text-[10px] font-bold">
+            REJECTED
           </Badge>
         );
       case 'ARCHIVED':
         return (
-          <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] font-bold">
+          <Badge className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] font-bold">
             ARCHIVED
           </Badge>
         );
+      case 'DRAFT':
       default:
-        return null;
+        return (
+          <Badge className="bg-slate-100 text-slate-700 border-slate-300 text-[10px] font-bold">
+            DRAFT
+          </Badge>
+        );
     }
   };
 
@@ -270,9 +298,59 @@ export const CourseDetailsModal = ({
             </div>
           </div>
         )}
+
+        {/* Workflow Lifecycle History & Remarks Timeline */}
+        {course.workflowHistory && course.workflowHistory.length > 0 && (
+          <div className="space-y-3 pt-4 border-t border-slate-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <History className="w-3.5 h-3.5 text-sky-600" />
+                <span>Workflow Audit Trail &amp; Remarks ({course.workflowHistory.length})</span>
+              </span>
+              <span className="text-[10px] text-slate-400">Maker ➔ Reviewer ➔ Approver</span>
+            </div>
+
+            <div className="space-y-2">
+              {course.workflowHistory.slice().reverse().map((entry, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1 text-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900">
+                        {entry.action.replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold">
+                        {entry.roleName}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(entry.timestamp).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                    <User className="w-3 h-3" />
+                    <span>Action by: <strong>{entry.performerName || 'Admin'}</strong></span>
+                  </div>
+
+                  {entry.comments && (
+                    <p className="text-[11px] text-slate-700 italic bg-white p-2 rounded-lg border border-slate-200/80 flex items-start gap-1.5 mt-1">
+                      <MessageSquare className="w-3 h-3 text-slate-400 shrink-0 mt-0.5" />
+                      <span>"{entry.comments}"</span>
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </AdminModal>
   );
 };
 
 export default CourseDetailsModal;
+

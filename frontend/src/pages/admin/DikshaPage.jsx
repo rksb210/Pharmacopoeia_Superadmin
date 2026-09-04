@@ -20,6 +20,11 @@ import {
   AlertCircle,
   PlayCircle,
   ExternalLink,
+  Send,
+  ShieldCheck,
+  FileCheck,
+  XCircle,
+  Clock,
 } from 'lucide-react';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
@@ -43,6 +48,7 @@ import PermissionGuard from '../../components/admin/common/PermissionGuard';
 import CreateEditCourseModal from '../../components/admin/diksha/CreateEditCourseModal';
 import CourseDetailsModal from '../../components/admin/diksha/CourseDetailsModal';
 import CourseEnrollmentsModal from '../../components/admin/diksha/CourseEnrollmentsModal';
+import CourseWorkflowModal from '../../components/admin/diksha/CourseWorkflowModal';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Categories' },
@@ -89,6 +95,7 @@ export const DikshaPage = () => {
   const [editingCourse, setEditingCourse] = useState(null);
   const [viewingCourse, setViewingCourse] = useState(null);
   const [enrolledModalCourse, setEnrolledModalCourse] = useState(null);
+  const [workflowModalCourse, setWorkflowModalCourse] = useState(null);
 
   // Fetch KPI Stats
   const fetchStats = async () => {
@@ -209,7 +216,7 @@ export const DikshaPage = () => {
           <span>Refresh</span>
         </Button>
 
-        <PermissionGuard module="INTEGRATED" section="DIKSHA" action="CREATE">
+        <PermissionGuard module="INTEGRATED" section="DIKSHA" action="ADD">
           <Button
             variant="nfiYellow"
             size="sm"
@@ -353,9 +360,13 @@ export const DikshaPage = () => {
                 }}
                 className="h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
               >
-                <option value="all">All Statuses</option>
-                <option value="PUBLISHED">Published Only</option>
-                <option value="DRAFT">Draft Only</option>
+                <option value="all">All Statuses ({totalItems})</option>
+                <option value="PUBLISHED">Published (Live to Subscribers)</option>
+                <option value="UNDER_REVIEW">Under Review (In Queue)</option>
+                <option value="NEEDS_REVISION">Needs Revision (Changes Requested)</option>
+                <option value="REVIEWED">Reviewed (Pending Final Approval)</option>
+                <option value="DRAFT">Drafts</option>
+                <option value="REJECTED">Rejected</option>
                 <option value="ARCHIVED">Archived</option>
               </select>
 
@@ -394,157 +405,230 @@ export const DikshaPage = () => {
                 <TableHead>Video Curriculum</TableHead>
                 <TableHead>Assessment &amp; Cert</TableHead>
                 <TableHead>Pricing Model</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Workflow Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {courses.map((c) => (
-                <TableRow key={c._id}>
-                  {/* Title & Code */}
-                  <TableCell>
-                    <div className="space-y-0.5">
-                      <span className="font-mono text-[10px] font-bold text-[#284661] block">
-                        {c.code}
-                      </span>
-                      <span className="font-bold text-slate-900 text-xs block truncate max-w-[240px]" title={c.title}>
-                        {c.title}
-                      </span>
-                    </div>
-                  </TableCell>
+              {courses.map((c) => {
+                const isDraftOrNeedsRev = ['DRAFT', 'NEEDS_REVISION', 'REJECTED'].includes(c.status);
+                const isUnderReview = c.status === 'UNDER_REVIEW';
+                const isReviewed = c.status === 'REVIEWED';
+                const isPublished = c.status === 'PUBLISHED';
 
-                  {/* Category & Audience */}
-                  <TableCell>
-                    <div className="space-y-1">
-                      <span className="text-xs font-semibold text-slate-700 block">
-                        {c.category?.replace(/_/g, ' ')}
+                return (
+                  <TableRow key={c._id} className="hover:bg-slate-50/80 transition-colors">
+                    {/* Title & Code */}
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <span className="font-mono text-[10px] font-bold text-[#284661] block">
+                          {c.code}
+                        </span>
+                        <span className="font-bold text-slate-900 text-xs block truncate max-w-[240px]" title={c.title}>
+                          {c.title}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    {/* Category & Audience */}
+                    <TableCell>
+                      <div className="space-y-1">
+                        <span className="text-xs font-semibold text-slate-700 block">
+                          {c.category?.replace(/_/g, ' ')}
+                        </span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {c.targetAudience?.slice(0, 2).map((a) => (
+                            <Badge key={a} variant="outline" className="text-[9px] px-1 py-0 font-bold text-slate-500">
+                              {a}
+                            </Badge>
+                          ))}
+                          {c.targetAudience?.length > 2 && (
+                            <span className="text-[10px] text-slate-400 font-bold">
+                              +{c.targetAudience.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Videos */}
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-700">
+                        <Video className="w-3.5 h-3.5 text-[#E76120]" />
+                        <span className="font-bold">{c.videos?.length || 0} Lecture(s)</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block">
+                        {c.videos?.reduce((acc, v) => acc + (v.durationMinutes || 0), 0)} mins total
                       </span>
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {c.targetAudience?.slice(0, 2).map((a) => (
-                          <Badge key={a} variant="outline" className="text-[9px] px-1 py-0 font-bold text-slate-500">
-                            {a}
-                          </Badge>
-                        ))}
-                        {c.targetAudience?.length > 2 && (
-                          <span className="text-[10px] text-slate-400 font-bold">
-                            +{c.targetAudience.length - 2}
+                    </TableCell>
+
+                    {/* Assessment & Certificate */}
+                    <TableCell>
+                      <div className="space-y-0.5 text-xs">
+                        {c.assessment?.enabled ? (
+                          <div className="flex items-center gap-1 text-emerald-700 font-bold text-[11px]">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>MCQ ({c.assessment.questions?.length || 0} Qs)</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-[10px]">No Quiz</span>
+                        )}
+
+                        {c.certificate?.enabled && (
+                          <span className="text-[10px] text-amber-700 font-semibold block">
+                            Cert: {c.certificate.validityMonths}m validity
                           </span>
                         )}
                       </div>
-                    </div>
-                  </TableCell>
+                    </TableCell>
 
-                  {/* Videos */}
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-700">
-                      <Video className="w-3.5 h-3.5 text-[#E76120]" />
-                      <span className="font-bold">{c.videos?.length || 0} Lecture(s)</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 block">
-                      {c.videos?.reduce((acc, v) => acc + (v.durationMinutes || 0), 0)} mins total
-                    </span>
-                  </TableCell>
-
-                  {/* Assessment & Certificate */}
-                  <TableCell>
-                    <div className="space-y-0.5 text-xs">
-                      {c.assessment?.enabled ? (
-                        <div className="flex items-center gap-1 text-emerald-700 font-bold text-[11px]">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>MCQ ({c.assessment.questions?.length || 0} Qs)</span>
+                    {/* Pricing */}
+                    <TableCell>
+                      {c.pricing?.isPaid ? (
+                        <div>
+                          <span className="font-black text-slate-900 text-xs">
+                            ₹{c.pricing.priceINR}
+                          </span>
+                          {c.pricing.discountPriceINR > 0 && (
+                            <span className="text-[10px] text-emerald-600 block font-bold">
+                              Offer: ₹{c.pricing.discountPriceINR}
+                            </span>
+                          )}
                         </div>
                       ) : (
-                        <span className="text-slate-400 text-[10px]">No Quiz</span>
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold">
+                          FREE
+                        </Badge>
                       )}
+                    </TableCell>
 
-                      {c.certificate?.enabled && (
-                        <span className="text-[10px] text-amber-700 font-semibold block">
-                          Cert: {c.certificate.validityMonths}m validity
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-
-                  {/* Pricing */}
-                  <TableCell>
-                    {c.pricing?.isPaid ? (
-                      <div>
-                        <span className="font-black text-slate-900 text-xs">
-                          ₹{c.pricing.priceINR}
-                        </span>
-                        {c.pricing.discountPriceINR > 0 && (
-                          <span className="text-[10px] text-emerald-600 block font-bold">
-                            Offer: ₹{c.pricing.discountPriceINR}
-                          </span>
+                    {/* Status Badge & Workflow Trigger */}
+                    <TableCell>
+                      <div className="space-y-1.5">
+                        {c.status === 'PUBLISHED' && (
+                          <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] font-bold flex items-center gap-1 w-fit">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Published (Live)</span>
+                          </Badge>
                         )}
+                        {c.status === 'UNDER_REVIEW' && (
+                          <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/30 text-[10px] font-bold flex items-center gap-1 w-fit">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            <span>Under Review</span>
+                          </Badge>
+                        )}
+                        {c.status === 'NEEDS_REVISION' && (
+                          <Badge className="bg-purple-500/15 text-purple-700 border-purple-500/30 text-[10px] font-bold flex items-center gap-1 w-fit">
+                            <FileCheck className="w-3 h-3 text-purple-600" />
+                            <span>Needs Revision</span>
+                          </Badge>
+                        )}
+                        {c.status === 'REVIEWED' && (
+                          <Badge className="bg-blue-500/15 text-blue-700 border-blue-500/30 text-[10px] font-bold flex items-center gap-1 w-fit">
+                            <ShieldCheck className="w-3 h-3 text-blue-600" />
+                            <span>Pending Approval</span>
+                          </Badge>
+                        )}
+                        {c.status === 'REJECTED' && (
+                          <Badge className="bg-rose-500/15 text-rose-700 border-rose-500/30 text-[10px] font-bold flex items-center gap-1 w-fit">
+                            <XCircle className="w-3 h-3 text-rose-600" />
+                            <span>Rejected</span>
+                          </Badge>
+                        )}
+                        {c.status === 'ARCHIVED' && (
+                          <Badge className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] font-bold flex items-center gap-1 w-fit">
+                            <span>Archived</span>
+                          </Badge>
+                        )}
+                        {(!c.status || c.status === 'DRAFT') && (
+                          <Badge className="bg-slate-100 text-slate-700 border-slate-300 text-[10px] font-bold flex items-center gap-1 w-fit">
+                            <span>Draft</span>
+                          </Badge>
+                        )}
+
+                        {/* Quick Workflow Action Button */}
+                        <PermissionGuard module="INTEGRATED" section="DIKSHA" action="EDIT">
+                          {isDraftOrNeedsRev && (
+                            <button
+                              type="button"
+                              onClick={() => setWorkflowModalCourse(c)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-[10px] font-bold cursor-pointer transition-all"
+                              title="Submit course to reviewer queue"
+                            >
+                              <Send className="w-2.5 h-2.5" />
+                              <span>Submit Review</span>
+                            </button>
+                          )}
+
+                          {isUnderReview && (
+                            <button
+                              type="button"
+                              onClick={() => setWorkflowModalCourse(c)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold cursor-pointer transition-all"
+                              title="Review curriculum & MCQs"
+                            >
+                              <ShieldCheck className="w-2.5 h-2.5" />
+                              <span>Review Course</span>
+                            </button>
+                          )}
+
+                          {isReviewed && (
+                            <button
+                              type="button"
+                              onClick={() => setWorkflowModalCourse(c)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold cursor-pointer transition-all"
+                              title="Approve & publish live to subscribers"
+                            >
+                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              <span>Approve &amp; Publish</span>
+                            </button>
+                          )}
+                        </PermissionGuard>
                       </div>
-                    ) : (
-                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold">
-                        FREE
-                      </Badge>
-                    )}
-                  </TableCell>
+                    </TableCell>
 
-                  {/* Status Toggle Dropdown */}
-                  <TableCell>
-                    <select
-                      value={c.status}
-                      onChange={(e) => handleToggleStatus(c._id, e.target.value)}
-                      className={`h-7 px-2 rounded-lg text-[11px] font-bold border outline-none cursor-pointer transition-colors ${
-                        c.status === 'PUBLISHED'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : c.status === 'DRAFT'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
-                      }`}
-                    >
-                      <option value="DRAFT">DRAFT</option>
-                      <option value="PUBLISHED">PUBLISHED</option>
-                      <option value="ARCHIVED">ARCHIVED</option>
-                    </select>
-                  </TableCell>
-
-                  {/* Action Buttons */}
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setViewingCourse(c)}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 cursor-pointer shadow-2xs transition-all"
-                        title="View Course Details"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-[#284661]" />
-                        <span>Details</span>
-                      </button>
-
-                      <PermissionGuard module="INTEGRATED" section="DIKSHA" action="EDIT">
+                    {/* Action Buttons */}
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
-                          onClick={() => {
-                            setEditingCourse(c);
-                            setIsCreateEditOpen(true);
-                          }}
-                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 cursor-pointer"
-                          title="Edit Course"
+                          onClick={() => setViewingCourse(c)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 cursor-pointer shadow-2xs transition-all"
+                          title="View Course Details & Workflow Audit Trail"
                         >
-                          <Edit className="w-3.5 h-3.5 text-[#E76120]" />
+                          <Eye className="w-3.5 h-3.5 text-[#284661]" />
+                          <span>Details</span>
                         </button>
-                      </PermissionGuard>
 
-                      <PermissionGuard module="INTEGRATED" section="DIKSHA" action="DELETE">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteCourse(c)}
-                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 border border-slate-200 cursor-pointer"
-                          title="Delete Course"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </PermissionGuard>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                        <PermissionGuard module="INTEGRATED" section="DIKSHA" action="EDIT">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingCourse(c);
+                              setIsCreateEditOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 cursor-pointer"
+                            title="Edit Course"
+                          >
+                            <Edit className="w-3.5 h-3.5 text-[#E76120]" />
+                          </button>
+                        </PermissionGuard>
+
+                        <PermissionGuard module="INTEGRATED" section="DIKSHA" action="DELETE">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCourse(c)}
+                            className="p-1.5 rounded-lg bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 border border-slate-200 cursor-pointer"
+                            title="Delete Course"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </PermissionGuard>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </AdminTableWrapper>
@@ -763,8 +847,19 @@ export const DikshaPage = () => {
         onClose={() => setEnrolledModalCourse(null)}
         course={enrolledModalCourse}
       />
+
+      <CourseWorkflowModal
+        isOpen={!!workflowModalCourse}
+        onClose={() => setWorkflowModalCourse(null)}
+        course={workflowModalCourse}
+        onSuccess={() => {
+          fetchStats();
+          fetchCourses();
+        }}
+      />
     </PageContainer>
   );
 };
 
 export default DikshaPage;
+

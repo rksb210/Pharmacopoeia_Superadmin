@@ -115,7 +115,16 @@ const DikshaCourseSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['DRAFT', 'PUBLISHED', 'ARCHIVED'],
+      enum: [
+        'DRAFT',
+        'UNDER_REVIEW',
+        'NEEDS_REVISION',
+        'REVIEWED',
+        'APPROVED',
+        'REJECTED',
+        'PUBLISHED',
+        'ARCHIVED',
+      ],
       default: 'DRAFT',
     },
     pricing: {
@@ -141,6 +150,45 @@ const DikshaCourseSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    submittedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    submittedAt: {
+      type: Date,
+      default: null,
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+    workflowHistory: [
+      {
+        action: { type: String, required: true },
+        performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+        performerName: { type: String, default: 'Admin' },
+        roleName: { type: String, default: 'Admin' },
+        previousStatus: { type: String },
+        newStatus: { type: String },
+        comments: { type: String, default: '' },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

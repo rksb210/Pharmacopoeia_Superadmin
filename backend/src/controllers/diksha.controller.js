@@ -198,6 +198,93 @@ export const toggleStatus = async (req, res, next) => {
 };
 
 /**
+ * @desc    Submit course for Review (Maker action)
+ * @route   POST /api/diksha/courses/:id/submit-review
+ * @access  Private (INTEGRATED:DIKSHA:EDIT)
+ */
+export const submitForReview = async (req, res, next) => {
+  try {
+    const { comments } = req.body;
+    const course = await dikshaService.submitForReview(req.params.id, req.user, comments);
+
+    await auditService.log(req, {
+      action: 'DIKSHA_COURSE_SUBMITTED_FOR_REVIEW',
+      module: 'INTEGRATED',
+      entity: 'DikshaCourse',
+      entityId: course._id,
+      status: 'SUCCESS',
+      details: `Submitted DIKSHA Course "${course.title}" (${course.code}) for reviewer inspection.`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Course submitted for review successfully.',
+      course,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Review course (Reviewer action)
+ * @route   POST /api/diksha/courses/:id/review
+ * @access  Private (INTEGRATED:DIKSHA:APPROVE or EDIT)
+ */
+export const reviewCourse = async (req, res, next) => {
+  try {
+    const { decision, comments } = req.body; // 'APPROVE' | 'REQUEST_REVISION' | 'REJECT'
+    const course = await dikshaService.reviewCourse(req.params.id, { decision, comments }, req.user);
+
+    await auditService.log(req, {
+      action: `DIKSHA_COURSE_REVIEW_${decision}`,
+      module: 'INTEGRATED',
+      entity: 'DikshaCourse',
+      entityId: course._id,
+      status: 'SUCCESS',
+      details: `Review action "${decision}" performed on course "${course.title}". Remarks: ${comments || 'None'}`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Course review updated (${course.status}).`,
+      course,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Approve and Publish course (Approver action)
+ * @route   POST /api/diksha/courses/:id/approve
+ * @access  Private (INTEGRATED:DIKSHA:APPROVE)
+ */
+export const approveCourse = async (req, res, next) => {
+  try {
+    const { decision, comments } = req.body; // 'APPROVE_PUBLISH' | 'REQUEST_REVISION' | 'REJECT'
+    const course = await dikshaService.approveCourse(req.params.id, { decision, comments }, req.user);
+
+    await auditService.log(req, {
+      action: `DIKSHA_COURSE_FINAL_${decision}`,
+      module: 'INTEGRATED',
+      entity: 'DikshaCourse',
+      entityId: course._id,
+      status: 'SUCCESS',
+      details: `Final approval action "${decision}" performed on course "${course.title}". Status is now ${course.status}.`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Course status is now ${course.status}.`,
+      course,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * @desc    Get enrollments list
  * @route   GET /api/diksha/enrollments
  * @access  Private (INTEGRATED:DIKSHA:VIEW)
@@ -221,3 +308,4 @@ export const getEnrollments = async (req, res, next) => {
     next(error);
   }
 };
+

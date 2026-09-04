@@ -403,14 +403,17 @@ export const CreateEditCourseModal = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 block">Publish Status</label>
+                <label className="text-xs font-bold text-slate-700 block">Workflow Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#E76120]"
                 >
                   <option value="DRAFT">Draft (Under Preparation)</option>
-                  <option value="PUBLISHED">Published (Active on DIKSHA Portal)</option>
+                  <option value="UNDER_REVIEW">Under Review (In Reviewer Queue)</option>
+                  <option value="NEEDS_REVISION">Needs Revision (Changes Requested)</option>
+                  <option value="REVIEWED">Reviewed (Pending Final Approval)</option>
+                  <option value="PUBLISHED">Published (Live to Subscribers)</option>
                   <option value="ARCHIVED">Archived (Inactive)</option>
                 </select>
               </div>

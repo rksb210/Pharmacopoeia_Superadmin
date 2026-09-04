@@ -375,10 +375,20 @@ export const dikshaService = {
   },
 
   /**
-   * Toggle status
+   * Toggle status directly (admin/superadmin override)
    */
   toggleCourseStatus: async (courseId, newStatus) => {
-    if (!['DRAFT', 'PUBLISHED', 'ARCHIVED'].includes(newStatus)) {
+    const validStatuses = [
+      'DRAFT',
+      'UNDER_REVIEW',
+      'NEEDS_REVISION',
+      'REVIEWED',
+      'APPROVED',
+      'REJECTED',
+      'PUBLISHED',
+      'ARCHIVED',
+    ];
+    if (!validStatuses.includes(newStatus)) {
       throw new Error('Invalid course status.');
     }
     const updated = await DikshaCourse.findByIdAndUpdate(
@@ -391,6 +401,115 @@ export const dikshaService = {
   },
 
   /**
+   * Step 1: Submit for Review (Maker/Editor Action)
+   */
+  submitForReview: async (courseId, user, comments = '') => {
+    const course = await DikshaCourse.findById(courseId);
+    if (!course) throw new Error('Course not found.');
+
+    const prevStatus = course.status;
+    course.status = 'UNDER_REVIEW';
+    course.submittedBy = user?._id || null;
+    course.submittedAt = new Date();
+
+    const performerName = user?.name || user?.fullName || user?.email || 'Admin';
+    const roleName = user?.role?.name || user?.role || 'Maker';
+
+    course.workflowHistory.push({
+      action: 'SUBMIT_FOR_REVIEW',
+      performedBy: user?._id || null,
+      performerName,
+      roleName,
+      previousStatus: prevStatus,
+      newStatus: 'UNDER_REVIEW',
+      comments: comments || 'Submitted course for reviewer inspection.',
+      timestamp: new Date(),
+    });
+
+    return await course.save();
+  },
+
+  /**
+   * Step 2: Reviewer Action (Approve Review / Request Revision / Reject)
+   */
+  reviewCourse: async (courseId, { decision, comments }, user) => {
+    const course = await DikshaCourse.findById(courseId);
+    if (!course) throw new Error('Course not found.');
+
+    const prevStatus = course.status;
+    let nextStatus = 'REVIEWED';
+    let actionLabel = 'REVIEW_APPROVED';
+
+    if (decision === 'REQUEST_REVISION') {
+      nextStatus = 'NEEDS_REVISION';
+      actionLabel = 'REQUEST_REVISION';
+    } else if (decision === 'REJECT') {
+      nextStatus = 'REJECTED';
+      actionLabel = 'REVIEW_REJECTED';
+    }
+
+    course.status = nextStatus;
+    course.reviewedBy = user?._id || null;
+    course.reviewedAt = new Date();
+
+    const performerName = user?.name || user?.fullName || user?.email || 'Reviewer';
+    const roleName = user?.role?.name || user?.role || 'Reviewer';
+
+    course.workflowHistory.push({
+      action: actionLabel,
+      performedBy: user?._id || null,
+      performerName,
+      roleName,
+      previousStatus: prevStatus,
+      newStatus: nextStatus,
+      comments: comments || (decision === 'APPROVE' ? 'Course verified and approved by Reviewer.' : 'Revision requested.'),
+      timestamp: new Date(),
+    });
+
+    return await course.save();
+  },
+
+  /**
+   * Step 3: Approver Action (Final Approve & Publish / Reject)
+   */
+  approveCourse: async (courseId, { decision, comments }, user) => {
+    const course = await DikshaCourse.findById(courseId);
+    if (!course) throw new Error('Course not found.');
+
+    const prevStatus = course.status;
+    let nextStatus = 'PUBLISHED';
+    let actionLabel = 'FINAL_APPROVED_PUBLISHED';
+
+    if (decision === 'REJECT') {
+      nextStatus = 'REJECTED';
+      actionLabel = 'FINAL_REJECTED';
+    } else if (decision === 'REQUEST_REVISION') {
+      nextStatus = 'NEEDS_REVISION';
+      actionLabel = 'FINAL_REQUEST_REVISION';
+    }
+
+    course.status = nextStatus;
+    course.approvedBy = user?._id || null;
+    course.approvedAt = new Date();
+
+    const performerName = user?.name || user?.fullName || user?.email || 'Approver';
+    const roleName = user?.role?.name || user?.role || 'Approver';
+
+    course.workflowHistory.push({
+      action: actionLabel,
+      performedBy: user?._id || null,
+      performerName,
+      roleName,
+      previousStatus: prevStatus,
+      newStatus: nextStatus,
+      comments: comments || (decision === 'APPROVE_PUBLISH' ? 'Final approval granted. Course published live to subscribers.' : 'Course rejected by Approver.'),
+      timestamp: new Date(),
+    });
+
+    return await course.save();
+  },
+
+  /**
    * Get Aggregate KPI Statistics
    */
   getDikshaStats: async () => {
@@ -400,6 +519,9 @@ export const dikshaService = {
       totalCourses,
       publishedCourses,
       draftCourses,
+      underReviewCourses,
+      needsRevisionCourses,
+      pendingApprovalCourses,
       coursesAgg,
       totalEnrollments,
       completedEnrollments,
@@ -407,6 +529,9 @@ export const dikshaService = {
       DikshaCourse.countDocuments(),
       DikshaCourse.countDocuments({ status: 'PUBLISHED' }),
       DikshaCourse.countDocuments({ status: 'DRAFT' }),
+      DikshaCourse.countDocuments({ status: 'UNDER_REVIEW' }),
+      DikshaCourse.countDocuments({ status: 'NEEDS_REVISION' }),
+      DikshaCourse.countDocuments({ status: 'REVIEWED' }),
       DikshaCourse.aggregate([
         {
           $group: {
@@ -433,6 +558,9 @@ export const dikshaService = {
       totalCourses,
       publishedCourses,
       draftCourses,
+      underReviewCourses,
+      needsRevisionCourses,
+      pendingApprovalCourses,
       totalEnrolled,
       totalCompleted,
       completionRate,

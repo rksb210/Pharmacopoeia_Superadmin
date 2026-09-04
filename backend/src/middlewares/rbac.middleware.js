@@ -68,7 +68,10 @@ export const checkPermissionMatch = (permissions, module, section, action) => {
   // Wildcard superadmin
   if (permissions.includes('*')) return true;
 
-  const targetCode = `${module}:${section}:${action}`.toUpperCase();
+  let normAction = (action || '').toUpperCase();
+  if (normAction === 'CREATE') normAction = 'ADD';
+
+  const targetCode = `${module}:${section}:${normAction}`.toUpperCase();
   const moduleWildcard = `${module}:*`.toUpperCase();
   const sectionWildcard = `${module}:${section}:*`.toUpperCase();
 

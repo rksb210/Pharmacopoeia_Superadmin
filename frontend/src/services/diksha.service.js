@@ -6,8 +6,7 @@ export const dikshaService = {
    */
   getStats: async () => {
     try {
-      const response = await api.get('/diksha/stats');
-      return response.data;
+      return await api.get('/diksha/stats');
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -37,8 +36,7 @@ export const dikshaService = {
       if (sortBy) params.append('sortBy', sortBy);
       if (sortOrder) params.append('sortOrder', sortOrder);
 
-      const response = await api.get(`/diksha/courses?${params.toString()}`);
-      return response.data;
+      return await api.get(`/diksha/courses?${params.toString()}`);
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -49,8 +47,7 @@ export const dikshaService = {
    */
   getCourseById: async (courseId) => {
     try {
-      const response = await api.get(`/diksha/courses/${courseId}`);
-      return response.data;
+      return await api.get(`/diksha/courses/${courseId}`);
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -61,8 +58,7 @@ export const dikshaService = {
    */
   createCourse: async (courseData) => {
     try {
-      const response = await api.post('/diksha/courses', courseData);
-      return response.data;
+      return await api.post('/diksha/courses', courseData);
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -73,8 +69,7 @@ export const dikshaService = {
    */
   updateCourse: async (courseId, courseData) => {
     try {
-      const response = await api.put(`/diksha/courses/${courseId}`, courseData);
-      return response.data;
+      return await api.put(`/diksha/courses/${courseId}`, courseData);
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -85,8 +80,7 @@ export const dikshaService = {
    */
   deleteCourse: async (courseId) => {
     try {
-      const response = await api.delete(`/diksha/courses/${courseId}`);
-      return response.data;
+      return await api.delete(`/diksha/courses/${courseId}`);
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -97,8 +91,40 @@ export const dikshaService = {
    */
   toggleStatus: async (courseId, status) => {
     try {
-      const response = await api.patch(`/diksha/courses/${courseId}/status`, { status });
-      return response.data;
+      return await api.patch(`/diksha/courses/${courseId}/status`, { status });
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Submit course for review (Maker action)
+   */
+  submitForReview: async (courseId, comments = '') => {
+    try {
+      return await api.post(`/diksha/courses/${courseId}/submit-review`, { comments });
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Review course (Reviewer action)
+   */
+  reviewCourse: async (courseId, { decision, comments }) => {
+    try {
+      return await api.post(`/diksha/courses/${courseId}/review`, { decision, comments });
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  /**
+   * Final approve & publish (Approver action)
+   */
+  approveCourse: async (courseId, { decision, comments }) => {
+    try {
+      return await api.post(`/diksha/courses/${courseId}/approve`, { decision, comments });
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -122,8 +148,7 @@ export const dikshaService = {
       if (page) params.append('page', page);
       if (limit) params.append('limit', limit);
 
-      const response = await api.get(`/diksha/enrollments?${params.toString()}`);
-      return response.data;
+      return await api.get(`/diksha/enrollments?${params.toString()}`);
     } catch (error) {
       throw error.response?.data || error;
     }
@@ -131,3 +156,5 @@ export const dikshaService = {
 };
 
 export default dikshaService;
+
+

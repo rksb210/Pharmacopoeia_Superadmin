@@ -7,6 +7,9 @@ import {
   updateCourse,
   deleteCourse,
   toggleStatus,
+  submitForReview,
+  reviewCourse,
+  approveCourse,
   getEnrollments,
 } from '../controllers/diksha.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
@@ -26,9 +29,15 @@ router.get('/courses', requirePermission('INTEGRATED', 'DIKSHA', 'VIEW'), getCou
 router.get('/courses/:id', requirePermission('INTEGRATED', 'DIKSHA', 'VIEW'), getCourseById);
 
 // Course Mutations
-router.post('/courses', requirePermission('INTEGRATED', 'DIKSHA', 'CREATE'), createCourse);
+router.post('/courses', requirePermission('INTEGRATED', 'DIKSHA', 'ADD'), createCourse);
 router.put('/courses/:id', requirePermission('INTEGRATED', 'DIKSHA', 'EDIT'), updateCourse);
 router.patch('/courses/:id/status', requirePermission('INTEGRATED', 'DIKSHA', 'EDIT'), toggleStatus);
 router.delete('/courses/:id', requirePermission('INTEGRATED', 'DIKSHA', 'DELETE'), deleteCourse);
 
+// Multi-Tier Workflow Endpoints (Maker ➔ Reviewer ➔ Approver)
+router.post('/courses/:id/submit-review', requirePermission('INTEGRATED', 'DIKSHA', 'EDIT'), submitForReview);
+router.post('/courses/:id/review', requirePermission('INTEGRATED', 'DIKSHA', 'EDIT'), reviewCourse);
+router.post('/courses/:id/approve', requirePermission('INTEGRATED', 'DIKSHA', 'APPROVE'), approveCourse);
+
 export default router;
+
