@@ -275,13 +275,9 @@ export const AdminsPage = () => {
               }}
               className="h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
             >
-              <option value="all">All Roles</option>
+              <option value="all">All Administrators</option>
               <option value="superadmin">Super Admin</option>
               <option value="admin">Admin</option>
-              <option value="subadmin">Sub Admin</option>
-              <option value="maker">Maker</option>
-              <option value="reviewer">Reviewer</option>
-              <option value="approver">Approver</option>
             </select>
 
             {/* Status Filter */}

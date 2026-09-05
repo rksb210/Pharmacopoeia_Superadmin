@@ -5,14 +5,15 @@ import { useAuth } from '../../../context/AuthContext';
 import { AlertCircle } from 'lucide-react';
 import departmentService from '../../../services/department.service';
 import designationService from '../../../services/designation.service';
+import api from '../../../services/api';
 
-const ADMIN_ROLES = [
-  { value: 'admin', label: 'Admin (Full Departmental Operations)' },
-  { value: 'subadmin', label: 'Sub Admin (Coordinators & Support)' },
-  { value: 'maker', label: 'Maker (Draft Content Author)' },
-  { value: 'reviewer', label: 'Reviewer (Editorial Reviewer)' },
-  { value: 'approver', label: 'Approver (Scientific Committee Signer)' },
-  { value: 'superadmin', label: 'Super Admin (System Governance)' },
+const DEFAULT_ADMIN_ROLES = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'subadmin', label: 'Sub Admin' },
+  { value: 'maker', label: 'Maker' },
+  { value: 'reviewer', label: 'Reviewer' },
+  { value: 'approver', label: 'Approver' },
+  { value: 'superadmin', label: 'Super Admin' },
 ];
 
 export const CreateEditAdminModal = ({
@@ -41,10 +42,22 @@ export const CreateEditAdminModal = ({
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [deptLoading, setDeptLoading] = useState(false);
+  const [dbRoles, setDbRoles] = useState([]);
 
   const isEditMode = !!admin;
 
   useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        const res = await api.get('/rbac/roles');
+        if (res?.roles && res.roles.length > 0) {
+          setDbRoles(res.roles);
+        }
+      } catch {
+        // Fallback to static roles if offline or error
+      }
+    };
+
     const loadDepts = async () => {
       setDeptLoading(true);
       try {
@@ -53,7 +66,11 @@ export const CreateEditAdminModal = ({
       } catch {}
       setDeptLoading(false);
     };
-    if (isOpen) loadDepts();
+
+    if (isOpen) {
+      loadDepts();
+      loadRoles();
+    }
   }, [isOpen]);
 
   useEffect(() => {
@@ -161,10 +178,21 @@ export const CreateEditAdminModal = ({
     }
   };
 
+  // Populate active roles from database (fallback to DEFAULT_ADMIN_ROLES)
+  const roleOptions =
+    dbRoles.length > 0
+      ? dbRoles
+          .filter((r) => r.isActive !== false)
+          .map((r) => ({
+            value: r.code,
+            label: r.name,
+          }))
+      : DEFAULT_ADMIN_ROLES;
+
   // Only superadmin can assign superadmin role
   const availableRoles = isSuperAdmin
-    ? ADMIN_ROLES
-    : ADMIN_ROLES.filter((r) => r.value !== 'superadmin');
+    ? roleOptions
+    : roleOptions.filter((r) => r.value !== 'superadmin');
 
   return (
     <AdminModal

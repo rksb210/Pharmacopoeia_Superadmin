@@ -26,9 +26,8 @@ export const validateCreateAdmin = (req, res, next) => {
     errors.push('Password must be at least 6 characters long');
   }
 
-  const validRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
-  if (role && !validRoles.includes(role.toLowerCase())) {
-    errors.push(`Role must be one of: ${validRoles.join(', ')}`);
+  if (role && (typeof role !== 'string' || !role.trim())) {
+    errors.push('Role must be a valid non-empty identifier');
   }
 
   if (departmentRef && !/^[0-9a-fA-F]{24}$/.test(String(departmentRef))) errors.push('Invalid department selected');
@@ -61,9 +60,8 @@ export const validateUpdateAdmin = (req, res, next) => {
     errors.push('Username must be at least 3 characters');
   }
 
-  const validRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
-  if (role && !validRoles.includes(role.toLowerCase())) {
-    errors.push(`Role must be one of: ${validRoles.join(', ')}`);
+  if (role !== undefined && (typeof role !== 'string' || !role.trim())) {
+    errors.push('Role must be a valid non-empty identifier');
   }
 
   if (departmentRef !== undefined && departmentRef !== null && departmentRef !== '' && !/^[0-9a-fA-F]{24}$/.test(String(departmentRef))) errors.push('Invalid department selected');

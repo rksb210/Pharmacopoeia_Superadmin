@@ -9,7 +9,7 @@ export const adminService = {
    * Get KPI statistics for Admins dashboard
    */
   getAdminStats: async () => {
-    const adminRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
+    const adminRoles = ['superadmin', 'admin'];
 
     const totalAdmins = await User.countDocuments({ role: { $in: adminRoles } });
     const activeAdmins = await User.countDocuments({ role: { $in: adminRoles }, isActive: true });
@@ -35,9 +35,13 @@ export const adminService = {
     status = '',
     sortBy = 'createdAt',
     sortOrder = 'desc',
+    allowedRoles = ['superadmin', 'admin'],
   }) => {
-    const adminRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
-    const query = { role: { $in: adminRoles } };
+    let roleCondition = { $in: allowedRoles };
+    if (role && role !== 'all') {
+      roleCondition = role.toLowerCase();
+    }
+    const query = { role: roleCondition };
 
     if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
@@ -48,11 +52,6 @@ export const adminService = {
         { department: searchRegex },
         { designation: searchRegex },
       ];
-    }
-
-    // Role filter
-    if (role && role !== 'all') {
-      query.role = role.toLowerCase();
     }
 
     // Status filter
