@@ -3,7 +3,7 @@
  */
 
 export const validateCreateSubscriber = (req, res, next) => {
-  const { name, email, username, password, userType, dynamicFields = {} } = req.body;
+  const { name, email, username, password, userType, phoneNumber, dynamicFields = {} } = req.body;
   const errors = [];
 
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -24,6 +24,13 @@ export const validateCreateSubscriber = (req, res, next) => {
 
   if (!password || typeof password !== 'string' || password.length < 6) {
     errors.push('Password must be at least 6 characters long');
+  }
+
+  if (phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim()) {
+    const digits = phoneNumber.replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10 || !/^[6-9]\d{9}$/.test(digits)) {
+      errors.push('Please enter a valid 10-digit Indian mobile number (e.g. 98765 43210)');
+    }
   }
 
   if (!userType || typeof userType !== 'string') {
@@ -87,7 +94,7 @@ export const validateCreateSubscriber = (req, res, next) => {
 };
 
 export const validateUpdateSubscriber = (req, res, next) => {
-  const { name, email, username } = req.body;
+  const { name, email, username, phoneNumber } = req.body;
   const errors = [];
 
   if (name !== undefined && (!name || !name.trim())) {
@@ -100,6 +107,13 @@ export const validateUpdateSubscriber = (req, res, next) => {
 
   if (username !== undefined && (!username || username.trim().length < 3)) {
     errors.push('Username must be at least 3 characters');
+  }
+
+  if (phoneNumber !== undefined && phoneNumber !== null && String(phoneNumber).trim()) {
+    const digits = String(phoneNumber).replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10 || !/^[6-9]\d{9}$/.test(digits)) {
+      errors.push('Please enter a valid 10-digit Indian mobile number (e.g. 98765 43210)');
+    }
   }
 
   if (req.body.dynamicFields && typeof req.body.dynamicFields === 'object') {

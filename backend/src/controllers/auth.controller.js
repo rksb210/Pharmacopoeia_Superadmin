@@ -240,6 +240,17 @@ export const signup = async (req, res, next) => {
       });
     }
 
+    if (phoneNumber && phoneNumber.trim()) {
+      const cleanPhone = phoneNumber.trim();
+      const existingPhone = await Subscriber.findOne({ phoneNumber: cleanPhone });
+      if (existingPhone) {
+        return res.status(409).json({
+          success: false,
+          message: 'This mobile / contact number is already registered with another account.',
+        });
+      }
+    }
+
     const userTypeDoc = await UserType.findOne({ code: cleanUserType });
     if (!userTypeDoc) {
       return res.status(400).json({

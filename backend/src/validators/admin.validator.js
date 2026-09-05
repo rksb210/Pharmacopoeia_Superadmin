@@ -3,7 +3,7 @@
  */
 
 export const validateCreateAdmin = (req, res, next) => {
-  const { name, email, username, password, role, departmentRef, designationRef } = req.body;
+  const { name, email, username, password, role, departmentRef, designationRef, phoneNumber } = req.body;
   const errors = [];
 
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -30,6 +30,13 @@ export const validateCreateAdmin = (req, res, next) => {
     errors.push('Role must be a valid non-empty identifier');
   }
 
+  if (phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim()) {
+    const digits = phoneNumber.replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10 || !/^[6-9]\d{9}$/.test(digits)) {
+      errors.push('Please enter a valid 10-digit Indian mobile number (e.g. 98765 43210)');
+    }
+  }
+
   if (departmentRef && !/^[0-9a-fA-F]{24}$/.test(String(departmentRef))) errors.push('Invalid department selected');
   if (designationRef && !/^[0-9a-fA-F]{24}$/.test(String(designationRef))) errors.push('Invalid designation selected');
 
@@ -45,7 +52,7 @@ export const validateCreateAdmin = (req, res, next) => {
 };
 
 export const validateUpdateAdmin = (req, res, next) => {
-  const { name, email, username, role, departmentRef, designationRef } = req.body;
+  const { name, email, username, role, departmentRef, designationRef, phoneNumber } = req.body;
   const errors = [];
 
   if (name !== undefined && (!name || !name.trim())) {
@@ -62,6 +69,13 @@ export const validateUpdateAdmin = (req, res, next) => {
 
   if (role !== undefined && (typeof role !== 'string' || !role.trim())) {
     errors.push('Role must be a valid non-empty identifier');
+  }
+
+  if (phoneNumber !== undefined && phoneNumber !== null && String(phoneNumber).trim()) {
+    const digits = String(phoneNumber).replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10 || !/^[6-9]\d{9}$/.test(digits)) {
+      errors.push('Please enter a valid 10-digit Indian mobile number (e.g. 98765 43210)');
+    }
   }
 
   if (departmentRef !== undefined && departmentRef !== null && departmentRef !== '' && !/^[0-9a-fA-F]{24}$/.test(String(departmentRef))) errors.push('Invalid department selected');

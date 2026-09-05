@@ -97,6 +97,7 @@ export const CreateEditAdminModal = ({
 
   useEffect(() => {
     if (admin) {
+      const rawPhone = (admin.phoneNumber || '').replace(/\D/g, '').slice(-10);
       setFormData({
         name: admin.name || '',
         email: admin.email || '',
@@ -105,7 +106,7 @@ export const CreateEditAdminModal = ({
         role: admin.role || 'admin',
         departmentRef: admin.departmentRef?._id || admin.departmentRef || '',
         designationRef: admin.designationRef?._id || admin.designationRef || '',
-        phoneNumber: admin.phoneNumber || '',
+        phoneNumber: rawPhone,
         notes: admin.notes || '',
       });
     } else {
@@ -136,6 +137,25 @@ export const CreateEditAdminModal = ({
     if (apiError) setApiError('');
   };
 
+  const handlePhoneChange = (e) => {
+    const onlyDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setFormData((prev) => ({ ...prev, phoneNumber: onlyDigits }));
+    if (errors.phoneNumber) setErrors((prev) => ({ ...prev, phoneNumber: '' }));
+    if (apiError) setApiError('');
+  };
+
+  const handlePhoneKeyDown = (e) => {
+    if (
+      ['Backspace', 'Tab', 'Enter', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) ||
+      (e.ctrlKey || e.metaKey)
+    ) {
+      return;
+    }
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Full name is required';
@@ -149,6 +169,15 @@ export const CreateEditAdminModal = ({
       newErrors.username = 'Username is required';
     } else if (formData.username.trim().length < 3) {
       newErrors.username = 'Username must be at least 3 characters';
+    }
+
+    if (formData.phoneNumber && formData.phoneNumber.trim()) {
+      const digits = formData.phoneNumber.replace(/\D/g, '');
+      if (digits.length !== 10) {
+        newErrors.phoneNumber = 'Contact number must be exactly 10 digits';
+      } else if (!/^[6-9]\d{9}$/.test(digits)) {
+        newErrors.phoneNumber = 'Enter a valid Indian mobile number (starting with 6, 7, 8, or 9)';
+      }
     }
 
     if (!isEditMode && (!formData.password || formData.password.length < 6)) {
@@ -167,8 +196,14 @@ export const CreateEditAdminModal = ({
     setApiError('');
 
     try {
+      const digits = formData.phoneNumber ? formData.phoneNumber.replace(/\D/g, '').slice(-10) : '';
+      const submissionData = {
+        ...formData,
+        phoneNumber: digits ? `+91 ${digits}` : '',
+      };
+
       if (onSuccess) {
-        await onSuccess(formData, isEditMode ? admin._id : null);
+        await onSuccess(submissionData, isEditMode ? admin._id : null);
       }
       onClose();
     } catch (err) {
@@ -289,14 +324,38 @@ export const CreateEditAdminModal = ({
             {errors.designationRef && <span className="text-[11px] text-red-600">{errors.designationRef}</span>}
           </div>
 
-          <InputField
-            id="phoneNumber"
-            name="phoneNumber"
-            label="Contact Number"
-            placeholder="e.g. +91 98765 43210"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-          />
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-slate-700 select-none text-left">
+              Contact Number
+            </label>
+            <div
+              className={`flex items-center w-full h-11 border ${
+                errors.phoneNumber
+                  ? 'border-red-500 ring-2 ring-red-200'
+                  : 'border-slate-200 hover:border-slate-300 focus-within:border-[#E76120] focus-within:ring-2 focus-within:ring-[#E76120]/15'
+              } rounded-lg bg-white overflow-hidden transition-all`}
+            >
+              <div className="flex items-center gap-1 px-3 bg-slate-50 border-r border-slate-200 text-slate-700 font-bold text-xs shrink-0 select-none h-full">
+                <span className="text-sm">🇮🇳</span>
+                <span>+91</span>
+              </div>
+              <input
+                id="phoneNumber"
+                type="text"
+                name="phoneNumber"
+                inputMode="numeric"
+                maxLength={10}
+                placeholder="98765 43210"
+                value={formData.phoneNumber}
+                onChange={handlePhoneChange}
+                onKeyDown={handlePhoneKeyDown}
+                className="w-full h-full px-3 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none bg-transparent"
+              />
+            </div>
+            {errors.phoneNumber && (
+              <span className="text-xs text-red-500 text-left mt-0.5">{errors.phoneNumber}</span>
+            )}
+          </div>
 
           {!isEditMode && (
             <InputField

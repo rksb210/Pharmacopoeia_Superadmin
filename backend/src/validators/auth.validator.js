@@ -164,8 +164,11 @@ export const validateSignup = (req, res, next) => {
     errors.push('User type is required');
   }
 
-  if (phoneNumber !== undefined && typeof phoneNumber !== 'string') {
-    errors.push('Phone number must be a string');
+  if (phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim()) {
+    const digits = phoneNumber.replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10 || !/^[6-9]\d{9}$/.test(digits)) {
+      errors.push('Please enter a valid 10-digit Indian mobile number (e.g. 98765 43210)');
+    }
   }
 
   if (dynamicFields !== undefined && (typeof dynamicFields !== 'object' || Array.isArray(dynamicFields))) {

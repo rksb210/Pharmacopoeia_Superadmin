@@ -334,18 +334,29 @@ export const subscriberService = {
 
     const cleanEmail = email.toLowerCase().trim();
     const cleanUsername = username.toLowerCase().trim();
+    const cleanPhone = (phoneNumber || '').trim();
     const uType = userType.toUpperCase().trim();
 
-    // Check duplicate
+    // Check duplicate email, username, and mobile number
+    const orConditions = [{ email: cleanEmail }, { username: cleanUsername }];
+    if (cleanPhone) {
+      orConditions.push({ phoneNumber: cleanPhone });
+    }
+
     const existing = await Subscriber.findOne({
-      $or: [{ email: cleanEmail }, { username: cleanUsername }],
+      $or: orConditions,
     });
 
     if (existing) {
       if (existing.email === cleanEmail) {
         throw new Error('A subscriber account with this email already exists.');
       }
-      throw new Error('A subscriber account with this username already exists.');
+      if (existing.username === cleanUsername) {
+        throw new Error('A subscriber account with this username already exists.');
+      }
+      if (cleanPhone && existing.phoneNumber === cleanPhone) {
+        throw new Error('This mobile number is already registered with another subscriber account.');
+      }
     }
 
     const userTypeDoc = await UserType.findOne({ code: uType });
@@ -354,7 +365,7 @@ export const subscriberService = {
       name: name.trim(),
       email: cleanEmail,
       username: cleanUsername,
-      phoneNumber: phoneNumber.trim(),
+      phoneNumber: cleanPhone,
       password,
       userType: uType,
       userTypeRef: userTypeDoc ? userTypeDoc._id : null,
@@ -382,8 +393,18 @@ export const subscriberService = {
     const { name, email, username, phoneNumber, dynamicFields, notes } = data;
 
     if (name) subscriber.name = name.trim();
-    if (phoneNumber !== undefined) subscriber.phoneNumber = phoneNumber.trim();
     if (notes !== undefined) subscriber.notes = notes.trim();
+
+    if (phoneNumber !== undefined) {
+      const cleanPhone = phoneNumber.trim();
+      if (cleanPhone && cleanPhone !== subscriber.phoneNumber) {
+        const duplicatePhone = await Subscriber.findOne({ phoneNumber: cleanPhone, _id: { $ne: subscriber._id } });
+        if (duplicatePhone) {
+          throw new Error('This mobile number is already registered with another subscriber account.');
+        }
+      }
+      subscriber.phoneNumber = cleanPhone;
+    }
 
     if (email && email.toLowerCase().trim() !== subscriber.email) {
       const cleanEmail = email.toLowerCase().trim();

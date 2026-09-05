@@ -137,17 +137,28 @@ export const adminService = {
 
     const cleanEmail = email.toLowerCase().trim();
     const cleanUsername = username.toLowerCase().trim();
+    const cleanPhone = (phoneNumber || '').trim();
 
-    // Check duplicate
+    // Check duplicate email, username, and mobile number
+    const orConditions = [{ email: cleanEmail }, { username: cleanUsername }];
+    if (cleanPhone) {
+      orConditions.push({ phoneNumber: cleanPhone });
+    }
+
     const existing = await User.findOne({
-      $or: [{ email: cleanEmail }, { username: cleanUsername }],
+      $or: orConditions,
     });
 
     if (existing) {
       if (existing.email === cleanEmail) {
         throw new Error('An account with this email address already exists.');
       }
-      throw new Error('An account with this username already exists.');
+      if (existing.username === cleanUsername) {
+        throw new Error('An account with this username already exists.');
+      }
+      if (cleanPhone && existing.phoneNumber === cleanPhone) {
+        throw new Error('This mobile number is already registered with another user or staff account.');
+      }
     }
 
     // Lookup roleRef if available
@@ -302,6 +313,17 @@ export const adminService = {
       const duplicate = await User.findOne({ username: cleanUsername, _id: { $ne: admin._id } });
       if (duplicate) throw new Error('Username is already in use by another account.');
       admin.username = cleanUsername;
+    }
+
+    if (phoneNumber !== undefined) {
+      const cleanPhone = phoneNumber.trim();
+      if (cleanPhone && cleanPhone !== admin.phoneNumber) {
+        const duplicatePhone = await User.findOne({ phoneNumber: cleanPhone, _id: { $ne: admin._id } });
+        if (duplicatePhone) {
+          throw new Error('This mobile number is already registered with another user or staff account.');
+        }
+      }
+      admin.phoneNumber = cleanPhone;
     }
 
     if (role && role !== admin.role) {
