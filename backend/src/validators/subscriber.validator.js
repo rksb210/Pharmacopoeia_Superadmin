@@ -8,6 +8,8 @@ export const validateCreateSubscriber = (req, res, next) => {
 
   if (!name || typeof name !== 'string' || !name.trim()) {
     errors.push('Full name is required');
+  } else if (!/^[a-zA-Z\s.]{2,100}$/.test(name.trim())) {
+    errors.push('Full name can only contain alphabetic letters, spaces, and periods');
   }
 
   if (!email || typeof email !== 'string' || !email.trim()) {
@@ -97,8 +99,12 @@ export const validateUpdateSubscriber = (req, res, next) => {
   const { name, email, username, phoneNumber } = req.body;
   const errors = [];
 
-  if (name !== undefined && (!name || !name.trim())) {
-    errors.push('Name cannot be empty');
+  if (name !== undefined) {
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      errors.push('Name cannot be empty');
+    } else if (!/^[a-zA-Z\s.]{2,100}$/.test(name.trim())) {
+      errors.push('Name can only contain alphabetic letters, spaces, and periods');
+    }
   }
 
   if (email !== undefined && (!email || !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email.trim()))) {

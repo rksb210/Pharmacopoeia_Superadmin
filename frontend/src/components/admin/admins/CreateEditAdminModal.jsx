@@ -137,6 +137,26 @@ export const CreateEditAdminModal = ({
     if (apiError) setApiError('');
   };
 
+  const handleNameChange = (e) => {
+    // Only allow alphabets, spaces, and periods (e.g. Dr. Rajesh Verma)
+    const cleanName = e.target.value.replace(/[^a-zA-Z\s.]/g, '');
+    setFormData((prev) => ({ ...prev, name: cleanName }));
+    if (errors.name) setErrors((prev) => ({ ...prev, name: '' }));
+    if (apiError) setApiError('');
+  };
+
+  const handleNameKeyDown = (e) => {
+    if (
+      ['Backspace', 'Tab', 'Enter', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) ||
+      (e.ctrlKey || e.metaKey)
+    ) {
+      return;
+    }
+    if (!/^[a-zA-Z\s.]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handlePhoneChange = (e) => {
     const onlyDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
     setFormData((prev) => ({ ...prev, phoneNumber: onlyDigits }));
@@ -158,7 +178,14 @@ export const CreateEditAdminModal = ({
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Full name is required';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required';
+    } else if (!/^[a-zA-Z\s.]+$/.test(formData.name.trim())) {
+      newErrors.name = 'Full name can only contain alphabetic letters, spaces, and periods';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Full name must be at least 2 characters long';
+    }
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email address is required';
     } else if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email.trim())) {
@@ -259,7 +286,8 @@ export const CreateEditAdminModal = ({
             label="Full Name"
             placeholder="e.g. Dr. Rajesh Verma"
             value={formData.name}
-            onChange={handleChange}
+            onChange={handleNameChange}
+            onKeyDown={handleNameKeyDown}
             error={errors.name}
             required
           />
