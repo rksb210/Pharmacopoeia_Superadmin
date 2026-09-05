@@ -39,16 +39,8 @@ const userSchema = new mongoose.Schema(
     // Primary Role
     role: {
       type: String,
-      enum: [
-        'superadmin',
-        'admin',
-        'subadmin',
-        'maker',
-        'reviewer',
-        'approver',
-        'editor',
-        'viewer',
-      ],
+      trim: true,
+      lowercase: true,
       default: 'admin',
     },
     // Administrative Metadata

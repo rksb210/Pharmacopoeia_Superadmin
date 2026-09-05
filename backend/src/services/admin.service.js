@@ -9,7 +9,7 @@ export const adminService = {
    * Get KPI statistics for Admins dashboard
    */
   getAdminStats: async () => {
-    const adminRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
+    const adminRoles = ['superadmin', 'admin'];
 
     const totalAdmins = await User.countDocuments({ role: { $in: adminRoles } });
     const activeAdmins = await User.countDocuments({ role: { $in: adminRoles }, isActive: true });
@@ -35,9 +35,13 @@ export const adminService = {
     status = '',
     sortBy = 'createdAt',
     sortOrder = 'desc',
+    allowedRoles = ['superadmin', 'admin'],
   }) => {
-    const adminRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
-    const query = { role: { $in: adminRoles } };
+    let roleCondition = { $in: allowedRoles };
+    if (role && role !== 'all') {
+      roleCondition = role.toLowerCase();
+    }
+    const query = { role: roleCondition };
 
     if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
@@ -48,11 +52,6 @@ export const adminService = {
         { department: searchRegex },
         { designation: searchRegex },
       ];
-    }
-
-    // Role filter
-    if (role && role !== 'all') {
-      query.role = role.toLowerCase();
     }
 
     // Status filter
@@ -138,17 +137,28 @@ export const adminService = {
 
     const cleanEmail = email.toLowerCase().trim();
     const cleanUsername = username.toLowerCase().trim();
+    const cleanPhone = (phoneNumber || '').trim();
 
-    // Check duplicate
+    // Check duplicate email, username, and mobile number
+    const orConditions = [{ email: cleanEmail }, { username: cleanUsername }];
+    if (cleanPhone) {
+      orConditions.push({ phoneNumber: cleanPhone });
+    }
+
     const existing = await User.findOne({
-      $or: [{ email: cleanEmail }, { username: cleanUsername }],
+      $or: orConditions,
     });
 
     if (existing) {
       if (existing.email === cleanEmail) {
         throw new Error('An account with this email address already exists.');
       }
-      throw new Error('An account with this username already exists.');
+      if (existing.username === cleanUsername) {
+        throw new Error('An account with this username already exists.');
+      }
+      if (cleanPhone && existing.phoneNumber === cleanPhone) {
+        throw new Error('This mobile number is already registered with another user or staff account.');
+      }
     }
 
     // Lookup roleRef if available
@@ -305,6 +315,17 @@ export const adminService = {
       admin.username = cleanUsername;
     }
 
+    if (phoneNumber !== undefined) {
+      const cleanPhone = phoneNumber.trim();
+      if (cleanPhone && cleanPhone !== admin.phoneNumber) {
+        const duplicatePhone = await User.findOne({ phoneNumber: cleanPhone, _id: { $ne: admin._id } });
+        if (duplicatePhone) {
+          throw new Error('This mobile number is already registered with another user or staff account.');
+        }
+      }
+      admin.phoneNumber = cleanPhone;
+    }
+
     if (role && role !== admin.role) {
       admin.role = role.toLowerCase();
       const roleDoc = await Role.findOne({ code: role.toLowerCase() });
@@ -355,7 +376,7 @@ export const adminService = {
    * Reset Admin password
    */
   resetAdminPassword: async (id, newPassword, requester) => {
-    const admin = await User.findById(id);
+    const admin = await User.findById(id).select('+password');
     if (!admin) {
       throw new Error('Administrator not found');
     }
@@ -363,6 +384,13 @@ export const adminService = {
     // Hierarchy protection
     if (admin.role === 'superadmin' && requester.role !== 'superadmin') {
       throw new Error('Permission denied: Only Superadmin can reset Superadmin passwords.');
+    }
+
+    if (admin.password) {
+      const isSameAsOld = await admin.comparePassword(newPassword);
+      if (isSameAsOld) {
+        throw new Error('New password cannot be the same as the previous password. Please choose a different password.');
+      }
     }
 
     admin.password = newPassword;

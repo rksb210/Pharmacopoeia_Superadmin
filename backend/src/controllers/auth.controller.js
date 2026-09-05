@@ -240,6 +240,17 @@ export const signup = async (req, res, next) => {
       });
     }
 
+    if (phoneNumber && phoneNumber.trim()) {
+      const cleanPhone = phoneNumber.trim();
+      const existingPhone = await Subscriber.findOne({ phoneNumber: cleanPhone });
+      if (existingPhone) {
+        return res.status(409).json({
+          success: false,
+          message: 'This mobile / contact number is already registered with another account.',
+        });
+      }
+    }
+
     const userTypeDoc = await UserType.findOne({ code: cleanUserType });
     if (!userTypeDoc) {
       return res.status(400).json({
@@ -326,6 +337,14 @@ export const changePassword = async (req, res, next) => {
       });
     }
 
+    const isSameAsOld = await user.comparePassword(newPassword);
+    if (isSameAsOld) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password cannot be the same as your previous password. Please choose a different password.',
+      });
+    }
+
     user.password = newPassword;
     await user.save();
 
@@ -391,13 +410,23 @@ export const resetPassword = async (req, res, next) => {
     const user = await User.findOne({
       passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() },
-    });
+    }).select('+password');
 
     if (!user) {
       return res.status(400).json({
         success: false,
         message: 'Password reset token is invalid or has expired.',
       });
+    }
+
+    if (user.password) {
+      const isSameAsOld = await user.comparePassword(req.body.password);
+      if (isSameAsOld) {
+        return res.status(400).json({
+          success: false,
+          message: 'New password cannot be the same as your previous password. Please choose a different password.',
+        });
+      }
     }
 
     user.password = req.body.password;

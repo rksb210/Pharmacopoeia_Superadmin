@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AdminModal from '../common/AdminModal';
 import InputField from '../../common/InputField';
 import { Badge } from '../../ui/badge';
+import { tokens } from '../../../theme/tokens';
 import {
   Search,
   Percent,
@@ -179,10 +180,47 @@ export const AssignDirectDiscountModal = ({
     }
   };
 
+  const handleNumberKeyDown = (e) => {
+    if (['-', '+', 'e', 'E'].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleNumberChange = (rawValue, options = {}) => {
+    const { min = 0, max = null } = options;
+    if (rawValue === '' || rawValue === undefined || rawValue === null) {
+      setDiscountValue('');
+      return;
+    }
+
+    let cleanStr = String(rawValue);
+    if (/^0\d+/.test(cleanStr)) {
+      cleanStr = cleanStr.replace(/^0+/, '');
+      if (cleanStr === '') cleanStr = '0';
+    }
+
+    let num = Number(cleanStr);
+    if (isNaN(num)) return;
+    if (min !== null && num < min) num = min;
+    if (max !== null && num > max) num = max;
+
+    setDiscountValue(num);
+  };
+
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (selectedUsers.length === 0) {
       setError('Please select at least one subscriber to assign concession.');
+      return;
+    }
+
+    const numVal = discountValue === '' ? 0 : Number(discountValue);
+    if (discountValue === '' || isNaN(numVal) || numVal <= 0) {
+      setError('Valid positive discount value is required.');
+      return;
+    }
+    if (discountType === 'percentage' && numVal > 100) {
+      setError('Percentage discount cannot exceed 100%.');
       return;
     }
 
@@ -195,7 +233,7 @@ export const AssignDirectDiscountModal = ({
         userIds: selectedUsers.map((u) => u._id),
         email: selectedUsers[0].email,
         discountType,
-        discountValue,
+        discountValue: numVal,
         endDate,
         notes,
       });
@@ -508,13 +546,25 @@ export const AssignDirectDiscountModal = ({
         </div>
 
         {/* Concession Type & Value */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="font-semibold text-slate-700">Discount</label>
+        <div className="grid grid-cols-2 gap-3 items-start">
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-slate-700 select-none text-left">Discount Type</label>
             <select
               value={discountType}
-              onChange={(e) => setDiscountType(e.target.value)}
-              className="h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:border-[#E76120] cursor-pointer"
+              onChange={(e) => {
+                const newType = e.target.value;
+                setDiscountType(newType);
+                if (newType === 'percentage' && typeof discountValue === 'number' && discountValue > 100) {
+                  setDiscountValue(100);
+                }
+              }}
+              style={{
+                height: tokens.dimensions.inputHeight,
+                borderRadius: tokens.borderRadius.input,
+                paddingLeft: tokens.dimensions.inputPaddingX,
+                paddingRight: tokens.dimensions.inputPaddingX,
+              }}
+              className="w-full border border-slate-200 bg-white text-slate-800 text-sm font-medium transition-all duration-150 outline-none hover:border-slate-300 focus:border-[#E76120] focus:ring-2 focus:ring-[#E76120]/15 cursor-pointer"
             >
               <option value="percentage">Percentage (%)</option>
               <option value="fixed_amount">Fixed Amount (₹) Off</option>
@@ -525,8 +575,16 @@ export const AssignDirectDiscountModal = ({
             id="val"
             label={discountType === 'percentage' ? 'Percentage Value (%)' : 'Fixed Amount (₹)'}
             type="number"
+            min={0}
+            max={discountType === 'percentage' ? 100 : undefined}
+            onKeyDown={handleNumberKeyDown}
             value={discountValue}
-            onChange={(e) => setDiscountValue(Number(e.target.value))}
+            onChange={(e) =>
+              handleNumberChange(e.target.value, {
+                min: 0,
+                max: discountType === 'percentage' ? 100 : null,
+              })
+            }
             required
           />
         </div>

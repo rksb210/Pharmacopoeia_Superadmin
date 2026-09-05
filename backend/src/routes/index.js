@@ -19,6 +19,7 @@ import configRoutes from './config.routes.js';
 import marqueeAlertRoutes from './marqueeAlert.routes.js';
 import departmentRoutes from './department.routes.js';
 import designationRoutes from './designation.routes.js';
+import dikshaRoutes from './diksha.routes.js';
 
 const router = Router();
 
@@ -88,5 +89,8 @@ router.use('/marquee-alerts', marqueeAlertRoutes);
 // Department & Designation Masters
 router.use('/departments', departmentRoutes);
 router.use('/designations', designationRoutes);
+
+// DIKSHA (Digital Initiative for Knowledge & Skill Enhancement) LMS routes
+router.use('/diksha', dikshaRoutes);
 
 export default router;

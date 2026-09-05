@@ -107,7 +107,12 @@ export const validateRegister = (req, res, next) => {
   const { name, email, username, password, role } = req.body;
   const errors = [];
 
-  if (!name || !name.trim()) errors.push('Name is required');
+  if (!name || !name.trim()) {
+    errors.push('Name is required');
+  } else if (!/^[a-zA-Z\s.]{2,100}$/.test(name.trim())) {
+    errors.push('Name can only contain alphabetic letters, spaces, and periods');
+  }
+
   if (!email || !email.trim()) errors.push('Email is required');
   if (!username || !username.trim()) errors.push('Username is required');
   if (!password || password.length < 6) errors.push('Password must be at least 6 characters long');
@@ -136,6 +141,8 @@ export const validateSignup = (req, res, next) => {
 
   if (!name || typeof name !== 'string' || !name.trim()) {
     errors.push('Full name is required');
+  } else if (!/^[a-zA-Z\s.]{2,100}$/.test(name.trim())) {
+    errors.push('Full name can only contain alphabetic letters, spaces, and periods');
   } else if (name.trim().length > 100) {
     errors.push('Name cannot exceed 100 characters');
   }
@@ -164,8 +171,11 @@ export const validateSignup = (req, res, next) => {
     errors.push('User type is required');
   }
 
-  if (phoneNumber !== undefined && typeof phoneNumber !== 'string') {
-    errors.push('Phone number must be a string');
+  if (phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim()) {
+    const digits = phoneNumber.replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10 || !/^[6-9]\d{9}$/.test(digits)) {
+      errors.push('Please enter a valid 10-digit Indian mobile number (e.g. 98765 43210)');
+    }
   }
 
   if (dynamicFields !== undefined && (typeof dynamicFields !== 'object' || Array.isArray(dynamicFields))) {

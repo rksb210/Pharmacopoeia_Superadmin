@@ -56,9 +56,8 @@ router.get(
   async (req, res, next) => {
     try {
       const { page, limit, search, role, status, sortBy, sortOrder } = req.query;
-
-      // Default role filter if none specified: subadmin roles
-      const subAdminRole = role && role !== 'all' ? role : 'subadmin';
+      const subAdminRoles = ['subadmin', 'maker', 'reviewer', 'approver'];
+      const subAdminRole = role && role !== 'all' ? role : undefined;
 
       const result = await adminService.getAdminsList({
         page,
@@ -68,6 +67,7 @@ router.get(
         status,
         sortBy,
         sortOrder,
+        allowedRoles: subAdminRoles,
       });
 
       return res.status(200).json({

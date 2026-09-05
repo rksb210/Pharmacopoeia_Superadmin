@@ -74,7 +74,7 @@ export const UserProfileDropdown = () => {
 
         {/* Dropdown Menu */}
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+          <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
             {/* Header section with User Info */}
             <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#284661] text-white font-bold flex items-center justify-center text-base shrink-0">

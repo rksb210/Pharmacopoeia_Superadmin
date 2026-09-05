@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminModal from '../common/AdminModal';
 import InputField from '../../common/InputField';
 import { Badge } from '../../ui/badge';
+import { tokens } from '../../../theme/tokens';
 import {
   Ticket,
   Percent,
@@ -51,17 +52,17 @@ export const CreateEditCouponModal = ({
         title: coupon.title || '',
         description: coupon.description || '',
         discountType: coupon.discountType || 'percentage',
-        discountValue: coupon.discountValue || 0,
-        maxDiscountINR: coupon.maxDiscountINR || 0,
-        minOrderAmountINR: coupon.minOrderAmountINR || 0,
+        discountValue: coupon.discountValue ?? 0,
+        maxDiscountINR: coupon.maxDiscountINR ?? 0,
+        minOrderAmountINR: coupon.minOrderAmountINR ?? 0,
         startDate: coupon.startDate
           ? new Date(coupon.startDate).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
         endDate: coupon.endDate
           ? new Date(coupon.endDate).toISOString().split('T')[0]
           : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        usageLimit: coupon.usageLimit || 0,
-        perUserLimit: coupon.perUserLimit || 1,
+        usageLimit: coupon.usageLimit ?? 0,
+        perUserLimit: coupon.perUserLimit ?? 1,
         applicablePlans: coupon.applicablePlans || ['ALL'],
         applicableUserTypes: coupon.applicableUserTypes || ['ALL'],
         specificEmails: coupon.specificEmails?.join(', ') || '',
@@ -95,6 +96,35 @@ export const CreateEditCouponModal = ({
     if (apiError) setApiError('');
   };
 
+  const handleNumberKeyDown = (e) => {
+    // Prevent typing negative sign '-', '+', and exponent 'e'/'E'
+    if (['-', '+', 'e', 'E'].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleNumberChange = (field, rawValue, options = {}) => {
+    const { min = 0, max = null } = options;
+    if (rawValue === '' || rawValue === undefined || rawValue === null) {
+      handleChange(field, '');
+      return;
+    }
+
+    // Clean leading zeros if multiple characters (e.g. "022" -> "22", but retain "0")
+    let cleanStr = String(rawValue);
+    if (/^0\d+/.test(cleanStr)) {
+      cleanStr = cleanStr.replace(/^0+/, '');
+      if (cleanStr === '') cleanStr = '0';
+    }
+
+    let num = Number(cleanStr);
+    if (isNaN(num)) return;
+    if (min !== null && num < min) num = min;
+    if (max !== null && num > max) num = max;
+
+    handleChange(field, num);
+  };
+
   const toggleUserType = (ut) => {
     let current = [...formData.applicableUserTypes];
     if (ut === 'ALL') {
@@ -115,9 +145,11 @@ export const CreateEditCouponModal = ({
     const errs = {};
     if (!formData.code.trim()) errs.code = 'Coupon code is required';
     if (!formData.title.trim()) errs.title = 'Coupon title is required';
-    if (formData.discountValue === undefined || Number(formData.discountValue) <= 0) {
+
+    const numDiscount = formData.discountValue === '' ? 0 : Number(formData.discountValue);
+    if (formData.discountValue === '' || isNaN(numDiscount) || numDiscount <= 0) {
       errs.discountValue = 'Valid discount value is required';
-    } else if (formData.discountType === 'percentage' && Number(formData.discountValue) > 100) {
+    } else if (formData.discountType === 'percentage' && numDiscount > 100) {
       errs.discountValue = 'Percentage cannot exceed 100%';
     }
     if (!formData.endDate) errs.endDate = 'End date is required';
@@ -138,9 +170,20 @@ export const CreateEditCouponModal = ({
         .map((s) => s.trim())
         .filter(Boolean);
 
+      const numDiscountValue = formData.discountValue === '' ? 0 : Number(formData.discountValue);
+      const numMaxDiscount = formData.maxDiscountINR === '' ? 0 : Number(formData.maxDiscountINR);
+      const numMinOrder = formData.minOrderAmountINR === '' ? 0 : Number(formData.minOrderAmountINR);
+      const numUsageLimit = formData.usageLimit === '' ? 0 : Number(formData.usageLimit);
+      const numPerUserLimit = formData.perUserLimit === '' ? 1 : Number(formData.perUserLimit);
+
       await onSuccess(
         {
           ...formData,
+          discountValue: numDiscountValue,
+          maxDiscountINR: numMaxDiscount,
+          minOrderAmountINR: numMinOrder,
+          usageLimit: numUsageLimit,
+          perUserLimit: numPerUserLimit,
           specificEmails: emailList,
         },
         isEditMode ? coupon._id : null
@@ -220,13 +263,33 @@ export const CreateEditCouponModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-slate-700">Discount Calculation Mode</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-start">
+              <div className="flex flex-col gap-1.5 w-full">
+                <label className="text-sm font-medium text-slate-700 select-none text-left">
+                  Discount Calculation Mode
+                </label>
                 <select
                   value={formData.discountType}
-                  onChange={(e) => handleChange('discountType', e.target.value)}
-                  className="h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:border-[#E76120]"
+                  onChange={(e) => {
+                    const newType = e.target.value;
+                    let newDiscountVal = formData.discountValue;
+                    if (newType === 'percentage' && typeof newDiscountVal === 'number' && newDiscountVal > 100) {
+                      newDiscountVal = 100;
+                    }
+                    setFormData((prev) => ({
+                      ...prev,
+                      discountType: newType,
+                      discountValue: newDiscountVal,
+                    }));
+                    if (errors.discountValue) setErrors((prev) => ({ ...prev, discountValue: '' }));
+                  }}
+                  style={{
+                    height: tokens.dimensions.inputHeight,
+                    borderRadius: tokens.borderRadius.input,
+                    paddingLeft: tokens.dimensions.inputPaddingX,
+                    paddingRight: tokens.dimensions.inputPaddingX,
+                  }}
+                  className="w-full border border-slate-200 bg-white text-slate-800 text-sm font-medium transition-all duration-150 outline-none hover:border-slate-300 focus:border-[#E76120] focus:ring-2 focus:ring-[#E76120]/15"
                 >
                   <option value="percentage">Percentage (%) Concession</option>
                   <option value="fixed_amount">Fixed Amount (₹) Off</option>
@@ -241,9 +304,17 @@ export const CreateEditCouponModal = ({
                     : 'Discount Amount (₹)'
                 }
                 type="number"
+                min={0}
+                max={formData.discountType === 'percentage' ? 100 : undefined}
+                onKeyDown={handleNumberKeyDown}
                 placeholder={formData.discountType === 'percentage' ? '20' : '1000'}
                 value={formData.discountValue}
-                onChange={(e) => handleChange('discountValue', Number(e.target.value))}
+                onChange={(e) =>
+                  handleNumberChange('discountValue', e.target.value, {
+                    min: 0,
+                    max: formData.discountType === 'percentage' ? 100 : null,
+                  })
+                }
                 error={errors.discountValue}
                 required
               />
@@ -251,20 +322,30 @@ export const CreateEditCouponModal = ({
               {formData.discountType === 'percentage' ? (
                 <InputField
                   id="maxDiscount"
-                  label="Maximum Discount Cap (₹) [0 = No Cap]"
+                  label="Maximum Discount Cap (₹)"
+                  helperText="[0 = No Cap]"
                   type="number"
+                  min={0}
+                  onKeyDown={handleNumberKeyDown}
                   placeholder="1500"
                   value={formData.maxDiscountINR}
-                  onChange={(e) => handleChange('maxDiscountINR', Number(e.target.value))}
+                  onChange={(e) =>
+                    handleNumberChange('maxDiscountINR', e.target.value, { min: 0 })
+                  }
                 />
               ) : (
                 <InputField
                   id="minSpend"
-                  label="Minimum Order Spend (₹) [0 = None]"
+                  label="Minimum Order Spend (₹)"
+                  helperText="[0 = None]"
                   type="number"
+                  min={0}
+                  onKeyDown={handleNumberKeyDown}
                   placeholder="3000"
                   value={formData.minOrderAmountINR}
-                  onChange={(e) => handleChange('minOrderAmountINR', Number(e.target.value))}
+                  onChange={(e) =>
+                    handleNumberChange('minOrderAmountINR', e.target.value, { min: 0 })
+                  }
                 />
               )}
             </div>
@@ -302,23 +383,33 @@ export const CreateEditCouponModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
               <InputField
                 id="usageLimit"
-                label="Global Total Redemption Limit [0 = Unlimited]"
+                label="Global Total Redemption Limit"
+                helperText="[0 = Unlimited]"
                 type="number"
+                min={0}
+                onKeyDown={handleNumberKeyDown}
                 placeholder="500"
                 value={formData.usageLimit}
-                onChange={(e) => handleChange('usageLimit', Number(e.target.value))}
+                onChange={(e) =>
+                  handleNumberChange('usageLimit', e.target.value, { min: 0 })
+                }
               />
 
               <InputField
                 id="perUserLimit"
                 label="Redemptions Permitted Per User"
+                helperText="[Default: 1]"
                 type="number"
+                min={0}
+                onKeyDown={handleNumberKeyDown}
                 placeholder="1"
                 value={formData.perUserLimit}
-                onChange={(e) => handleChange('perUserLimit', Number(e.target.value))}
+                onChange={(e) =>
+                  handleNumberChange('perUserLimit', e.target.value, { min: 0 })
+                }
               />
             </div>
           </div>

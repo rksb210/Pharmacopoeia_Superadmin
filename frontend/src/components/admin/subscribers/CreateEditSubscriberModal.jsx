@@ -30,11 +30,12 @@ export const CreateEditSubscriberModal = ({
 
   useEffect(() => {
     if (subscriber) {
+      const rawPhone = (subscriber.phoneNumber || '').replace(/\D/g, '').slice(-10);
       setFormData({
         name: subscriber.name || '',
         email: subscriber.email || '',
         username: subscriber.username || '',
-        phoneNumber: subscriber.phoneNumber || '',
+        phoneNumber: rawPhone,
         password: '',
         userType: subscriber.userType || 'STUDENT',
         dynamicFields: subscriber.dynamicFields || {},
@@ -63,13 +64,58 @@ export const CreateEditSubscriberModal = ({
     if (apiError) setApiError('');
   };
 
+  const handleNameChange = (e) => {
+    const cleanName = e.target.value.replace(/[^a-zA-Z\s.]/g, '');
+    setFormData((prev) => ({ ...prev, name: cleanName }));
+    if (errors.name) setErrors((prev) => ({ ...prev, name: '' }));
+    if (apiError) setApiError('');
+  };
+
+  const handleNameKeyDown = (e) => {
+    if (
+      ['Backspace', 'Tab', 'Enter', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) ||
+      (e.ctrlKey || e.metaKey)
+    ) {
+      return;
+    }
+    if (!/^[a-zA-Z\s.]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handlePhoneChange = (e) => {
+    const onlyDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setFormData((prev) => ({ ...prev, phoneNumber: onlyDigits }));
+    if (errors.phoneNumber) setErrors((prev) => ({ ...prev, phoneNumber: '' }));
+    if (apiError) setApiError('');
+  };
+
+  const handlePhoneKeyDown = (e) => {
+    if (
+      ['Backspace', 'Tab', 'Enter', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) ||
+      (e.ctrlKey || e.metaKey)
+    ) {
+      return;
+    }
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleDynamicChange = (newDynamicFields) => {
     setFormData((prev) => ({ ...prev, dynamicFields: newDynamicFields }));
   };
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Full name is required';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required';
+    } else if (!/^[a-zA-Z\s.]+$/.test(formData.name.trim())) {
+      newErrors.name = 'Full name can only contain alphabetic letters, spaces, and periods';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Full name must be at least 2 characters long';
+    }
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email address is required';
     } else if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email.trim())) {
@@ -84,6 +130,15 @@ export const CreateEditSubscriberModal = ({
 
     if (!isEditMode && (!formData.password || formData.password.length < 6)) {
       newErrors.password = 'Password must be at least 6 characters long';
+    }
+
+    if (formData.phoneNumber && formData.phoneNumber.trim()) {
+      const digits = formData.phoneNumber.replace(/\D/g, '');
+      if (digits.length !== 10) {
+        newErrors.phoneNumber = 'Phone number must be exactly 10 digits';
+      } else if (!/^[6-9]\d{9}$/.test(digits)) {
+        newErrors.phoneNumber = 'Enter a valid Indian mobile number (starting with 6, 7, 8, or 9)';
+      }
     }
 
     // Validate dynamic fields based on type
@@ -139,8 +194,10 @@ export const CreateEditSubscriberModal = ({
     setApiError('');
 
     try {
+      const digits = formData.phoneNumber ? formData.phoneNumber.replace(/\D/g, '').slice(-10) : '';
       const payload = {
         ...formData,
+        phoneNumber: digits ? `+91 ${digits}` : '',
         dynamicFields: {
           ...formData.dynamicFields,
           ...(formData.userType.toUpperCase() === 'INDUSTRY' && {
@@ -191,7 +248,8 @@ export const CreateEditSubscriberModal = ({
             label="Full Name"
             placeholder="e.g. Dr. Ananya Sen"
             value={formData.name}
-            onChange={handleChange}
+            onChange={handleNameChange}
+            onKeyDown={handleNameKeyDown}
             error={errors.name}
             required
           />
@@ -219,14 +277,38 @@ export const CreateEditSubscriberModal = ({
             required
           />
 
-          <InputField
-            id="phoneNumber"
-            name="phoneNumber"
-            label="Phone Number"
-            placeholder="e.g. +91 98765 43210"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-          />
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-slate-700 select-none text-left">
+              Phone Number
+            </label>
+            <div
+              className={`flex items-center w-full h-11 border ${
+                errors.phoneNumber
+                  ? 'border-red-500 ring-2 ring-red-200'
+                  : 'border-slate-200 hover:border-slate-300 focus-within:border-[#E76120] focus-within:ring-2 focus-within:ring-[#E76120]/15'
+              } rounded-lg bg-white overflow-hidden transition-all`}
+            >
+              <div className="flex items-center gap-1 px-3 bg-slate-50 border-r border-slate-200 text-slate-700 font-bold text-xs shrink-0 select-none h-full">
+                <span className="text-sm">🇮🇳</span>
+                <span>+91</span>
+              </div>
+              <input
+                id="phoneNumber"
+                type="text"
+                name="phoneNumber"
+                inputMode="numeric"
+                maxLength={10}
+                placeholder="98765 43210"
+                value={formData.phoneNumber}
+                onChange={handlePhoneChange}
+                onKeyDown={handlePhoneKeyDown}
+                className="w-full h-full px-3 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none bg-transparent"
+              />
+            </div>
+            {errors.phoneNumber && (
+              <span className="text-xs text-red-500 text-left mt-0.5">{errors.phoneNumber}</span>
+            )}
+          </div>
 
           {/* Configurable User Type Dropdown */}
           <div className="flex flex-col gap-1.5 w-full">

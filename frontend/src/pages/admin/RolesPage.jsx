@@ -295,7 +295,7 @@ export const RolesPage = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Role Title &amp; Code</TableHead>
-              <TableHead>Type</TableHead>
+              {/* <TableHead>Type</TableHead> */}
               <TableHead>Assigned Users</TableHead>
               <TableHead>Permissions Scope</TableHead>
               <TableHead>Status</TableHead>
@@ -327,15 +327,15 @@ export const RolesPage = () => {
                     </div>
                   </TableCell>
 
-                  {/* Type Badge */}
-                  <TableCell>
+                  {/* Type Badge (Commented out for now) */}
+                  {/* <TableCell>
                     <Badge
                       variant={role.isSystemDefault ? 'nfiYellow' : 'secondary'}
                       className="text-[10px] font-bold"
                     >
                       {role.isSystemDefault ? 'System Default' : 'Custom'}
                     </Badge>
-                  </TableCell>
+                  </TableCell> */}
 
                   {/* Assigned Users Link */}
                   <TableCell>
@@ -465,6 +465,7 @@ export const RolesPage = () => {
         onClose={() => setViewingRoleId(null)}
         roleId={viewingRoleId}
         onEdit={(r) => setEditingRole(r)}
+        onRoleUpdated={fetchRolesData}
       />
 
       {/* Assign Users Modal */}

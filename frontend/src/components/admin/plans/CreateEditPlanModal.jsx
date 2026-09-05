@@ -3,6 +3,7 @@ import AdminModal from '../common/AdminModal';
 import InputField from '../../common/InputField';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
+import { tokens } from '../../../theme/tokens';
 import {
   Plus,
   Trash2,
@@ -60,18 +61,18 @@ export const CreateEditPlanModal = ({
         code: plan.code || '',
         description: plan.description || '',
         tier: plan.tier || 'Individual',
-        priceINR: plan.priceINR || 0,
+        priceINR: plan.priceINR ?? 0,
         validityType: plan.validityType || 'fixed_date',
         fixedDate: plan.fixedDate
           ? new Date(plan.fixedDate).toISOString().split('T')[0]
           : '2031-12-31',
-        durationValue: plan.durationValue || 365,
+        durationValue: plan.durationValue ?? 365,
         applicableUserTypes: plan.applicableUserTypes || ['ALL'],
         features: plan.features?.length > 0 ? plan.features : ['Full Digital Monograph Database'],
         trialEligibility: plan.trialEligibility || { isAllowed: true, trialDays: 14 },
         complimentaryEligibility: plan.complimentaryEligibility || { isAllowed: true, defaultMonths: 12 },
         discountRules: plan.discountRules || { isDiscountAllowed: true, maxDiscountPercent: 50, defaultDiscountPercent: 0 },
-        seatQuota: plan.seatQuota || 1,
+        seatQuota: plan.seatQuota ?? 1,
         isPopular: !!plan.isPopular,
         sortOrder: plan.sortOrder || 1,
         reason: '',
@@ -122,6 +123,54 @@ export const CreateEditPlanModal = ({
     }));
   };
 
+  const handleNumberKeyDown = (e) => {
+    if (['-', '+', 'e', 'E'].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleNumberChange = (field, rawValue, options = {}) => {
+    const { min = 0, max = null } = options;
+    if (rawValue === '' || rawValue === undefined || rawValue === null) {
+      handleChange(field, '');
+      return;
+    }
+
+    let cleanStr = String(rawValue);
+    if (/^0\d+/.test(cleanStr)) {
+      cleanStr = cleanStr.replace(/^0+/, '');
+      if (cleanStr === '') cleanStr = '0';
+    }
+
+    let num = Number(cleanStr);
+    if (isNaN(num)) return;
+    if (min !== null && num < min) num = min;
+    if (max !== null && num > max) num = max;
+
+    handleChange(field, num);
+  };
+
+  const handleNestedNumberChange = (parent, field, rawValue, options = {}) => {
+    const { min = 0, max = null } = options;
+    if (rawValue === '' || rawValue === undefined || rawValue === null) {
+      handleNestedChange(parent, field, '');
+      return;
+    }
+
+    let cleanStr = String(rawValue);
+    if (/^0\d+/.test(cleanStr)) {
+      cleanStr = cleanStr.replace(/^0+/, '');
+      if (cleanStr === '') cleanStr = '0';
+    }
+
+    let num = Number(cleanStr);
+    if (isNaN(num)) return;
+    if (min !== null && num < min) num = min;
+    if (max !== null && num > max) num = max;
+
+    handleNestedChange(parent, field, num);
+  };
+
   const toggleUserType = (ut) => {
     let current = [...formData.applicableUserTypes];
     if (ut === 'ALL') {
@@ -153,7 +202,8 @@ export const CreateEditPlanModal = ({
     const errs = {};
     if (!formData.name.trim()) errs.name = 'Plan name is required';
     if (!formData.code.trim()) errs.code = 'Plan code slug is required';
-    if (formData.priceINR === undefined || Number(formData.priceINR) < 0) {
+    const numPrice = formData.priceINR === '' ? -1 : Number(formData.priceINR);
+    if (formData.priceINR === '' || isNaN(numPrice) || numPrice < 0) {
       errs.priceINR = 'Valid price is required';
     }
     setErrors(errs);
@@ -168,7 +218,30 @@ export const CreateEditPlanModal = ({
     setApiError('');
 
     try {
-      await onSuccess(formData, isEditMode ? plan._id : null);
+      const numPrice = formData.priceINR === '' ? 0 : Number(formData.priceINR);
+      const numSeats = formData.seatQuota === '' ? 1 : Number(formData.seatQuota);
+      const numDuration = formData.durationValue === '' ? 365 : Number(formData.durationValue);
+      const numTrialDays = formData.trialEligibility?.trialDays === '' ? 0 : Number(formData.trialEligibility?.trialDays || 0);
+      const numMaxDiscount = formData.discountRules?.maxDiscountPercent === '' ? 0 : Number(formData.discountRules?.maxDiscountPercent || 0);
+      const numDefaultDiscount = formData.discountRules?.defaultDiscountPercent === '' ? 0 : Number(formData.discountRules?.defaultDiscountPercent || 0);
+
+      const payload = {
+        ...formData,
+        priceINR: numPrice,
+        seatQuota: numSeats,
+        durationValue: numDuration,
+        trialEligibility: {
+          ...formData.trialEligibility,
+          trialDays: numTrialDays,
+        },
+        discountRules: {
+          ...formData.discountRules,
+          maxDiscountPercent: numMaxDiscount,
+          defaultDiscountPercent: numDefaultDiscount,
+        },
+      };
+
+      await onSuccess(payload, isEditMode ? plan._id : null);
       onClose();
     } catch (err) {
       setApiError(err.message || 'Failed to save plan.');
@@ -246,13 +319,19 @@ export const CreateEditPlanModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-slate-700">Tier Category</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
+              <div className="flex flex-col gap-1.5 w-full">
+                <label className="text-sm font-medium text-slate-700 select-none text-left">Tier Category</label>
                 <select
                   value={formData.tier}
                   onChange={(e) => handleChange('tier', e.target.value)}
-                  className="h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:border-[#E76120]"
+                  style={{
+                    height: tokens.dimensions.inputHeight,
+                    borderRadius: tokens.borderRadius.input,
+                    paddingLeft: tokens.dimensions.inputPaddingX,
+                    paddingRight: tokens.dimensions.inputPaddingX,
+                  }}
+                  className="w-full border border-slate-200 bg-white text-slate-800 text-sm font-medium transition-all duration-150 outline-none hover:border-slate-300 focus:border-[#E76120] focus:ring-2 focus:ring-[#E76120]/15 cursor-pointer"
                 >
                   {TIERS.map((t) => (
                     <option key={t} value={t}>
@@ -266,13 +345,17 @@ export const CreateEditPlanModal = ({
                 id="priceINR"
                 label="Base Price in INR (₹)"
                 type="number"
+                min={0}
+                onKeyDown={handleNumberKeyDown}
                 placeholder="3500"
                 value={formData.priceINR}
-                onChange={(e) => handleChange('priceINR', e.target.value)}
+                onChange={(e) => handleNumberChange('priceINR', e.target.value, { min: 0 })}
                 error={errors.priceINR}
                 required
               />
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
               <InputField
                 id="fixedDate"
                 label="Valid Thru (Expiry Date)"
@@ -283,11 +366,14 @@ export const CreateEditPlanModal = ({
 
               <InputField
                 id="seatQuota"
-                label="Seat per subscription"
+                label="Seats Per Subscription"
+                helperText="[0 = Unlimited]"
                 type="number"
-                placeholder="1 (0 for unlimited)"
+                min={0}
+                onKeyDown={handleNumberKeyDown}
+                placeholder="1"
                 value={formData.seatQuota}
-                onChange={(e) => handleChange('seatQuota', e.target.value)}
+                onChange={(e) => handleNumberChange('seatQuota', e.target.value, { min: 0 })}
               />
             </div>
 
@@ -323,13 +409,19 @@ export const CreateEditPlanModal = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-slate-700">Validity Calculation Mode</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
+              <div className="flex flex-col gap-1.5 w-full">
+                <label className="text-sm font-medium text-slate-700 select-none text-left">Validity Calculation Mode</label>
                 <select
                   value={formData.validityType}
                   onChange={(e) => handleChange('validityType', e.target.value)}
-                  className="h-10 px-3 bg-white border border-slate-200 rounded-xl font-bold text-xs outline-none focus:border-[#E76120]"
+                  style={{
+                    height: tokens.dimensions.inputHeight,
+                    borderRadius: tokens.borderRadius.input,
+                    paddingLeft: tokens.dimensions.inputPaddingX,
+                    paddingRight: tokens.dimensions.inputPaddingX,
+                  }}
+                  className="w-full border border-slate-200 bg-white text-slate-800 text-sm font-medium transition-all duration-150 outline-none hover:border-slate-300 focus:border-[#E76120] focus:ring-2 focus:ring-[#E76120]/15 cursor-pointer"
                 >
                   <option value="fixed_date">Fixed Date (BRD 31-12-2031 Rule)</option>
                   <option value="duration_years">Duration in Years (e.g. 1 Year License)</option>
@@ -350,10 +442,19 @@ export const CreateEditPlanModal = ({
                 <InputField
                   id="durationValue"
                   label="Duration Length"
+                  helperText={
+                    formData.validityType === 'duration_years'
+                      ? '[In Years]'
+                      : formData.validityType === 'duration_months'
+                      ? '[In Months]'
+                      : '[In Days]'
+                  }
                   type="number"
+                  min={1}
+                  onKeyDown={handleNumberKeyDown}
                   placeholder="365"
                   value={formData.durationValue}
-                  onChange={(e) => handleChange('durationValue', e.target.value)}
+                  onChange={(e) => handleNumberChange('durationValue', e.target.value, { min: 1 })}
                 />
               )}
             </div>
@@ -431,9 +532,12 @@ export const CreateEditPlanModal = ({
                     id="trialDays"
                     label="Evaluation Duration (Days)"
                     type="number"
-                    value={formData.trialEligibility?.trialDays || 14}
+                    min={0}
+                    onKeyDown={handleNumberKeyDown}
+                    placeholder="14"
+                    value={formData.trialEligibility?.trialDays ?? ''}
                     onChange={(e) =>
-                      handleNestedChange('trialEligibility', 'trialDays', Number(e.target.value))
+                      handleNestedNumberChange('trialEligibility', 'trialDays', e.target.value, { min: 0 })
                     }
                   />
                 </div>
@@ -457,18 +561,22 @@ export const CreateEditPlanModal = ({
               </div>
 
               {formData.discountRules?.isDiscountAllowed && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
                   <InputField
                     id="maxDiscount"
                     label="Maximum Permitted Discount (%)"
                     type="number"
+                    min={0}
+                    max={100}
+                    onKeyDown={handleNumberKeyDown}
                     placeholder="50"
-                    value={formData.discountRules?.maxDiscountPercent || 50}
+                    value={formData.discountRules?.maxDiscountPercent ?? ''}
                     onChange={(e) =>
-                      handleNestedChange(
+                      handleNestedNumberChange(
                         'discountRules',
                         'maxDiscountPercent',
-                        Number(e.target.value)
+                        e.target.value,
+                        { min: 0, max: 100 }
                       )
                     }
                   />
@@ -477,13 +585,17 @@ export const CreateEditPlanModal = ({
                     id="defaultDiscount"
                     label="Default Concession Rate (%)"
                     type="number"
+                    min={0}
+                    max={100}
+                    onKeyDown={handleNumberKeyDown}
                     placeholder="0"
-                    value={formData.discountRules?.defaultDiscountPercent || 0}
+                    value={formData.discountRules?.defaultDiscountPercent ?? ''}
                     onChange={(e) =>
-                      handleNestedChange(
+                      handleNestedNumberChange(
                         'discountRules',
                         'defaultDiscountPercent',
-                        Number(e.target.value)
+                        e.target.value,
+                        { min: 0, max: 100 }
                       )
                     }
                   />

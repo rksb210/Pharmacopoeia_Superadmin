@@ -53,6 +53,7 @@ export const SubscriptionsPage = () => {
     totalSubscriptions: 0,
     activeSubscriptions: 0,
     expiredSubscriptions: 0,
+    cancelledSubscriptions: 0,
     trialSubscriptions: 0,
     complimentarySubscriptions: 0,
     discountedSubscriptions: 0,
@@ -68,8 +69,13 @@ export const SubscriptionsPage = () => {
   const [feedback, setFeedback] = useState({ message: '', type: '' });
   const exportMenuRef = useRef(null);
 
+  const showFeedback = (message, type = 'success') => {
+    setFeedback({ message, type });
+    setTimeout(() => setFeedback({ message: '', type: '' }), 4000);
+  };
+
   // Filters State
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'active' | 'expiring_soon' | 'trial' | 'complimentary' | 'discounted' | 'expired'
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'active' | 'expiring_soon' | 'trial' | 'complimentary' | 'discounted' | 'cancelled'
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -106,7 +112,7 @@ export const SubscriptionsPage = () => {
     let computedType = typeFilter;
 
     if (activeTab === 'active') computedStatus = 'active';
-    else if (activeTab === 'expired') computedStatus = 'expired';
+    else if (activeTab === 'cancelled' || activeTab === 'expired') computedStatus = 'cancelled';
     else if (activeTab === 'expiring_soon') computedStatus = 'expiring_soon';
     else if (activeTab === 'trial') computedType = 'trial';
     else if (activeTab === 'complimentary') computedType = 'complimentary';
@@ -159,7 +165,7 @@ export const SubscriptionsPage = () => {
     let computedType = typeFilter;
 
     if (activeTab === 'active') computedStatus = 'active';
-    else if (activeTab === 'expired') computedStatus = 'expired';
+    else if (activeTab === 'cancelled' || activeTab === 'expired') computedStatus = 'cancelled';
     else if (activeTab === 'expiring_soon') computedStatus = 'expiring_soon';
     else if (activeTab === 'trial') computedType = 'trial';
     else if (activeTab === 'complimentary') computedType = 'complimentary';
@@ -497,7 +503,7 @@ export const SubscriptionsPage = () => {
             { id: 'active', label: 'Active', count: stats.activeSubscriptions },
             { id: 'trial', label: 'Free Trial', count: stats.trialSubscriptions },
             { id: 'discounted', label: 'Discounted', count: stats.discountedSubscriptions },
-            { id: 'expired', label: 'Cancelled', count: stats.expiredSubscriptions },
+            { id: 'cancelled', label: 'Cancelled', count: stats.cancelledSubscriptions ?? stats.expiredSubscriptions ?? 0 },
           ].map((tab) => (
             <button
               key={tab.id}

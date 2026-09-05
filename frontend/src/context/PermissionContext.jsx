@@ -51,7 +51,9 @@ export const PermissionProvider = ({ children }) => {
       if (!user) return false;
       if (user.role === 'superadmin' || permissions.includes('*')) return true;
 
-      const act = (action || '').toUpperCase();
+      let act = (action || '').toUpperCase();
+      if (act === 'CREATE') act = 'ADD';
+
       if (['EXPORT', 'DOWNLOAD', 'PRINT'].includes(act)) return true;
 
       const mod = (module || '').toUpperCase();

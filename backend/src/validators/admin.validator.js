@@ -3,11 +3,13 @@
  */
 
 export const validateCreateAdmin = (req, res, next) => {
-  const { name, email, username, password, role, departmentRef, designationRef } = req.body;
+  const { name, email, username, password, role, departmentRef, designationRef, phoneNumber } = req.body;
   const errors = [];
 
   if (!name || typeof name !== 'string' || !name.trim()) {
     errors.push('Full name is required');
+  } else if (!/^[a-zA-Z\s.]{2,100}$/.test(name.trim())) {
+    errors.push('Full name can only contain alphabetic letters, spaces, and periods');
   }
 
   if (!email || typeof email !== 'string' || !email.trim()) {
@@ -26,9 +28,15 @@ export const validateCreateAdmin = (req, res, next) => {
     errors.push('Password must be at least 6 characters long');
   }
 
-  const validRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
-  if (role && !validRoles.includes(role.toLowerCase())) {
-    errors.push(`Role must be one of: ${validRoles.join(', ')}`);
+  if (role && (typeof role !== 'string' || !role.trim())) {
+    errors.push('Role must be a valid non-empty identifier');
+  }
+
+  if (phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim()) {
+    const digits = phoneNumber.replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10 || !/^[6-9]\d{9}$/.test(digits)) {
+      errors.push('Please enter a valid 10-digit Indian mobile number (e.g. 98765 43210)');
+    }
   }
 
   if (departmentRef && !/^[0-9a-fA-F]{24}$/.test(String(departmentRef))) errors.push('Invalid department selected');
@@ -46,11 +54,15 @@ export const validateCreateAdmin = (req, res, next) => {
 };
 
 export const validateUpdateAdmin = (req, res, next) => {
-  const { name, email, username, role, departmentRef, designationRef } = req.body;
+  const { name, email, username, role, departmentRef, designationRef, phoneNumber } = req.body;
   const errors = [];
 
-  if (name !== undefined && (!name || !name.trim())) {
-    errors.push('Name cannot be empty');
+  if (name !== undefined) {
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      errors.push('Name cannot be empty');
+    } else if (!/^[a-zA-Z\s.]{2,100}$/.test(name.trim())) {
+      errors.push('Name can only contain alphabetic letters, spaces, and periods');
+    }
   }
 
   if (email !== undefined && (!email || !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email.trim()))) {
@@ -61,9 +73,15 @@ export const validateUpdateAdmin = (req, res, next) => {
     errors.push('Username must be at least 3 characters');
   }
 
-  const validRoles = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
-  if (role && !validRoles.includes(role.toLowerCase())) {
-    errors.push(`Role must be one of: ${validRoles.join(', ')}`);
+  if (role !== undefined && (typeof role !== 'string' || !role.trim())) {
+    errors.push('Role must be a valid non-empty identifier');
+  }
+
+  if (phoneNumber !== undefined && phoneNumber !== null && String(phoneNumber).trim()) {
+    const digits = String(phoneNumber).replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10 || !/^[6-9]\d{9}$/.test(digits)) {
+      errors.push('Please enter a valid 10-digit Indian mobile number (e.g. 98765 43210)');
+    }
   }
 
   if (departmentRef !== undefined && departmentRef !== null && departmentRef !== '' && !/^[0-9a-fA-F]{24}$/.test(String(departmentRef))) errors.push('Invalid department selected');

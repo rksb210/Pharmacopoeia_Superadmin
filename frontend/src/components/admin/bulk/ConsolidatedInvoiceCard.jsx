@@ -19,7 +19,7 @@ export const ConsolidatedInvoiceCard = ({ invoice, job }) => {
   };
 
   return (
-    <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-xs font-sans text-xs select-none space-y-5 print:border-none print:shadow-none">
+    <div className="printable-invoice p-6 bg-white border border-slate-200/80 rounded-2xl shadow-xs font-sans text-xs select-none space-y-5 print:border-none print:shadow-none">
       {/* Invoice Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-5">
         <div className="flex items-center gap-3">
