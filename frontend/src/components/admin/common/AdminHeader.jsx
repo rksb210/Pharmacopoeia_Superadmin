@@ -145,7 +145,7 @@ export const AdminHeader = ({
 
           {/* Dynamic Notifications Flyout */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 animate-in fade-in-0 zoom-in-95 duration-150 font-sans">
+            <div className="fixed sm:absolute top-16 sm:top-auto sm:mt-2 left-3 right-3 sm:left-auto sm:right-0 sm:w-80 max-w-[calc(100vw-24px)] sm:max-w-none bg-white rounded-2xl shadow-xl border border-slate-100 p-4 z-50 animate-in fade-in-0 zoom-in-95 duration-150 font-sans">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <span className="text-xs font-bold text-slate-800">System Broadcasts &amp; Alerts</span>
                 {unreadCount > 0 && (
@@ -159,7 +159,7 @@ export const AdminHeader = ({
                 )}
               </div>
 
-              <div className="divide-y divide-slate-100 my-1 max-h-64 overflow-y-auto">
+              <div className="divide-y divide-slate-100 my-1 max-h-[60vh] sm:max-h-64 overflow-y-auto">
                 {notifications.length === 0 ? (
                   <p className="text-xs text-slate-400 text-center py-6">No recent system notifications.</p>
                 ) : (
