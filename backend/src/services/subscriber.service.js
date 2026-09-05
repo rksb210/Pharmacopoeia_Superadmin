@@ -423,8 +423,15 @@ export const subscriberService = {
    * Reset Subscriber password
    */
   resetPassword: async (id, newPassword) => {
-    const subscriber = await Subscriber.findById(id);
+    const subscriber = await Subscriber.findById(id).select('+password');
     if (!subscriber) throw new Error('Subscriber account not found');
+
+    if (subscriber.password) {
+      const isSameAsOld = await subscriber.comparePassword(newPassword);
+      if (isSameAsOld) {
+        throw new Error('New password cannot be the same as the previous password. Please choose a different password.');
+      }
+    }
 
     subscriber.password = newPassword;
     await subscriber.save();

@@ -354,7 +354,7 @@ export const adminService = {
    * Reset Admin password
    */
   resetAdminPassword: async (id, newPassword, requester) => {
-    const admin = await User.findById(id);
+    const admin = await User.findById(id).select('+password');
     if (!admin) {
       throw new Error('Administrator not found');
     }
@@ -362,6 +362,13 @@ export const adminService = {
     // Hierarchy protection
     if (admin.role === 'superadmin' && requester.role !== 'superadmin') {
       throw new Error('Permission denied: Only Superadmin can reset Superadmin passwords.');
+    }
+
+    if (admin.password) {
+      const isSameAsOld = await admin.comparePassword(newPassword);
+      if (isSameAsOld) {
+        throw new Error('New password cannot be the same as the previous password. Please choose a different password.');
+      }
     }
 
     admin.password = newPassword;

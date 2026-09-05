@@ -326,6 +326,14 @@ export const changePassword = async (req, res, next) => {
       });
     }
 
+    const isSameAsOld = await user.comparePassword(newPassword);
+    if (isSameAsOld) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password cannot be the same as your previous password. Please choose a different password.',
+      });
+    }
+
     user.password = newPassword;
     await user.save();
 
@@ -391,13 +399,23 @@ export const resetPassword = async (req, res, next) => {
     const user = await User.findOne({
       passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() },
-    });
+    }).select('+password');
 
     if (!user) {
       return res.status(400).json({
         success: false,
         message: 'Password reset token is invalid or has expired.',
       });
+    }
+
+    if (user.password) {
+      const isSameAsOld = await user.comparePassword(req.body.password);
+      if (isSameAsOld) {
+        return res.status(400).json({
+          success: false,
+          message: 'New password cannot be the same as your previous password. Please choose a different password.',
+        });
+      }
     }
 
     user.password = req.body.password;
