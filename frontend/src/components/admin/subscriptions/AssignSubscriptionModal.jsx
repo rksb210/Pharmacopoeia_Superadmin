@@ -687,12 +687,23 @@ export const AssignSubscriptionModal = ({
                   max={100}
                   placeholder="Enter % (e.g. 15, 25, 78)"
                   value={discountPercent}
+                  onKeyDown={(e) => {
+                    if (['-', '+', 'e', 'E'].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   onChange={(e) => {
                     const val = e.target.value;
                     if (val === '') {
                       setDiscountPercent('');
                     } else {
-                      const num = Number(val);
+                      let cleanStr = String(val);
+                      if (/^0\d+/.test(cleanStr)) {
+                        cleanStr = cleanStr.replace(/^0+/, '');
+                        if (cleanStr === '') cleanStr = '0';
+                      }
+                      const num = Number(cleanStr);
+                      if (isNaN(num)) return;
                       if (num < 0) setDiscountPercent(0);
                       else if (num > 100) setDiscountPercent(100);
                       else setDiscountPercent(num);

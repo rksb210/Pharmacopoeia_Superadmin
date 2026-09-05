@@ -87,6 +87,7 @@ export const subscriptionService = {
       totalCount,
       activeCount,
       expiredCount,
+      cancelledCount,
       trialCount,
       complimentaryCount,
       discountedCount,
@@ -96,6 +97,7 @@ export const subscriptionService = {
       Subscription.countDocuments(),
       Subscription.countDocuments({ status: 'active' }),
       Subscription.countDocuments({ status: 'expired' }),
+      Subscription.countDocuments({ status: { $in: ['cancelled', 'expired'] } }),
       Subscription.countDocuments({ type: 'trial', status: 'active' }),
       Subscription.countDocuments({ type: 'complimentary', status: 'active' }),
       Subscription.countDocuments({
@@ -118,6 +120,7 @@ export const subscriptionService = {
       totalSubscriptions: totalCount,
       activeSubscriptions: activeCount,
       expiredSubscriptions: expiredCount,
+      cancelledSubscriptions: cancelledCount,
       trialSubscriptions: trialCount,
       complimentarySubscriptions: complimentaryCount,
       discountedSubscriptions: discountedCount,
@@ -153,6 +156,8 @@ export const subscriptionService = {
       const expiringThreshold = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
       query.status = 'active';
       query.endDate = { $gte: now, $lte: expiringThreshold };
+    } else if (status === 'cancelled') {
+      query.status = { $in: ['cancelled', 'expired'] };
     } else if (status && status !== 'all') {
       query.status = status.toLowerCase().trim();
     }
