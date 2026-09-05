@@ -133,3 +133,58 @@
 .pause-on-hover:hover {
   animation-play-state: paused;
 }
+
+/* ----------------------------------------------------
+   Print Optimization & Isolation
+   Ensures only the target invoice or printable card is
+   rendered when printing or generating PDF.
+   ---------------------------------------------------- */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide everything on the page by default when printing */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Reveal only .printable-invoice and its descendants */
+  .printable-invoice,
+  .printable-invoice * {
+    visibility: visible !important;
+  }
+
+  /* Position .printable-invoice at the very top-left of the page */
+  .printable-invoice {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 1.5rem !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  /* Completely remove print-hidden elements, buttons from print layout */
+  .print\:hidden,
+  .printable-invoice .print\:hidden,
+  button {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+}
