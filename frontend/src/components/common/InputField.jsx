@@ -16,10 +16,16 @@ export const InputField = ({
   onChange,
   onBlur,
   error,
+  helperText,
   required = false,
   autoComplete,
   className = '',
   disabled = false,
+  min,
+  max,
+  step,
+  onKeyDown,
+  ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
@@ -48,6 +54,10 @@ export const InputField = ({
           disabled={disabled}
           required={required}
           autoComplete={autoComplete}
+          min={min}
+          max={max}
+          step={step}
+          onKeyDown={onKeyDown}
           style={{
             height: tokens.dimensions.inputHeight,
             borderRadius: tokens.borderRadius.input,
@@ -63,6 +73,7 @@ export const InputField = ({
             }
             disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed
           `}
+          {...props}
         />
 
         {isPassword && (
@@ -88,6 +99,10 @@ export const InputField = ({
           </button>
         )}
       </div>
+
+      {helperText && !error && (
+        <span className="text-[11px] font-medium text-slate-400 text-left mt-0.5">{helperText}</span>
+      )}
 
       {error && (
         <span className="text-xs text-red-500 text-left mt-0.5">{error}</span>
