@@ -465,6 +465,7 @@ export const RolesPage = () => {
         onClose={() => setViewingRoleId(null)}
         roleId={viewingRoleId}
         onEdit={(r) => setEditingRole(r)}
+        onRoleUpdated={fetchRolesData}
       />
 
       {/* Assign Users Modal */}
