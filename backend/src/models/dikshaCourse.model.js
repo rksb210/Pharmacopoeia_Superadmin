@@ -16,6 +16,8 @@ const MaterialItemSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     fileUrl: { type: String, required: true, trim: true },
     type: { type: String, default: 'PDF' },
+    fileName: { type: String, default: '' },
+    fileSize: { type: String, default: '' },
   },
   { _id: true }
 );

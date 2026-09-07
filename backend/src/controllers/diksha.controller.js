@@ -309,3 +309,47 @@ export const getEnrollments = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Upload study material file (PDF, Doc, Slides, etc.)
+ * @route   POST /api/diksha/upload-material
+ * @access  Private (INTEGRATED:DIKSHA:ADD / EDIT)
+ */
+export const uploadMaterialFile = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No material file uploaded.',
+      });
+    }
+
+    const host = req.get('host');
+    const protocol = req.protocol;
+    const relativePath = `/uploads/diksha/${req.file.filename}`;
+    const fileUrl = `${protocol}://${host}${relativePath}`;
+
+    // Format human-readable file size (e.g., 2.4 MB)
+    const bytes = req.file.size || 0;
+    let fileSize = `${bytes} B`;
+    if (bytes >= 1024 * 1024) {
+      fileSize = `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    } else if (bytes >= 1024) {
+      fileSize = `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Study material uploaded successfully',
+      data: {
+        fileUrl,
+        relativePath,
+        fileName: req.file.originalname,
+        fileSize,
+        mimetype: req.file.mimetype,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

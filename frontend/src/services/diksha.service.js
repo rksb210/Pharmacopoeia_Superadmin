@@ -153,6 +153,24 @@ export const dikshaService = {
       throw error.response?.data || error;
     }
   },
+
+  /**
+   * Upload study material document (PDF, Word, PPT, etc.)
+   */
+  uploadMaterial: async (file, onUploadProgress) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      return await api.post('/diksha/upload-material', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress,
+      });
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
 };
 
 export default dikshaService;
