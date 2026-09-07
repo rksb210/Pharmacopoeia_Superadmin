@@ -146,7 +146,7 @@ export const LoginForm = ({ onLoginSuccess }) => {
             style={{ color: tokens.colors.brandNavy }}
             className="text-lg sm:text-xl font-bold tracking-tight mb-0.5"
           >
-            National Formulary of India
+            National Formulary of India (NFI)
           </h2>
 
           {/* Subtitle */}
