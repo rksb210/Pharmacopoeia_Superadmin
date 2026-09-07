@@ -68,8 +68,8 @@ export const CreateEditCourseModal = ({
     status: 'DRAFT',
     pricing: {
       isPaid: false,
-      priceINR: 0,
-      discountPriceINR: 0,
+      priceINR: '',
+      discountPriceINR: '',
     },
     videos: [
       {
@@ -117,8 +117,8 @@ export const CreateEditCourseModal = ({
         status: course.status || 'DRAFT',
         pricing: {
           isPaid: course.pricing?.isPaid ?? false,
-          priceINR: course.pricing?.priceINR ?? 0,
-          discountPriceINR: course.pricing?.discountPriceINR ?? 0,
+          priceINR: course.pricing?.priceINR !== undefined && course.pricing?.priceINR !== null ? course.pricing.priceINR : '',
+          discountPriceINR: course.pricing?.discountPriceINR !== undefined && course.pricing?.discountPriceINR !== null ? course.pricing.discountPriceINR : '',
         },
         videos: course.videos?.length
           ? course.videos
@@ -168,8 +168,8 @@ export const CreateEditCourseModal = ({
         status: 'DRAFT',
         pricing: {
           isPaid: false,
-          priceINR: 0,
-          discountPriceINR: 0,
+          priceINR: '',
+          discountPriceINR: '',
         },
         videos: [
           {
@@ -309,11 +309,44 @@ export const CreateEditCourseModal = ({
       return;
     }
 
+    if (formData.pricing?.isPaid) {
+      const price = Number(formData.pricing.priceINR) || 0;
+      const discount = Number(formData.pricing.discountPriceINR) || 0;
+      if (price <= 0) {
+        setError('Standard enrollment fee must be greater than 0 for commercial paid courses.');
+        setActiveTab('pricing');
+        return;
+      }
+      if (discount > price) {
+        setError(`Special Discounted Fee (₹${discount}) cannot be greater than Standard Enrollment Fee (₹${price}).`);
+        setActiveTab('pricing');
+        return;
+      }
+    }
+
     setLoading(true);
     setError('');
 
+    const payload = {
+      ...formData,
+      pricing: {
+        ...formData.pricing,
+        priceINR: formData.pricing.isPaid ? (Number(formData.pricing.priceINR) || 0) : 0,
+        discountPriceINR: formData.pricing.isPaid ? (Number(formData.pricing.discountPriceINR) || 0) : 0,
+      },
+      assessment: {
+        ...formData.assessment,
+        timeLimitMinutes: Number(formData.assessment.timeLimitMinutes) || 15,
+        passingScorePercent: Number(formData.assessment.passingScorePercent) || 70,
+      },
+      videos: formData.videos.map((v) => ({
+        ...v,
+        durationMinutes: Number(v.durationMinutes) || 0,
+      })),
+    };
+
     try {
-      await onSave(formData);
+      await onSave(payload);
       onClose();
     } catch (err) {
       setError(err.message || 'Failed to save DIKSHA Course.');
@@ -329,6 +362,7 @@ export const CreateEditCourseModal = ({
       title={isEdit ? `Edit Course: ${course.title}` : 'Create New DIKSHA Course'}
       subtitle="Digital Initiative for Knowledge & Skill Enhancement · IPC Learning Management System"
       size="xl"
+      footer={false}
     >
       <form onSubmit={handleSubmit} className="space-y-5 select-none font-sans">
         {error && (
@@ -501,13 +535,19 @@ export const CreateEditCourseModal = ({
                     id="priceINR"
                     label="Standard Enrollment Fee (INR ₹)"
                     type="number"
-                    value={formData.pricing.priceINR}
-                    onChange={(e) =>
+                    min="0"
+                    placeholder="e.g. 499"
+                    value={formData.pricing.priceINR !== undefined && formData.pricing.priceINR !== null ? formData.pricing.priceINR : ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
                       setFormData({
                         ...formData,
-                        pricing: { ...formData.pricing, priceINR: Number(e.target.value) },
-                      })
-                    }
+                        pricing: {
+                          ...formData.pricing,
+                          priceINR: val === '' ? '' : Math.max(0, Number(val)),
+                        },
+                      });
+                    }}
                     required
                   />
 
@@ -515,14 +555,33 @@ export const CreateEditCourseModal = ({
                     id="discountPriceINR"
                     label="Special Discounted Fee (INR ₹)"
                     type="number"
-                    value={formData.pricing.discountPriceINR}
-                    onChange={(e) =>
+                    min="0"
+                    placeholder="0"
+                    value={formData.pricing.discountPriceINR !== undefined && formData.pricing.discountPriceINR !== null ? formData.pricing.discountPriceINR : ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
                       setFormData({
                         ...formData,
-                        pricing: { ...formData.pricing, discountPriceINR: Number(e.target.value) },
-                      })
+                        pricing: {
+                          ...formData.pricing,
+                          discountPriceINR: val === '' ? '' : Math.max(0, Number(val)),
+                        },
+                      });
+                    }}
+                    error={
+                      Number(formData.pricing.discountPriceINR) > Number(formData.pricing.priceINR) &&
+                      Number(formData.pricing.discountPriceINR) > 0
+                        ? `Discount (₹${formData.pricing.discountPriceINR}) cannot exceed standard price (₹${formData.pricing.priceINR || 0})`
+                        : ''
                     }
-                    helperText="Leave 0 if no discounted offer is running"
+                    helperText={
+                      !(
+                        Number(formData.pricing.discountPriceINR) > Number(formData.pricing.priceINR) &&
+                        Number(formData.pricing.discountPriceINR) > 0
+                      )
+                        ? 'Leave empty or 0 if no discounted offer is running'
+                        : ''
+                    }
                   />
                 </div>
               ) : (
@@ -586,8 +645,12 @@ export const CreateEditCourseModal = ({
                         <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <input
                           type="number"
-                          value={vid.durationMinutes}
-                          onChange={(e) => handleVideoChange(idx, 'durationMinutes', Number(e.target.value))}
+                          min="0"
+                          value={vid.durationMinutes !== undefined && vid.durationMinutes !== null ? vid.durationMinutes : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleVideoChange(idx, 'durationMinutes', val === '' ? '' : Math.max(0, Number(val)));
+                          }}
                           placeholder="Mins"
                           className="w-full text-xs font-semibold outline-none"
                         />
@@ -667,16 +730,19 @@ export const CreateEditCourseModal = ({
                     id="timeLimitMinutes"
                     label="Assessment Time Limit (Minutes)"
                     type="number"
-                    value={formData.assessment.timeLimitMinutes}
-                    onChange={(e) =>
+                    min="1"
+                    placeholder="e.g. 15"
+                    value={formData.assessment.timeLimitMinutes !== undefined && formData.assessment.timeLimitMinutes !== null ? formData.assessment.timeLimitMinutes : ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
                       setFormData({
                         ...formData,
                         assessment: {
                           ...formData.assessment,
-                          timeLimitMinutes: Number(e.target.value),
+                          timeLimitMinutes: val === '' ? '' : Math.max(1, Number(val)),
                         },
-                      })
-                    }
+                      });
+                    }}
                     required
                   />
 
@@ -684,16 +750,20 @@ export const CreateEditCourseModal = ({
                     id="passingScorePercent"
                     label="Minimum Passing Score (%)"
                     type="number"
-                    value={formData.assessment.passingScorePercent}
-                    onChange={(e) =>
+                    min="1"
+                    max="100"
+                    placeholder="e.g. 70"
+                    value={formData.assessment.passingScorePercent !== undefined && formData.assessment.passingScorePercent !== null ? formData.assessment.passingScorePercent : ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
                       setFormData({
                         ...formData,
                         assessment: {
                           ...formData.assessment,
-                          passingScorePercent: Number(e.target.value),
+                          passingScorePercent: val === '' ? '' : Math.min(100, Math.max(0, Number(val))),
                         },
-                      })
-                    }
+                      });
+                    }}
                     required
                   />
                 </div>
