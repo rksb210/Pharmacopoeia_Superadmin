@@ -1,6 +1,7 @@
 import DikshaCourse from '../models/dikshaCourse.model.js';
 import DikshaEnrollment from '../models/dikshaEnrollment.model.js';
 import Subscriber from '../models/subscriber.model.js';
+import User from '../models/user.model.js';
 
 export const dikshaService = {
   /**
@@ -437,7 +438,7 @@ export const dikshaService = {
     const [enrollments, total] = await Promise.all([
       DikshaEnrollment.find(query)
         .populate('course', 'title code pricing')
-        .populate('subscriber', 'name email userType organization')
+        .populate('subscriber', 'name email userType role organization department designation')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSize)

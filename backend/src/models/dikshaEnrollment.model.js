@@ -19,9 +19,14 @@ const DikshaEnrollmentSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    subscriberModel: {
+      type: String,
+      enum: ['User', 'Subscriber'],
+      default: 'Subscriber',
+    },
     subscriber: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Subscriber',
+      refPath: 'subscriberModel',
       required: true,
       index: true,
     },

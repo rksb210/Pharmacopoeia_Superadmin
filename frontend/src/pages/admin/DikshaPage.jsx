@@ -656,7 +656,7 @@ export const DikshaPage = () => {
                   <TableRow>
                     <TableHead>Candidate Identity</TableHead>
                     <TableHead>Course Code &amp; Title</TableHead>
-                    <TableHead>Cohort</TableHead>
+                    <TableHead>Category</TableHead>
                     <TableHead>Progress</TableHead>
                     <TableHead>Assessment Result</TableHead>
                     <TableHead>Certificate</TableHead>
@@ -669,10 +669,10 @@ export const DikshaPage = () => {
                       <TableCell>
                         <div>
                           <span className="font-bold text-slate-900 block truncate">
-                            {enr.subscriber?.name || 'Healthcare Associate'}
+                            {enr.subscriber?.name || 'N/A'}
                           </span>
                           <span className="text-[10px] text-slate-400 font-mono">
-                            {enr.subscriber?.email || 'associate@nfi.gov.in'}
+                            {enr.subscriber?.email || 'N/A'}
                           </span>
                         </div>
                       </TableCell>
@@ -688,7 +688,7 @@ export const DikshaPage = () => {
 
                       <TableCell>
                         <Badge variant="outline" className="text-[9px] font-bold">
-                          {enr.subscriber?.userType || 'DOCTOR'}
+                          {enr.subscriber?.userType || enr.subscriber?.role?.toUpperCase() || 'SUBSCRIBER'}
                         </Badge>
                       </TableCell>
 
