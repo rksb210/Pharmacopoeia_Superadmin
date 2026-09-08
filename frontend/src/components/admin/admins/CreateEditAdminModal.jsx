@@ -20,6 +20,8 @@ export const CreateEditAdminModal = ({
   isOpen,
   onClose,
   admin = null, // if present -> Edit mode, else Create mode
+  defaultRole = 'admin',
+  isSubAdmin = false,
   onSuccess,
 }) => {
   const { isSuperAdmin } = useAuth();
@@ -29,7 +31,7 @@ export const CreateEditAdminModal = ({
     email: '',
     username: '',
     password: '',
-    role: 'admin',
+    role: defaultRole,
     departmentRef: '',
     designationRef: '',
     phoneNumber: '',
@@ -103,7 +105,7 @@ export const CreateEditAdminModal = ({
         email: admin.email || '',
         username: admin.username || '',
         password: '',
-        role: admin.role || 'admin',
+        role: admin.role || defaultRole,
         departmentRef: admin.departmentRef?._id || admin.departmentRef || '',
         designationRef: admin.designationRef?._id || admin.designationRef || '',
         phoneNumber: rawPhone,
@@ -115,7 +117,7 @@ export const CreateEditAdminModal = ({
         email: '',
         username: '',
         password: '',
-        role: 'admin',
+        role: defaultRole,
         departmentRef: '',
         designationRef: '',
         phoneNumber: '',
@@ -124,7 +126,7 @@ export const CreateEditAdminModal = ({
     }
     setErrors({});
     setApiError('');
-  }, [admin, isOpen]);
+  }, [admin, isOpen, defaultRole]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -251,8 +253,10 @@ export const CreateEditAdminModal = ({
           }))
       : DEFAULT_ADMIN_ROLES;
 
-  // Only superadmin can assign superadmin role
-  const availableRoles = isSuperAdmin
+  // If subadmin modal, filter out core superadmin & admin
+  const availableRoles = isSubAdmin
+    ? roleOptions.filter((r) => r.value !== 'superadmin' && r.value !== 'admin')
+    : isSuperAdmin
     ? roleOptions
     : roleOptions.filter((r) => r.value !== 'superadmin');
 

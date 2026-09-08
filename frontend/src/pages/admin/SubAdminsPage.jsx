@@ -31,6 +31,7 @@ import subadminService from '../../services/subadmin.service';
 import { useAuth } from '../../context/AuthContext';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
 import { usePermission } from '../../context/PermissionContext';
+import api from '../../services/api';
 
 // Modals
 import CreateEditAdminModal from '../../components/admin/admins/CreateEditAdminModal';
@@ -61,6 +62,7 @@ export const SubAdminsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [dbRoles, setDbRoles] = useState([]);
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -109,6 +111,14 @@ export const SubAdminsPage = () => {
 
   useEffect(() => {
     fetchStats();
+    api
+      .get('/rbac/roles')
+      .then((res) => {
+        if (res?.roles) {
+          setDbRoles(res.roles.filter((r) => r.code !== 'superadmin' && r.code !== 'admin'));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -265,10 +275,20 @@ export const SubAdminsPage = () => {
               className="h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
             >
               <option value="all">All Roles</option>
-              <option value="subadmin">Sub Admin</option>
-              <option value="maker">Maker</option>
-              <option value="reviewer">Reviewer</option>
-              <option value="approver">Approver</option>
+              {dbRoles.length > 0 ? (
+                dbRoles.map((r) => (
+                  <option key={r.code} value={r.code}>
+                    {r.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="subadmin">Sub Admin</option>
+                  <option value="maker">Maker</option>
+                  <option value="reviewer">Reviewer</option>
+                  <option value="approver">Approver</option>
+                </>
+              )}
             </select>
 
             <select
@@ -343,7 +363,7 @@ export const SubAdminsPage = () => {
                   {/* Role */}
                   <TableCell>
                     <Badge variant="nfiNavy" className="text-[10px] font-bold">
-                      {sub.role?.toUpperCase()}
+                      {sub.roleRef?.name || sub.role?.replace(/_/g, ' ')?.toUpperCase()}
                     </Badge>
                   </TableCell>
 
@@ -478,6 +498,8 @@ export const SubAdminsPage = () => {
           setEditingSubAdmin(null);
         }}
         admin={editingSubAdmin}
+        defaultRole="subadmin"
+        isSubAdmin={true}
         onSuccess={handleSaveSubAdmin}
       />
 

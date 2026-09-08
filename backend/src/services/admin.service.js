@@ -35,11 +35,18 @@ export const adminService = {
     status = '',
     sortBy = 'createdAt',
     sortOrder = 'desc',
-    allowedRoles = ['superadmin', 'admin'],
+    allowedRoles = null,
+    excludeRoles = null,
   }) => {
-    let roleCondition = { $in: allowedRoles };
+    let roleCondition;
     if (role && role !== 'all') {
       roleCondition = role.toLowerCase();
+    } else if (allowedRoles && Array.isArray(allowedRoles) && allowedRoles.length > 0) {
+      roleCondition = { $in: allowedRoles };
+    } else if (excludeRoles && Array.isArray(excludeRoles) && excludeRoles.length > 0) {
+      roleCondition = { $nin: excludeRoles };
+    } else {
+      roleCondition = { $in: ['superadmin', 'admin'] };
     }
     const query = { role: roleCondition };
 
