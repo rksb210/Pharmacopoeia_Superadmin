@@ -192,7 +192,7 @@ export const NotificationsPage = () => {
           <span>Refresh</span>
         </Button>
 
-        <PermissionGuard module="SETTINGS" section="SYSTEM" action="EDIT">
+        <PermissionGuard module="ENGAGEMENT" section="NOTIFICATIONS" action="ADD">
           <Button
             variant="nfiYellow"
             size="sm"
@@ -479,7 +479,7 @@ export const NotificationsPage = () => {
 
                       {/* Dispatch Now (if not sent) */}
                       {n.status !== 'sent' && (
-                        <PermissionGuard module="SETTINGS" section="SYSTEM" action="EDIT">
+                        <PermissionGuard module="ENGAGEMENT" section="NOTIFICATIONS" action="PUBLISH">
                           <button
                             type="button"
                             onClick={() => handleDispatchNow(n)}
@@ -492,7 +492,7 @@ export const NotificationsPage = () => {
                       )}
 
                       {/* Edit */}
-                      <PermissionGuard module="SETTINGS" section="SYSTEM" action="EDIT">
+                      <PermissionGuard module="ENGAGEMENT" section="NOTIFICATIONS" action="EDIT">
                         <button
                           type="button"
                           onClick={() => setEditingNotification(n)}

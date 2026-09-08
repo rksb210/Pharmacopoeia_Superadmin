@@ -177,16 +177,18 @@ export const AuditLogsPage = () => {
           <span>Refresh</span>
         </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportExcel}
-          loading={exporting}
-          className="rounded-xl text-xs font-bold cursor-pointer"
-        >
-          <Download className="w-3.5 h-3.5 mr-1.5" />
-          <span>Export Excel</span>
-        </Button>
+        <PermissionGuard module="SYSTEM" section="AUDIT_LOGS" action="EXPORT">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            loading={exporting}
+            className="rounded-xl text-xs font-bold cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5" />
+            <span>Export Excel</span>
+          </Button>
+        </PermissionGuard>
       </PageHeader>
 
       {/* 4 KPI Stat Cards */}

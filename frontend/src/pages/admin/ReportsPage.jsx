@@ -167,26 +167,30 @@ export const ReportsPage = () => {
           <span>Refresh</span>
         </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportExcel}
-          loading={exporting}
-          className="rounded-xl text-xs font-bold cursor-pointer"
-        >
-          <Download className="w-3.5 h-3.5 mr-1.5" />
-          <span>Export Excel</span>
-        </Button>
+        <PermissionGuard module="SYSTEM" section="REPORTS" action="EXPORT">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            loading={exporting}
+            className="rounded-xl text-xs font-bold cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5" />
+            <span>Export Excel</span>
+          </Button>
+        </PermissionGuard>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => window.print()}
-          className="rounded-xl text-xs font-bold cursor-pointer"
-        >
-          <Printer className="w-3.5 h-3.5 mr-1.5" />
-          <span>Print Sheet</span>
-        </Button>
+        <PermissionGuard module="SYSTEM" section="REPORTS" action="PRINT">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.print()}
+            className="rounded-xl text-xs font-bold cursor-pointer"
+          >
+            <Printer className="w-3.5 h-3.5 mr-1.5" />
+            <span>Print Sheet</span>
+          </Button>
+        </PermissionGuard>
       </PageHeader>
 
       {/* Date Presets & Custom Filter */}

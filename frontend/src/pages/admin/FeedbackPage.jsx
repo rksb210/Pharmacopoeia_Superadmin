@@ -447,7 +447,7 @@ export const FeedbackPage = () => {
                     <div className="flex items-center justify-end gap-1">
                       {/* Mark In Review */}
                       {t.status === 'pending' && (
-                        <PermissionGuard module="USERS" section="SUBSCRIBERS" action="EDIT">
+                        <PermissionGuard module="ENGAGEMENT" section="FEEDBACK" action="EDIT">
                           <button
                             type="button"
                             onClick={() => handleStatusChange(t, 'in_review', 'Marked in review')}
@@ -461,7 +461,7 @@ export const FeedbackPage = () => {
 
                       {/* Resolve */}
                       {t.status !== 'completed' ? (
-                        <PermissionGuard module="USERS" section="SUBSCRIBERS" action="EDIT">
+                        <PermissionGuard module="ENGAGEMENT" section="FEEDBACK" action="EDIT">
                           <button
                             type="button"
                             onClick={() => handleStatusChange(t, 'completed', 'Resolved ticket')}
@@ -472,7 +472,7 @@ export const FeedbackPage = () => {
                           </button>
                         </PermissionGuard>
                       ) : (
-                        <PermissionGuard module="USERS" section="SUBSCRIBERS" action="EDIT">
+                        <PermissionGuard module="ENGAGEMENT" section="FEEDBACK" action="EDIT">
                           <button
                             type="button"
                             onClick={() => handleStatusChange(t, 'reopened', 'Reopened for investigation')}
@@ -485,7 +485,7 @@ export const FeedbackPage = () => {
                       )}
 
                       {/* Assign */}
-                      <PermissionGuard module="USERS" section="SUBSCRIBERS" action="EDIT">
+                      <PermissionGuard module="ENGAGEMENT" section="FEEDBACK" action="EDIT">
                         <button
                           type="button"
                           onClick={() => setAssigningTicket(t)}
@@ -497,7 +497,7 @@ export const FeedbackPage = () => {
                       </PermissionGuard>
 
                       {/* Reply / Note */}
-                      <PermissionGuard module="USERS" section="SUBSCRIBERS" action="EDIT">
+                      <PermissionGuard module="ENGAGEMENT" section="FEEDBACK" action="EDIT">
                         <button
                           type="button"
                           onClick={() => setReplyingTicket(t)}

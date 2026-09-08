@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import marqueeAlertService from '../../../services/marqueeAlert.service';
 import CreateEditMarqueeModal from './CreateEditMarqueeModal';
+import { usePermission } from '../../../context/PermissionContext';
 
 const TYPE_ICONS = {
   info: Info,
@@ -39,6 +40,11 @@ export const MarqueeAlertMasterModal = ({
   isOpen,
   onClose,
 }) => {
+  const { can } = usePermission();
+  const canAdd = can('ADD', 'ENGAGEMENT', 'CRM');
+  const canEdit = can('EDIT', 'ENGAGEMENT', 'CRM');
+  const canDelete = can('DELETE', 'ENGAGEMENT', 'CRM');
+
   const [alerts, setAlerts] = useState([]);
   const [stats, setStats] = useState({ totalAlerts: 0, activeAlerts: 0 });
   const [loading, setLoading] = useState(true);
@@ -151,15 +157,17 @@ export const MarqueeAlertMasterModal = ({
                 <span>Refresh</span>
               </Button>
 
-              <Button
-                variant="nfiYellow"
-                size="sm"
-                onClick={() => setIsCreateModalOpen(true)}
-                className="h-8 rounded-xl font-bold text-xs shadow-2xs"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                <span>New Marquee Alert</span>
-              </Button>
+              {canAdd && (
+                <Button
+                  variant="nfiYellow"
+                  size="sm"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="h-8 rounded-xl font-bold text-xs shadow-2xs"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  <span>New Marquee Alert</span>
+                </Button>
+              )}
             </div>
           </div>
 
@@ -247,16 +255,27 @@ export const MarqueeAlertMasterModal = ({
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStatus(al)}
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-all ${
-                            al.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-600'
-                          }`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${al.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                          <span>{al.isActive ? 'Active' : 'Disabled'}</span>
-                        </button>
+                        {canEdit ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(al)}
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-all ${
+                              al.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${al.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                            <span>{al.isActive ? 'Active' : 'Disabled'}</span>
+                          </button>
+                        ) : (
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              al.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${al.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                            <span>{al.isActive ? 'Active' : 'Disabled'}</span>
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -279,26 +298,30 @@ export const MarqueeAlertMasterModal = ({
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingAlert(al)}
-                          className="h-7 px-2 text-slate-600 hover:text-slate-900 rounded-lg text-xs"
-                          title="Edit alert"
-                        >
-                          <Edit2 className="w-3.5 h-3.5 mr-1" />
-                          <span>Edit</span>
-                        </Button>
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingAlert(al)}
+                            className="h-7 px-2 text-slate-600 hover:text-slate-900 rounded-lg text-xs"
+                            title="Edit alert"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 mr-1" />
+                            <span>Edit</span>
+                          </Button>
+                        )}
 
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteAlert(al)}
-                          className="h-7 px-2 text-red-600 hover:bg-red-50 rounded-lg text-xs"
-                          title="Delete alert"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteAlert(al)}
+                            className="h-7 px-2 text-red-600 hover:bg-red-50 rounded-lg text-xs"
+                            title="Delete alert"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

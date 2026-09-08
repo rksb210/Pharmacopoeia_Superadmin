@@ -419,7 +419,7 @@ export const SubscriptionsPage = () => {
           <span>Refresh</span>
         </Button>
 
-        <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="ADD">
+        <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="ADD">
           <Button
             variant="nfiYellow"
             size="sm"
@@ -718,7 +718,7 @@ export const SubscriptionsPage = () => {
                       </button>
 
                       {/* Renew / Reactivate / Extend */}
-                      <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="EDIT">
+                      <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="EDIT">
                         <button
                           type="button"
                           onClick={() => setRenewingSubscription(sub)}
@@ -731,7 +731,7 @@ export const SubscriptionsPage = () => {
 
                       {/* Cancel / Deactivate */}
                       {sub.status === 'active' && (
-                        <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="DELETE">
+                        <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="DELETE">
                           <button
                             type="button"
                             onClick={() => setCancellingSubscription(sub)}

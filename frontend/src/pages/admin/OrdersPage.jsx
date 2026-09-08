@@ -481,7 +481,7 @@ export const OrdersPage = () => {
 
                       {/* Refund */}
                       {o.payment?.status === 'paid' && !o.refund?.isRefunded && (
-                        <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="EDIT">
+                        <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="EDIT">
                           <button
                             type="button"
                             onClick={() => setRefundingOrder(o)}

@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import PermissionGuard from '../common/PermissionGuard';
+import { usePermission } from '../../../context/PermissionContext';
 
 export const PlanCard = ({
   plan,
@@ -21,6 +22,8 @@ export const PlanCard = ({
   onViewSubscribers,
   onToggleStatus,
 }) => {
+  const { can } = usePermission();
+  const canEdit = can('EDIT', 'COMMERCIAL', 'PLANS');
   const getValidThruBadge = () => {
     if (plan.validityType === 'fixed_date') {
       const formattedDate = plan.fixedDate
@@ -72,7 +75,7 @@ export const PlanCard = ({
         </div>
 
         {/* Status Toggle Pill */}
-        <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="EDIT">
+        {canEdit ? (
           <button
             type="button"
             onClick={() => onToggleStatus(plan)}
@@ -93,7 +96,25 @@ export const PlanCard = ({
             />
             <span>{plan.isActive ? 'Active' : 'Disabled'}</span>
           </button>
-        </PermissionGuard>
+        ) : (
+          <span
+            className={`
+              inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold
+              ${
+                plan.isActive
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'bg-slate-200 text-slate-600'
+              }
+            `}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                plan.isActive ? 'bg-emerald-500' : 'bg-slate-400'
+              }`}
+            />
+            <span>{plan.isActive ? 'Active' : 'Disabled'}</span>
+          </span>
+        )}
       </div>
 
       {/* Plan Title & Description */}
@@ -195,7 +216,7 @@ export const PlanCard = ({
             <span>Details &amp; Audit</span>
           </Button>
 
-          <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="EDIT">
+          <PermissionGuard module="COMMERCIAL" section="PLANS" action="EDIT">
             <Button
               variant="nfiYellow"
               size="sm"

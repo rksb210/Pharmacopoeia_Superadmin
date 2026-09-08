@@ -34,6 +34,7 @@ import {
 
 import planService from '../../services/plan.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { usePermission } from '../../context/PermissionContext';
 
 // Components & Modals
 import PlanCard from '../../components/admin/plans/PlanCard';
@@ -44,6 +45,9 @@ import PlanSubscribersModal from '../../components/admin/plans/PlanSubscribersMo
 const TIERS = ['Individual', 'Institutional', 'Student', 'Doctor Professional', 'Corporate', 'General'];
 
 export const PlansPage = () => {
+  const { can } = usePermission();
+  const canEditPlan = can('EDIT', 'COMMERCIAL', 'PLANS');
+
   const [stats, setStats] = useState({
     totalPlans: 0,
     activePlans: 0,
@@ -160,7 +164,7 @@ export const PlansPage = () => {
           <span>Refresh</span>
         </Button>
 
-        <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="ADD">
+        <PermissionGuard module="COMMERCIAL" section="PLANS" action="ADD">
           <Button
             variant="nfiYellow"
             size="sm"
@@ -396,7 +400,7 @@ export const PlansPage = () => {
                   </TableCell>
 
                   <TableCell>
-                    <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="EDIT">
+                    {canEditPlan ? (
                       <button
                         type="button"
                         onClick={() => handleToggleStatus(p)}
@@ -407,7 +411,16 @@ export const PlansPage = () => {
                         <span className={`w-1.5 h-1.5 rounded-full ${p.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                         <span>{p.isActive ? 'Active' : 'Disabled'}</span>
                       </button>
-                    </PermissionGuard>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          p.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${p.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                        <span>{p.isActive ? 'Active' : 'Disabled'}</span>
+                      </span>
+                    )}
                   </TableCell>
 
                   <TableCell className="text-right">
@@ -421,7 +434,7 @@ export const PlansPage = () => {
                         <Eye className="w-4 h-4" />
                       </button>
 
-                      <PermissionGuard module="SUBSCRIPTIONS" section="PLANS" action="EDIT">
+                      <PermissionGuard module="COMMERCIAL" section="PLANS" action="EDIT">
                         <button
                           type="button"
                           onClick={() => setEditingPlan(p)}

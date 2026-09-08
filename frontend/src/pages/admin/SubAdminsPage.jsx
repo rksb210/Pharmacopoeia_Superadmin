@@ -30,6 +30,7 @@ import {
 import subadminService from '../../services/subadmin.service';
 import { useAuth } from '../../context/AuthContext';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { usePermission } from '../../context/PermissionContext';
 
 // Modals
 import CreateEditAdminModal from '../../components/admin/admins/CreateEditAdminModal';
@@ -39,6 +40,8 @@ import PermissionAssignmentModal from '../../components/admin/admins/PermissionA
 
 export const SubAdminsPage = () => {
   const { user: currentUser } = useAuth();
+  const { can } = usePermission();
+  const canEditSubAdmin = can('EDIT', 'USERS', 'SUBADMINS');
 
   const [stats, setStats] = useState({
     totalSubAdmins: 0,
@@ -370,28 +373,48 @@ export const SubAdminsPage = () => {
 
                   {/* Status Toggle */}
                   <TableCell>
-                    <button
-                      type="button"
-                      disabled={isSelf}
-                      onClick={() => handleToggleStatus(sub)}
-                      className={`
-                        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
-                        ${
-                          sub.isActive
-                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                            : 'bg-red-50 text-red-600 hover:bg-red-100'
-                        }
-                        ${isSelf ? 'opacity-80 cursor-default hover:bg-transparent' : ''}
-                      `}
-                      title={isSelf ? 'Cannot deactivate self' : 'Toggle status'}
-                    >
+                    {canEditSubAdmin ? (
+                      <button
+                        type="button"
+                        disabled={isSelf}
+                        onClick={() => handleToggleStatus(sub)}
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
+                          ${
+                            sub.isActive
+                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                              : 'bg-red-50 text-red-600 hover:bg-red-100'
+                          }
+                          ${isSelf ? 'opacity-80 cursor-default hover:bg-transparent' : ''}
+                        `}
+                        title={isSelf ? 'Cannot deactivate self' : 'Toggle status'}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            sub.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span>{sub.isActive ? 'Active' : 'Inactive'}</span>
+                      </button>
+                    ) : (
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          sub.isActive ? 'bg-emerald-500' : 'bg-red-500'
-                        }`}
-                      />
-                      <span>{sub.isActive ? 'Active' : 'Inactive'}</span>
-                    </button>
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold
+                          ${
+                            sub.isActive
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-red-50 text-red-600'
+                          }
+                        `}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            sub.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span>{sub.isActive ? 'Active' : 'Inactive'}</span>
+                      </span>
+                    )}
                   </TableCell>
 
                   {/* Actions */}

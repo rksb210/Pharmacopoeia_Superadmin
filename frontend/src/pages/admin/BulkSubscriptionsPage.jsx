@@ -140,15 +140,17 @@ export const BulkSubscriptionsPage = () => {
         subtitle="Batch enroll institutional rosters, university student cohorts, and corporate teams via Excel with pre-flight validation and consolidated billing."
       >
         <div className="flex items-center gap-2">
-          <Button
-            variant={activeMainTab === 'wizard' ? 'nfiYellow' : 'outline'}
-            size="sm"
-            onClick={() => setActiveMainTab('wizard')}
-            className="rounded-xl text-xs font-bold shadow-2xs cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            <span>New Bulk Import</span>
-          </Button>
+          <PermissionGuard module="COMMERCIAL" section="BULK_SUBSCRIPTION" action="ADD">
+            <Button
+              variant={activeMainTab === 'wizard' ? 'nfiYellow' : 'outline'}
+              size="sm"
+              onClick={() => setActiveMainTab('wizard')}
+              className="rounded-xl text-xs font-bold shadow-2xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              <span>New Bulk Import</span>
+            </Button>
+          </PermissionGuard>
 
           <Button
             variant={activeMainTab === 'history' ? 'nfiNavy' : 'outline'}
