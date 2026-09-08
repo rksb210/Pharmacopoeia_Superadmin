@@ -244,7 +244,7 @@ router.put(
   validateUpdatePermissions,
   async (req, res) => {
     try {
-      const { customPermissions } = req.body;
+      const customPermissions = req.body.customPermissions || req.body.permissions || [];
       const subAdmin = await adminService.updateAdminPermissions(
         req.params.id,
         customPermissions,

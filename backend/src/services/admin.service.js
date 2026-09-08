@@ -207,7 +207,8 @@ export const adminService = {
       designationRef: resolvedDesignationRef,
       phoneNumber: phoneNumber.trim(),
       notes: notes.trim(),
-      customPermissions: customPermissions.map((p) => p.toUpperCase()),
+      customPermissions: (customPermissions || []).map((p) => p.toUpperCase()),
+      hasCustomPermissions: Array.isArray(customPermissions) && customPermissions.length > 0,
       isActive: true,
     });
 

@@ -43,6 +43,7 @@ import {
 
 import dikshaService from '../../services/diksha.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { usePermission } from '../../context/PermissionContext';
 
 // Modals
 import CreateEditCourseModal from '../../components/admin/diksha/CreateEditCourseModal';
@@ -62,6 +63,9 @@ const CATEGORIES = [
 ];
 
 export const DikshaPage = () => {
+  const { can, isSuperAdmin } = usePermission();
+  const canEdit = isSuperAdmin || can('EDIT', 'INTEGRATED', 'DIKSHA');
+
   const [stats, setStats] = useState({
     totalCourses: 0,
     publishedCourses: 0,
@@ -831,11 +835,11 @@ export const DikshaPage = () => {
         isOpen={!!viewingCourse}
         onClose={() => setViewingCourse(null)}
         course={viewingCourse}
-        onEdit={(c) => {
+        onEdit={canEdit ? (c) => {
           setViewingCourse(null);
           setEditingCourse(c);
           setIsCreateEditOpen(true);
-        }}
+        } : undefined}
         onViewEnrollments={(c) => {
           setViewingCourse(null);
           setEnrolledModalCourse(c);

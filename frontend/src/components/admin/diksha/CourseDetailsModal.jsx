@@ -22,6 +22,7 @@ import {
 import { AdminModal } from '../common/AdminModal';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
+import PermissionGuard from '../common/PermissionGuard';
 
 export const CourseDetailsModal = ({
   isOpen,
@@ -131,14 +132,16 @@ export const CourseDetailsModal = ({
             )}
 
             {onEdit && (
-              <Button
-                variant="nfiYellow"
-                size="sm"
-                onClick={() => onEdit(course)}
-                className="rounded-xl text-xs font-bold shadow-2xs cursor-pointer"
-              >
-                <span>Edit Course</span>
-              </Button>
+              <PermissionGuard module="INTEGRATED" section="DIKSHA" action="EDIT">
+                <Button
+                  variant="nfiYellow"
+                  size="sm"
+                  onClick={() => onEdit(course)}
+                  className="rounded-xl text-xs font-bold shadow-2xs cursor-pointer"
+                >
+                  <span>Edit Course</span>
+                </Button>
+              </PermissionGuard>
             )}
           </div>
         </div>

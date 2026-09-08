@@ -33,6 +33,7 @@ import {
 
 import bulkImportService from '../../services/bulkImport.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { usePermission } from '../../context/PermissionContext';
 
 // Components & Modals
 import BulkUploadZone from '../../components/admin/bulk/BulkUploadZone';
@@ -41,7 +42,16 @@ import ConsolidatedInvoiceCard from '../../components/admin/bulk/ConsolidatedInv
 import BulkImportDetailsModal from '../../components/admin/bulk/BulkImportDetailsModal';
 
 export const BulkSubscriptionsPage = () => {
-  const [activeMainTab, setActiveMainTab] = useState('wizard'); // 'wizard' | 'history'
+  const { can, isSuperAdmin } = usePermission();
+  const canAdd = isSuperAdmin || can('ADD', 'COMMERCIAL', 'BULK_SUBSCRIPTION');
+
+  const [activeMainTab, setActiveMainTab] = useState(canAdd ? 'wizard' : 'history');
+
+  useEffect(() => {
+    if (!canAdd && activeMainTab === 'wizard') {
+      setActiveMainTab('history');
+    }
+  }, [canAdd, activeMainTab]);
 
   // Wizard States: 1: upload, 2: preview, 3: success
   const [wizardStep, setWizardStep] = useState(1);
@@ -140,7 +150,7 @@ export const BulkSubscriptionsPage = () => {
         subtitle="Batch enroll institutional rosters, university student cohorts, and corporate teams via Excel with pre-flight validation and consolidated billing."
       >
         <div className="flex items-center gap-2">
-          <PermissionGuard module="COMMERCIAL" section="BULK_SUBSCRIPTION" action="ADD">
+          {canAdd && (
             <Button
               variant={activeMainTab === 'wizard' ? 'nfiYellow' : 'outline'}
               size="sm"
@@ -150,7 +160,7 @@ export const BulkSubscriptionsPage = () => {
               <Plus className="w-3.5 h-3.5 mr-1" />
               <span>New Bulk Import</span>
             </Button>
-          </PermissionGuard>
+          )}
 
           <Button
             variant={activeMainTab === 'history' ? 'nfiNavy' : 'outline'}
@@ -185,7 +195,7 @@ export const BulkSubscriptionsPage = () => {
       )}
 
       {/* MAIN TAB 1: BULK IMPORT WIZARD */}
-      {activeMainTab === 'wizard' && (
+      {activeMainTab === 'wizard' && canAdd && (
         <div className="space-y-5">
           {/* Wizard Progress Steps Indicator */}
           <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-2xs flex items-center justify-between font-sans select-none text-xs">
@@ -297,8 +307,8 @@ export const BulkSubscriptionsPage = () => {
               <AdminEmptyState
                 title="No bulk import history"
                 description="You have not executed any bulk subscriber imports yet."
-                actionLabel="New Bulk Import"
-                onAction={() => setActiveMainTab('wizard')}
+                actionLabel={canAdd ? "New Bulk Import" : undefined}
+                onAction={canAdd ? () => setActiveMainTab('wizard') : undefined}
               />
             ) : (
               <Table>
