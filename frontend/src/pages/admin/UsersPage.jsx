@@ -32,6 +32,7 @@ import {
 
 import subscriberService from '../../services/subscriber.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { usePermission } from '../../context/PermissionContext';
 
 // Modals
 import CreateEditSubscriberModal from '../../components/admin/subscribers/CreateEditSubscriberModal';
@@ -40,6 +41,9 @@ import AssignSubscriptionModal from '../../components/admin/subscribers/AssignSu
 import ResetPasswordDialog from '../../components/admin/admins/ResetPasswordDialog';
 
 export const UsersPage = () => {
+  const { can } = usePermission();
+  const canEditUser = can('EDIT', 'USERS', 'USERS');
+
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeSubscribers: 0,
@@ -205,12 +209,23 @@ export const UsersPage = () => {
       ? Object.fromEntries(sub.dynamicFields)
       : sub.dynamicFields || {};
 
-    if (sub.userType === 'STUDENT') return `APAAR: ${dFields.apaarId || 'N/A'}`;
-    if (sub.userType === 'DOCTOR' || sub.userType === 'PHARMACIST' || sub.userType === 'NURSE') {
-      return `Reg: ${dFields.registrationNo || 'N/A'} (${dFields.stateCouncil || ''})`;
+    const stateVal = dFields.registrationState || dFields.stateCouncil || dFields.state || '';
+
+    if (sub.userType === 'STUDENT') {
+      return `APAAR: ${dFields.apaarId || 'N/A'}${stateVal ? ` (${stateVal})` : ''}`;
     }
-    if (sub.userType === 'INDUSTRY') return `${dFields.companyName || ''} · GST: ${dFields.gstin || 'N/A'}`;
-    return dFields.designation || 'General Public';
+    if (sub.userType === 'DOCTOR' || sub.userType === 'PHARMACIST' || sub.userType === 'NURSE') {
+      return `Reg: ${dFields.registrationNo || 'N/A'}${stateVal ? ` (${stateVal})` : ''}`;
+    }
+    if (sub.userType === 'INDUSTRY') {
+      const company = dFields.companyName || '';
+      const taxId = dFields.gstin ? `GST: ${dFields.gstin}` : dFields.pan ? `PAN: ${dFields.pan}` : '';
+      const parts = [company, taxId, stateVal ? `(${stateVal})` : ''].filter(Boolean);
+      return parts.join(' · ') || 'Industry Entity';
+    }
+    return dFields.designation
+      ? `${dFields.designation}${stateVal ? ` (${stateVal})` : ''}`
+      : (stateVal ? `State: ${stateVal}` : 'General Public');
   };
 
   return (
@@ -468,7 +483,7 @@ export const UsersPage = () => {
                 <TableCell>
                   <div className="flex items-center gap-1.5">
                     {getSubscriptionBadge(sub.subscription)}
-                    {sub.subscription?.discountPercent > 0 && (
+                    {sub.subscription?.status === 'active' && sub.subscription?.discountPercent > 0 && (
                       <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">
                         -{sub.subscription.discountPercent}%
                       </span>
@@ -478,26 +493,46 @@ export const UsersPage = () => {
 
                 {/* Account Status Toggle */}
                 <TableCell>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleStatus(sub)}
-                    className={`
-                      inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
-                      ${
-                        sub.isActive
-                          ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                          : 'bg-red-50 text-red-600 hover:bg-red-100'
-                      }
-                    `}
-                    title="Toggle active status"
-                  >
+                  {canEditUser ? (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(sub)}
+                      className={`
+                        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
+                        ${
+                          sub.isActive
+                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                            : 'bg-red-50 text-red-600 hover:bg-red-100'
+                        }
+                      `}
+                      title="Toggle active status"
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          sub.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                        }`}
+                      />
+                      <span>{sub.isActive ? 'Active' : 'Inactive'}</span>
+                    </button>
+                  ) : (
                     <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        sub.isActive ? 'bg-emerald-500' : 'bg-red-500'
-                      }`}
-                    />
-                    <span>{sub.isActive ? 'Active' : 'Inactive'}</span>
-                  </button>
+                      className={`
+                        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold
+                        ${
+                          sub.isActive
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-red-50 text-red-600'
+                        }
+                      `}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          sub.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                        }`}
+                      />
+                      <span>{sub.isActive ? 'Active' : 'Inactive'}</span>
+                    </span>
+                  )}
                 </TableCell>
 
                 {/* Actions Dropdown */}

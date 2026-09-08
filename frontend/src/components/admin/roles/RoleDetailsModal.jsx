@@ -18,6 +18,7 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react';
+import { usePermission } from '../../../context/PermissionContext';
 
 export const RoleDetailsModal = ({
   isOpen,
@@ -26,6 +27,8 @@ export const RoleDetailsModal = ({
   onEdit,
   onRoleUpdated,
 }) => {
+  const { can } = usePermission();
+  const canEditRole = can('EDIT', 'USERS', 'ROLES');
   const [roleData, setRoleData] = useState(null);
   const [assignedUsers, setAssignedUsers] = useState([]);
   const [allRoles, setAllRoles] = useState([]);
@@ -123,11 +126,11 @@ export const RoleDetailsModal = ({
       onClose={onClose}
       title={roleData ? `Role: ${roleData.name}` : 'Role Inspector'}
       description="Review role permission matrix and manage assigned administrative staff."
-      confirmLabel="Edit Role"
-      onConfirm={() => {
+      confirmLabel={canEditRole && !roleData?.isSystemDefault ? "Edit Role" : undefined}
+      onConfirm={canEditRole && !roleData?.isSystemDefault ? () => {
         onClose();
         if (onEdit && roleData) onEdit(roleData);
-      }}
+      } : undefined}
       size="xl"
     >
       {loading ? (

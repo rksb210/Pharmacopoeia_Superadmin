@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AdminModal from '../common/AdminModal';
 import InputField from '../../common/InputField';
-import { Gift, Clock, Percent, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Clock, Percent, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export const AssignSubscriptionModal = ({
   isOpen,
@@ -11,10 +11,8 @@ export const AssignSubscriptionModal = ({
   onAssignComplimentary,
   onAssignDiscount,
 }) => {
-  const [activeAction, setActiveAction] = useState('trial'); // 'trial' | 'complimentary' | 'discount'
+  const [activeAction, setActiveAction] = useState('trial'); // 'trial' | 'discount'
   const [trialDays, setTrialDays] = useState(14);
-  const [compPlanName, setCompPlanName] = useState('VIP Institutional Complimentary License');
-  const [compMonths, setCompMonths] = useState(12);
   const [discountPercent, setDiscountPercent] = useState(20);
   const [discountNotes, setDiscountNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,13 +29,10 @@ export const AssignSubscriptionModal = ({
     try {
       if (activeAction === 'trial') {
         await onAssignTrial(subscriber._id, trialDays);
-        setSuccessMsg(`Granted ${trialDays}-day Free Trial to ${subscriber.name}!`);
-      } else if (activeAction === 'complimentary') {
-        await onAssignComplimentary(subscriber._id, compPlanName, compMonths);
-        setSuccessMsg(`Granted ${compMonths}-month Complimentary License!`);
+        setSuccessMsg(`Granted ${trialDays}-day Evaluation Access to ${subscriber.name}!`);
       } else if (activeAction === 'discount') {
         await onAssignDiscount(subscriber._id, discountPercent, discountNotes);
-        setSuccessMsg(`Assigned ${discountPercent}% Discount Voucher!`);
+        setSuccessMsg(`Assigned ${discountPercent}% Concession Rate!`);
       }
 
       setTimeout(() => {
@@ -77,7 +72,8 @@ export const AssignSubscriptionModal = ({
         )}
 
         {/* Action Selector */}
-        <div className="grid grid-cols-3 gap-2">
+        {/* Action Selector */}
+        <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={() => setActiveAction('trial')}
@@ -88,20 +84,7 @@ export const AssignSubscriptionModal = ({
             }`}
           >
             <Clock className="w-4 h-4" />
-            <span>Free Trial</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveAction('complimentary')}
-            className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 font-bold transition-all cursor-pointer ${
-              activeAction === 'complimentary'
-                ? 'bg-purple-50/80 border-purple-600 text-purple-700 shadow-2xs'
-                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-            }`}
-          >
-            <Gift className="w-4 h-4" />
-            <span>Complimentary</span>
+            <span>Free Trial / Evaluation</span>
           </button>
 
           <button
@@ -114,50 +97,28 @@ export const AssignSubscriptionModal = ({
             }`}
           >
             <Percent className="w-4 h-4" />
-            <span>Apply Discount</span>
+            <span>Apply Concession / Discount</span>
           </button>
         </div>
 
         {/* Form Sections */}
         {activeAction === 'trial' && (
           <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
-            <h4 className="font-bold text-slate-900">Grant Promotional Free Trial</h4>
+            <h4 className="font-bold text-slate-900">Grant Free Trial / Evaluation Access</h4>
             <div className="flex flex-col gap-1.5">
-              <label className="text-slate-600 font-semibold">Trial Duration (Days)</label>
+              <label className="text-slate-600 font-semibold">Evaluation / Access Duration</label>
               <select
                 value={trialDays}
                 onChange={(e) => setTrialDays(e.target.value)}
                 className="h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-[#E76120]"
               >
-                <option value={7}>7 Days (1 Week Trial)</option>
-                <option value={14}>14 Days (Standard Trial)</option>
-                <option value={30}>30 Days (1 Month Trial)</option>
-                <option value={60}>60 Days (Extended Trial)</option>
-              </select>
-            </div>
-          </div>
-        )}
-
-        {activeAction === 'complimentary' && (
-          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
-            <h4 className="font-bold text-slate-900">Grant Complimentary Institutional License</h4>
-            <InputField
-              id="compPlan"
-              label="Complimentary License Label"
-              value={compPlanName}
-              onChange={(e) => setCompPlanName(e.target.value)}
-            />
-            <div className="flex flex-col gap-1.5">
-              <label className="text-slate-600 font-semibold">License Validity (Months)</label>
-              <select
-                value={compMonths}
-                onChange={(e) => setCompMonths(e.target.value)}
-                className="h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-[#E76120]"
-              >
-                <option value={3}>3 Months</option>
-                <option value={6}>6 Months</option>
-                <option value={12}>12 Months (1 Year Full Pass)</option>
-                <option value={24}>24 Months (2 Years VIP Pass)</option>
+                <option value={7}>7 Days (1 Week Quick Evaluation)</option>
+                <option value={14}>14 Days (Standard Evaluation Trial)</option>
+                <option value={30}>30 Days (1 Month Evaluation Pass)</option>
+                <option value={90}>90 Days (3 Months Evaluation Pass)</option>
+                <option value={180}>180 Days (6 Months VIP Complimentary Pass)</option>
+                <option value={365}>365 Days (1 Year Full Access Grant)</option>
+                <option value={730}>730 Days (2 Years Institutional Grant)</option>
               </select>
             </div>
           </div>
@@ -165,7 +126,12 @@ export const AssignSubscriptionModal = ({
 
         {activeAction === 'discount' && (
           <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
-            <h4 className="font-bold text-slate-900">Assign Subscription Discount Rate</h4>
+            <h4 className="font-bold text-slate-900">Assign Subscription Concession / Discount Rate</h4>
+            {(!subscriber.subscription || subscriber.subscription.status === 'none') && (
+              <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-800 font-medium">
+                Note: Subscriber is currently on Free Tier. Concession rate will be applied when enrolling in a commercial paid formulary pass.
+              </div>
+            )}
             <div className="flex flex-col gap-1.5">
               <label className="text-slate-600 font-semibold">Discount Percentage (%)</label>
               <select

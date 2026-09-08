@@ -30,6 +30,8 @@ import {
 import subadminService from '../../services/subadmin.service';
 import { useAuth } from '../../context/AuthContext';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { usePermission } from '../../context/PermissionContext';
+import api from '../../services/api';
 
 // Modals
 import CreateEditAdminModal from '../../components/admin/admins/CreateEditAdminModal';
@@ -39,6 +41,8 @@ import PermissionAssignmentModal from '../../components/admin/admins/PermissionA
 
 export const SubAdminsPage = () => {
   const { user: currentUser } = useAuth();
+  const { can } = usePermission();
+  const canEditSubAdmin = can('EDIT', 'USERS', 'SUBADMINS');
 
   const [stats, setStats] = useState({
     totalSubAdmins: 0,
@@ -58,6 +62,7 @@ export const SubAdminsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [dbRoles, setDbRoles] = useState([]);
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -106,6 +111,14 @@ export const SubAdminsPage = () => {
 
   useEffect(() => {
     fetchStats();
+    api
+      .get('/rbac/roles')
+      .then((res) => {
+        if (res?.roles) {
+          setDbRoles(res.roles.filter((r) => r.code !== 'superadmin' && r.code !== 'admin'));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -262,10 +275,20 @@ export const SubAdminsPage = () => {
               className="h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
             >
               <option value="all">All Roles</option>
-              <option value="subadmin">Sub Admin</option>
-              <option value="maker">Maker</option>
-              <option value="reviewer">Reviewer</option>
-              <option value="approver">Approver</option>
+              {dbRoles.length > 0 ? (
+                dbRoles.map((r) => (
+                  <option key={r.code} value={r.code}>
+                    {r.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="subadmin">Sub Admin</option>
+                  <option value="maker">Maker</option>
+                  <option value="reviewer">Reviewer</option>
+                  <option value="approver">Approver</option>
+                </>
+              )}
             </select>
 
             <select
@@ -340,7 +363,7 @@ export const SubAdminsPage = () => {
                   {/* Role */}
                   <TableCell>
                     <Badge variant="nfiNavy" className="text-[10px] font-bold">
-                      {sub.role?.toUpperCase()}
+                      {sub.roleRef?.name || sub.role?.replace(/_/g, ' ')?.toUpperCase()}
                     </Badge>
                   </TableCell>
 
@@ -370,28 +393,48 @@ export const SubAdminsPage = () => {
 
                   {/* Status Toggle */}
                   <TableCell>
-                    <button
-                      type="button"
-                      disabled={isSelf}
-                      onClick={() => handleToggleStatus(sub)}
-                      className={`
-                        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
-                        ${
-                          sub.isActive
-                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                            : 'bg-red-50 text-red-600 hover:bg-red-100'
-                        }
-                        ${isSelf ? 'opacity-80 cursor-default hover:bg-transparent' : ''}
-                      `}
-                      title={isSelf ? 'Cannot deactivate self' : 'Toggle status'}
-                    >
+                    {canEditSubAdmin ? (
+                      <button
+                        type="button"
+                        disabled={isSelf}
+                        onClick={() => handleToggleStatus(sub)}
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
+                          ${
+                            sub.isActive
+                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                              : 'bg-red-50 text-red-600 hover:bg-red-100'
+                          }
+                          ${isSelf ? 'opacity-80 cursor-default hover:bg-transparent' : ''}
+                        `}
+                        title={isSelf ? 'Cannot deactivate self' : 'Toggle status'}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            sub.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span>{sub.isActive ? 'Active' : 'Inactive'}</span>
+                      </button>
+                    ) : (
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          sub.isActive ? 'bg-emerald-500' : 'bg-red-500'
-                        }`}
-                      />
-                      <span>{sub.isActive ? 'Active' : 'Inactive'}</span>
-                    </button>
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold
+                          ${
+                            sub.isActive
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-red-50 text-red-600'
+                          }
+                        `}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            sub.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span>{sub.isActive ? 'Active' : 'Inactive'}</span>
+                      </span>
+                    )}
                   </TableCell>
 
                   {/* Actions */}
@@ -455,6 +498,8 @@ export const SubAdminsPage = () => {
           setEditingSubAdmin(null);
         }}
         admin={editingSubAdmin}
+        defaultRole="subadmin"
+        isSubAdmin={true}
         onSuccess={handleSaveSubAdmin}
       />
 

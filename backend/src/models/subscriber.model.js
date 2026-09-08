@@ -30,6 +30,36 @@ const orderHistorySchema = new mongoose.Schema(
   { _id: false }
 );
 
+const crmNoteSchema = new mongoose.Schema(
+  {
+    note: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    priority: {
+      type: String,
+      enum: ['low', 'medium', 'high'],
+      default: 'medium',
+    },
+    authorName: {
+      type: String,
+      default: 'Administrator',
+      trim: true,
+    },
+    authorRole: {
+      type: String,
+      default: 'Staff',
+      trim: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: true }
+);
+
 const subscriberSchema = new mongoose.Schema(
   {
     name: {
@@ -144,6 +174,7 @@ const subscriberSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    crmNotes: [crmNoteSchema],
   },
   {
     timestamps: true,

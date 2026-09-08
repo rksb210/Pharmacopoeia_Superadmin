@@ -11,6 +11,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
+import { usePermission } from '../../../context/PermissionContext';
 
 const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'OTHERS'];
 
@@ -20,6 +21,12 @@ export const CreateEditCouponModal = ({
   coupon = null,
   onSuccess,
 }) => {
+  const { can } = usePermission();
+  const canEdit = can('EDIT', 'COMMERCIAL', 'COUPONS') || can('EDIT', 'COMMERCIAL', 'DISCOUNTS');
+  const canAdd = can('ADD', 'COMMERCIAL', 'COUPONS') || can('ADD', 'COMMERCIAL', 'DISCOUNTS');
+  const isEditMode = !!coupon;
+  const isAllowed = isEditMode ? canEdit : canAdd;
+
   const [activeTab, setActiveTab] = useState('basics'); // 'basics' | 'limits' | 'targeting'
 
   const [formData, setFormData] = useState({
@@ -37,13 +44,12 @@ export const CreateEditCouponModal = ({
     applicablePlans: ['ALL'],
     applicableUserTypes: ['ALL'],
     specificEmails: '',
+    isActive: true,
   });
 
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isEditMode = !!coupon;
 
   useEffect(() => {
     if (coupon) {
@@ -66,6 +72,7 @@ export const CreateEditCouponModal = ({
         applicablePlans: coupon.applicablePlans || ['ALL'],
         applicableUserTypes: coupon.applicableUserTypes || ['ALL'],
         specificEmails: coupon.specificEmails?.join(', ') || '',
+        isActive: coupon.isActive !== undefined ? coupon.isActive : true,
       });
     } else {
       setFormData({
@@ -83,6 +90,7 @@ export const CreateEditCouponModal = ({
         applicablePlans: ['ALL'],
         applicableUserTypes: ['ALL'],
         specificEmails: '',
+        isActive: true,
       });
     }
     setActiveTab('basics');
@@ -159,6 +167,7 @@ export const CreateEditCouponModal = ({
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
+    if (!isAllowed) return;
     if (!validate()) return;
 
     setIsSubmitting(true);
@@ -202,9 +211,10 @@ export const CreateEditCouponModal = ({
       onClose={onClose}
       title={isEditMode ? `Edit Voucher: ${coupon?.code}` : 'Create Promotional Coupon Voucher'}
       description="Configure promotional concession codes, percentage/fixed discounts, usage limits, and user type targeting."
-      confirmLabel={isEditMode ? 'Save Coupon' : 'Create Voucher'}
+      cancelLabel="Close"
+      confirmLabel={isAllowed ? (isEditMode ? 'Save Coupon' : 'Create Voucher') : null}
       isConfirming={isSubmitting}
-      onConfirm={handleSubmit}
+      onConfirm={isAllowed ? handleSubmit : null}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs select-none font-sans">
@@ -357,6 +367,38 @@ export const CreateEditCouponModal = ({
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
             />
+
+            {/* Active Status Toggle */}
+            <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+              <div>
+                <span className="font-bold text-slate-800 text-xs block">Coupon Status</span>
+                <span className="text-[11px] text-slate-500">
+                  {formData.isActive
+                    ? 'Active (Coupon can be applied at checkout)'
+                    : 'Inactive (Coupon cannot be applied at checkout)'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleChange('isActive', !formData.isActive)}
+                className={`
+                  inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer border
+                  ${
+                    formData.isActive
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                      : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                  }
+                `}
+                title="Click to toggle status"
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    formData.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                  }`}
+                />
+                <span>{formData.isActive ? 'Active' : 'Inactive'}</span>
+              </button>
+            </div>
           </div>
         )}
 

@@ -368,10 +368,10 @@ export const CRMPage = () => {
                   {/* Status */}
                   <TableCell>
                     <Badge
-                      variant={c.status === 'active' ? 'nfiNavy' : 'secondary'}
+                      variant={c.status === 'active' || (c.isActive !== false && c.status !== 'inactive') ? 'nfiNavy' : 'secondary'}
                       className="text-[9px] uppercase font-bold"
                     >
-                      {c.status}
+                      {c.status || (c.isActive !== false ? 'active' : 'inactive')}
                     </Badge>
                   </TableCell>
 

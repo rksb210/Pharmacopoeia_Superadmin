@@ -249,7 +249,7 @@ function AppRoutes() {
         <Route
           path="discounts"
           element={
-            <PermissionGuard module="COMMERCIAL" section="DISCOUNTS" action="VIEW" pageLevel>
+            <PermissionGuard module="COMMERCIAL" section={['COUPONS', 'DISCOUNTS']} action="VIEW" pageLevel>
               <DiscountsPage />
             </PermissionGuard>
           }
@@ -257,7 +257,7 @@ function AppRoutes() {
         <Route
           path="coupons"
           element={
-            <PermissionGuard module="COMMERCIAL" section="COUPONS" action="VIEW" pageLevel>
+            <PermissionGuard module="COMMERCIAL" section={['COUPONS', 'DISCOUNTS']} action="VIEW" pageLevel>
               <DiscountsPage />
             </PermissionGuard>
           }

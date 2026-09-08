@@ -41,7 +41,8 @@ import AssignRoleUsersModal from '../../components/admin/roles/AssignRoleUsersMo
 
 export const RolesPage = () => {
   const { user: currentUser } = useAuth();
-  const { refreshPermissions } = usePermission();
+  const { refreshPermissions, can } = usePermission();
+  const canEditRole = can('EDIT', 'USERS', 'ROLES');
 
   const [roles, setRoles] = useState([]);
   const [stats, setStats] = useState({
@@ -363,28 +364,48 @@ export const RolesPage = () => {
 
                   {/* Status */}
                   <TableCell>
-                    <button
-                      type="button"
-                      disabled={role.isSystemDefault}
-                      onClick={() => handleToggleStatus(role)}
-                      className={`
-                        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all
-                        ${
-                          role.isActive
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-red-50 text-red-600'
-                        }
-                        ${role.isSystemDefault ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}
-                      `}
-                      title={role.isSystemDefault ? 'System default role cannot be disabled' : 'Click to toggle status'}
-                    >
+                    {canEditRole ? (
+                      <button
+                        type="button"
+                        disabled={role.isSystemDefault}
+                        onClick={() => handleToggleStatus(role)}
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all
+                          ${
+                            role.isActive
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-red-50 text-red-600'
+                          }
+                          ${role.isSystemDefault ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}
+                        `}
+                        title={role.isSystemDefault ? 'System default role cannot be disabled' : 'Click to toggle status'}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            role.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span>{role.isActive ? 'Active' : 'Inactive'}</span>
+                      </button>
+                    ) : (
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          role.isActive ? 'bg-emerald-500' : 'bg-red-500'
-                        }`}
-                      />
-                      <span>{role.isActive ? 'Active' : 'Inactive'}</span>
-                    </button>
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold
+                          ${
+                            role.isActive
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-red-50 text-red-600'
+                          }
+                        `}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            role.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span>{role.isActive ? 'Active' : 'Inactive'}</span>
+                      </span>
+                    )}
                   </TableCell>
 
                   {/* Actions */}

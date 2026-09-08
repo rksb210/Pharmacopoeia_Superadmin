@@ -10,6 +10,7 @@ import { authenticate } from '../middlewares/auth.middleware.js';
 import { requirePermission } from '../middlewares/rbac.middleware.js';
 import adminService from '../services/admin.service.js';
 import User from '../models/user.model.js';
+import Role from '../models/role.model.js';
 
 const router = Router();
 
@@ -26,10 +27,10 @@ router.get(
   requirePermission('USERS', 'SUBADMINS', 'VIEW'),
   async (req, res, next) => {
     try {
-      const subAdminRoles = ['subadmin', 'maker', 'reviewer', 'approver'];
-      const totalSubAdmins = await User.countDocuments({ role: { $in: subAdminRoles } });
-      const activeSubAdmins = await User.countDocuments({ role: { $in: subAdminRoles }, isActive: true });
-      const inactiveSubAdmins = await User.countDocuments({ role: { $in: subAdminRoles }, isActive: false });
+      const nonSubAdminRoles = ['superadmin', 'admin', 'subscriber'];
+      const totalSubAdmins = await User.countDocuments({ role: { $nin: nonSubAdminRoles } });
+      const activeSubAdmins = await User.countDocuments({ role: { $nin: nonSubAdminRoles }, isActive: true });
+      const inactiveSubAdmins = await User.countDocuments({ role: { $nin: nonSubAdminRoles }, isActive: false });
 
       return res.status(200).json({
         success: true,
@@ -56,7 +57,6 @@ router.get(
   async (req, res, next) => {
     try {
       const { page, limit, search, role, status, sortBy, sortOrder } = req.query;
-      const subAdminRoles = ['subadmin', 'maker', 'reviewer', 'approver'];
       const subAdminRole = role && role !== 'all' ? role : undefined;
 
       const result = await adminService.getAdminsList({
@@ -67,7 +67,7 @@ router.get(
         status,
         sortBy,
         sortOrder,
-        allowedRoles: subAdminRoles,
+        excludeRoles: ['superadmin', 'admin', 'subscriber'],
       });
 
       return res.status(200).json({
@@ -112,18 +112,28 @@ router.post(
   validateCreateAdmin,
   async (req, res) => {
     try {
-      // Ensure role is a subadmin-tier role
-      const role = req.body.role || 'subadmin';
-      const allowedRoles = ['subadmin', 'maker', 'reviewer', 'approver'];
-      if (!allowedRoles.includes(role.toLowerCase())) {
+      // Ensure role is not core admin/superadmin or subscriber
+      const role = (req.body.role || 'subadmin').toLowerCase().trim();
+      const forbiddenRoles = ['superadmin', 'admin', 'subscriber'];
+      if (forbiddenRoles.includes(role)) {
         return res.status(400).json({
           success: false,
-          message: `Sub Admin role must be one of: ${allowedRoles.join(', ')}`,
+          message: 'Cannot assign Core Admin or Superadmin role through Sub-Administrator portal.',
+        });
+      }
+
+      // Allow default sub-roles and any registered dynamic role from DB
+      const systemSubRoles = ['subadmin', 'maker', 'reviewer', 'approver'];
+      const roleDoc = await Role.findOne({ code: role });
+      if (!roleDoc && !systemSubRoles.includes(role)) {
+        return res.status(400).json({
+          success: false,
+          message: `Role '${role}' is not recognized. Please create it first under Custom Roles.`,
         });
       }
 
       const newSubAdmin = await adminService.createAdmin(
-        { ...req.body, role },
+        { ...req.body, role, roleRef: roleDoc ? roleDoc._id : null },
         req.user
       );
 
@@ -244,7 +254,7 @@ router.put(
   validateUpdatePermissions,
   async (req, res) => {
     try {
-      const { customPermissions } = req.body;
+      const customPermissions = req.body.customPermissions || req.body.permissions || [];
       const subAdmin = await adminService.updateAdminPermissions(
         req.params.id,
         customPermissions,

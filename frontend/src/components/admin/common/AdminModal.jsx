@@ -58,6 +58,20 @@ export const AdminModal = ({
           <DialogFooter className="p-4 sm:p-5 bg-slate-50/70 border-t border-slate-100 flex flex-row items-center justify-end gap-2.5">
             {footer ? (
               footer
+            ) : (!onConfirm || onConfirm === onClose) ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="rounded-lg text-xs font-semibold px-5 hover:bg-slate-100 cursor-pointer"
+              >
+                {confirmLabel && confirmLabel.toLowerCase().includes('close')
+                  ? confirmLabel
+                  : cancelLabel && cancelLabel !== 'Cancel'
+                  ? cancelLabel
+                  : 'Close'}
+              </Button>
             ) : (
               <>
                 <Button
@@ -66,29 +80,27 @@ export const AdminModal = ({
                   size="sm"
                   onClick={onClose}
                   disabled={isConfirming}
-                  className="rounded-lg text-xs font-semibold px-4"
+                  className="rounded-lg text-xs font-semibold px-4 cursor-pointer"
                 >
                   {cancelLabel}
                 </Button>
-                {onConfirm && (
-                  <Button
-                    type="button"
-                    variant={confirmVariant}
-                    size="sm"
-                    onClick={onConfirm}
-                    disabled={isConfirming}
-                    className="rounded-lg text-xs font-bold px-5 shadow-2xs"
-                  >
-                    {isConfirming ? (
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        <span>Processing...</span>
-                      </span>
-                    ) : (
-                      confirmLabel
-                    )}
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant={confirmVariant}
+                  size="sm"
+                  onClick={onConfirm}
+                  disabled={isConfirming}
+                  className="rounded-lg text-xs font-bold px-5 shadow-2xs cursor-pointer"
+                >
+                  {isConfirming ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <span>Processing...</span>
+                    </span>
+                  ) : (
+                    confirmLabel
+                  )}
+                </Button>
               </>
             )}
           </DialogFooter>

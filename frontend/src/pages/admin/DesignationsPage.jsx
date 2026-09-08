@@ -10,9 +10,12 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import designationService from '../../services/designation.service';
 import departmentService from '../../services/department.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { usePermission } from '../../context/PermissionContext';
 import CreateEditDesignationModal from '../../components/admin/designations/CreateEditDesignationModal';
 
 export const DesignationsPage = () => {
+  const { can } = usePermission();
+  const canEditDesig = can('EDIT', 'SYSTEM', 'DESIGNATIONS');
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
   const [designations, setDesignations] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -117,9 +120,11 @@ export const DesignationsPage = () => {
                 <TableCell><span className="text-xs font-semibold text-slate-700">{d.department?.name || '—'}</span><span className="text-[10px] text-slate-400 block">{d.department?.code || ''}</span></TableCell>
                 <TableCell><span className="text-xs text-slate-600">{d.usersCount ?? 0}</span></TableCell>
                 <TableCell>
-                  <PermissionGuard module="SYSTEM" section="DESIGNATIONS" action="EDIT">
+                  {canEditDesig ? (
                     <button onClick={()=>handleToggle(d)} className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer ${d.isActive?'bg-emerald-50 text-emerald-700':'bg-slate-200 text-slate-600'}`}><span className={`w-1.5 h-1.5 rounded-full ${d.isActive?'bg-emerald-500':'bg-slate-400'}`} /><span>{d.isActive?'Active':'Inactive'}</span></button>
-                  </PermissionGuard>
+                  ) : (
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${d.isActive?'bg-emerald-50 text-emerald-700':'bg-slate-200 text-slate-600'}`}><span className={`w-1.5 h-1.5 rounded-full ${d.isActive?'bg-emerald-500':'bg-slate-400'}`} /><span>{d.isActive?'Active':'Inactive'}</span></span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

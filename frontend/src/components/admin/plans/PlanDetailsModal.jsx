@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import planService from '../../../services/plan.service';
+import { usePermission } from '../../../context/PermissionContext';
 
 export const PlanDetailsModal = ({
   isOpen,
@@ -21,6 +22,8 @@ export const PlanDetailsModal = ({
   plan,
   onEdit,
 }) => {
+  const { can } = usePermission();
+  const canEdit = can('EDIT', 'COMMERCIAL', 'PLANS');
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'audit'
   const [detailedPlan, setDetailedPlan] = useState(null);
   const [usage, setUsage] = useState({ activeSubscribers: 0, totalSubscribers: 0, totalRevenueINR: 0 });
@@ -57,11 +60,11 @@ export const PlanDetailsModal = ({
       onClose={onClose}
       title="Plan Details & Pricing Audit Trail"
       description={`Formulary tier specifications and price change history for ${p.name}.`}
-      confirmLabel="Edit Plan Configurations"
-      onConfirm={() => {
+      confirmLabel={canEdit ? "Edit Plan Configurations" : undefined}
+      onConfirm={canEdit ? () => {
         onClose();
         if (onEdit) onEdit(p);
-      }}
+      } : undefined}
       size="lg"
     >
       <div className="space-y-4 text-xs select-none font-sans overflow-hidden">

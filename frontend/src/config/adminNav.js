@@ -258,6 +258,9 @@ export const getFilteredAdminNav = (user, can = null) => {
       // 1. Permission-based check if 'can' helper is provided
       if (can && item.permission) {
         const { module, section: sec, action } = item.permission;
+        if (item.id === 'coupons') {
+          return can(action || 'VIEW', 'COMMERCIAL', 'COUPONS') || can(action || 'VIEW', 'COMMERCIAL', 'DISCOUNTS');
+        }
         return can(action || 'VIEW', module, sec);
       }
 

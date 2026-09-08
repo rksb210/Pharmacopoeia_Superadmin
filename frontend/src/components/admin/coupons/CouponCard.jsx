@@ -11,9 +11,11 @@ import {
   Eye,
   Percent,
   Sparkles,
+  Power,
 } from 'lucide-react';
 import CouponStatusBadge from './CouponStatusBadge';
 import PermissionGuard from '../common/PermissionGuard';
+import { usePermission } from '../../../context/PermissionContext';
 
 export const CouponCard = ({
   coupon,
@@ -21,6 +23,9 @@ export const CouponCard = ({
   onViewDetails,
   onToggleStatus,
 }) => {
+  const { can } = usePermission();
+  const canEdit = can('EDIT', 'COMMERCIAL', 'COUPONS') || can('EDIT', 'COMMERCIAL', 'DISCOUNTS');
+
   const [copied, setCopied] = useState(false);
 
   const handleCopyCode = () => {
@@ -69,7 +74,23 @@ export const CouponCard = ({
           </div>
         </div>
 
-        <CouponStatusBadge coupon={coupon} />
+        <div>
+          {onToggleStatus && canEdit ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleStatus(coupon);
+              }}
+              title="Click to toggle status"
+              className="cursor-pointer transition-transform hover:scale-105"
+            >
+              <CouponStatusBadge coupon={coupon} />
+            </button>
+          ) : (
+            <CouponStatusBadge coupon={coupon} />
+          )}
+        </div>
       </div>
 
       {/* Dashed Border Line */}
@@ -180,7 +201,30 @@ export const CouponCard = ({
             <span>Audit History</span>
           </Button>
 
-          <PermissionGuard module="SUBSCRIPTIONS" section="DISCOUNTS" action="EDIT">
+          {onToggleStatus && canEdit && (
+            <button
+              type="button"
+              onClick={() => onToggleStatus(coupon)}
+              className={`
+                h-8 px-3 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer border
+                ${
+                  coupon.isActive
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                    : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                }
+              `}
+              title="Click to toggle status"
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  coupon.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                }`}
+              />
+              <span>{coupon.isActive ? 'Active' : 'Inactive'}</span>
+            </button>
+          )}
+
+          {canEdit && (
             <Button
               variant="nfiYellow"
               size="sm"
@@ -190,7 +234,7 @@ export const CouponCard = ({
               <Edit2 className="w-3.5 h-3.5 mr-1" />
               <span>Edit</span>
             </Button>
-          </PermissionGuard>
+          )}
         </div>
       </div>
     </div>

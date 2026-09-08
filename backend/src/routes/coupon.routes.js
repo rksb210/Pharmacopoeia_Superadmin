@@ -15,7 +15,7 @@ import {
   validateCouponApplication,
 } from '../validators/coupon.validator.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
-import { requirePermission } from '../middlewares/rbac.middleware.js';
+import { requireAnyPermission } from '../middlewares/rbac.middleware.js';
 
 const router = Router();
 
@@ -23,17 +23,68 @@ const router = Router();
 router.use(authenticate);
 
 // Stats & Listing
-router.get('/stats', requirePermission('COMMERCIAL', 'COUPONS', 'VIEW'), getCouponStats);
-router.get('/', requirePermission('COMMERCIAL', 'COUPONS', 'VIEW'), getCoupons);
-router.get('/:id', requirePermission('COMMERCIAL', 'COUPONS', 'VIEW'), getCouponById);
+router.get(
+  '/stats',
+  requireAnyPermission([
+    { module: 'COMMERCIAL', section: 'COUPONS', action: 'VIEW' },
+    { module: 'COMMERCIAL', section: 'DISCOUNTS', action: 'VIEW' },
+  ]),
+  getCouponStats
+);
+router.get(
+  '/',
+  requireAnyPermission([
+    { module: 'COMMERCIAL', section: 'COUPONS', action: 'VIEW' },
+    { module: 'COMMERCIAL', section: 'DISCOUNTS', action: 'VIEW' },
+  ]),
+  getCoupons
+);
+router.get(
+  '/:id',
+  requireAnyPermission([
+    { module: 'COMMERCIAL', section: 'COUPONS', action: 'VIEW' },
+    { module: 'COMMERCIAL', section: 'DISCOUNTS', action: 'VIEW' },
+  ]),
+  getCouponById
+);
 
 // Validation & Calculation Engine
 router.post('/validate', validateCouponApplication, validateAndApplyCoupon);
 
 // Mutations
-router.post('/', requirePermission('COMMERCIAL', 'COUPONS', 'ADD'), validateCreateCoupon, createCoupon);
-router.put('/:id', requirePermission('COMMERCIAL', 'COUPONS', 'EDIT'), validateUpdateCoupon, updateCoupon);
-router.patch('/:id/status', requirePermission('COMMERCIAL', 'COUPONS', 'EDIT'), toggleCouponStatus);
-router.post('/direct-assign', requirePermission('COMMERCIAL', 'DISCOUNTS', 'ADD'), assignDirectDiscount);
+router.post(
+  '/',
+  requireAnyPermission([
+    { module: 'COMMERCIAL', section: 'COUPONS', action: 'ADD' },
+    { module: 'COMMERCIAL', section: 'DISCOUNTS', action: 'ADD' },
+  ]),
+  validateCreateCoupon,
+  createCoupon
+);
+router.put(
+  '/:id',
+  requireAnyPermission([
+    { module: 'COMMERCIAL', section: 'COUPONS', action: 'EDIT' },
+    { module: 'COMMERCIAL', section: 'DISCOUNTS', action: 'EDIT' },
+  ]),
+  validateUpdateCoupon,
+  updateCoupon
+);
+router.patch(
+  '/:id/status',
+  requireAnyPermission([
+    { module: 'COMMERCIAL', section: 'COUPONS', action: 'EDIT' },
+    { module: 'COMMERCIAL', section: 'DISCOUNTS', action: 'EDIT' },
+  ]),
+  toggleCouponStatus
+);
+router.post(
+  '/direct-assign',
+  requireAnyPermission([
+    { module: 'COMMERCIAL', section: 'COUPONS', action: 'ADD' },
+    { module: 'COMMERCIAL', section: 'DISCOUNTS', action: 'ADD' },
+  ]),
+  assignDirectDiscount
+);
 
 export default router;

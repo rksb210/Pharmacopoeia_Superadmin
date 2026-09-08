@@ -9,9 +9,12 @@ import { Badge } from '../../components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table';
 import departmentService from '../../services/department.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { usePermission } from '../../context/PermissionContext';
 import CreateEditDepartmentModal from '../../components/admin/departments/CreateEditDepartmentModal';
 
 export const DepartmentsPage = () => {
+  const { can } = usePermission();
+  const canEditDept = can('EDIT', 'SYSTEM', 'DEPARTMENTS');
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0, totalDesignations: 0 });
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,9 +123,11 @@ export const DepartmentsPage = () => {
                 <TableCell><span className="text-xs font-semibold text-slate-700">{d.designationsCount ?? 0}</span></TableCell>
                 <TableCell><span className="text-xs text-slate-600">{d.usersCount ?? 0}</span></TableCell>
                 <TableCell>
-                  <PermissionGuard module="SYSTEM" section="DEPARTMENTS" action="EDIT">
+                  {canEditDept ? (
                     <button onClick={()=>handleToggle(d)} className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer ${d.isActive?'bg-emerald-50 text-emerald-700':'bg-slate-200 text-slate-600'}`}><span className={`w-1.5 h-1.5 rounded-full ${d.isActive?'bg-emerald-500':'bg-slate-400'}`} /><span>{d.isActive?'Active':'Inactive'}</span></button>
-                  </PermissionGuard>
+                  ) : (
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${d.isActive?'bg-emerald-50 text-emerald-700':'bg-slate-200 text-slate-600'}`}><span className={`w-1.5 h-1.5 rounded-full ${d.isActive?'bg-emerald-500':'bg-slate-400'}`} /><span>{d.isActive?'Active':'Inactive'}</span></span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

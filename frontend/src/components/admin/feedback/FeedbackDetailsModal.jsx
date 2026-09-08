@@ -23,6 +23,7 @@ import {
   Laptop,
 } from 'lucide-react';
 import feedbackService from '../../../services/feedback.service';
+import { usePermission } from '../../../context/PermissionContext';
 
 export const FeedbackDetailsModal = ({
   isOpen,
@@ -32,6 +33,8 @@ export const FeedbackDetailsModal = ({
   onReply,
   onStatusChange,
 }) => {
+  const { can } = usePermission();
+  const canEdit = can('EDIT', 'ENGAGEMENT', 'FEEDBACK');
   const [activeTab, setActiveTab] = useState('dossier'); // 'dossier' | 'thread' | 'timeline'
   const [detailedTicket, setDetailedTicket] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -89,77 +92,79 @@ export const FeedbackDetailsModal = ({
             </p>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex flex-wrap items-center gap-1.5 shrink-0 self-start sm:self-auto">
-            {t.status === 'pending' && (
+          {/* Quick Actions (only if user has EDIT permission) */}
+          {canEdit && (
+            <div className="flex flex-wrap items-center gap-1.5 shrink-0 self-start sm:self-auto">
+              {t.status === 'pending' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onClose();
+                    if (onStatusChange) onStatusChange(t, 'in_review', 'Marked in active review');
+                  }}
+                  className="h-8 rounded-xl font-bold text-xs cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5 mr-1" />
+                  <span>Mark In Review</span>
+                </Button>
+              )}
+
+              {t.status !== 'completed' ? (
+                <Button
+                  variant="nfiYellow"
+                  size="sm"
+                  onClick={() => {
+                    onClose();
+                    if (onStatusChange) onStatusChange(t, 'completed', 'Resolved and closed');
+                  }}
+                  className="h-8 rounded-xl font-bold text-xs shadow-2xs cursor-pointer"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                  <span>Resolve Ticket</span>
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onClose();
+                    if (onStatusChange) onStatusChange(t, 'reopened', 'Reopened for additional review');
+                  }}
+                  className="h-8 rounded-xl font-bold text-xs cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                  <span>Reopen</span>
+                </Button>
+              )}
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => {
                   onClose();
-                  if (onStatusChange) onStatusChange(t, 'in_review', 'Marked in active review');
+                  if (onAssign) onAssign(t);
                 }}
                 className="h-8 rounded-xl font-bold text-xs cursor-pointer"
               >
-                <Eye className="w-3.5 h-3.5 mr-1" />
-                <span>Mark In Review</span>
+                <UserCheck className="w-3.5 h-3.5 mr-1" />
+                <span>Assign</span>
               </Button>
-            )}
 
-            {t.status !== 'completed' ? (
               <Button
-                variant="nfiYellow"
+                variant="nfiNavy"
                 size="sm"
                 onClick={() => {
                   onClose();
-                  if (onStatusChange) onStatusChange(t, 'completed', 'Resolved and closed');
-                }}
-                className="h-8 rounded-xl font-bold text-xs shadow-2xs cursor-pointer"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                <span>Resolve Ticket</span>
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  onClose();
-                  if (onStatusChange) onStatusChange(t, 'reopened', 'Reopened for additional review');
+                  if (onReply) onReply(t);
                 }}
                 className="h-8 rounded-xl font-bold text-xs cursor-pointer"
               >
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                <span>Reopen</span>
+                <Send className="w-3.5 h-3.5 mr-1" />
+                <span>Reply / Note</span>
               </Button>
-            )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                onClose();
-                if (onAssign) onAssign(t);
-              }}
-              className="h-8 rounded-xl font-bold text-xs cursor-pointer"
-            >
-              <UserCheck className="w-3.5 h-3.5 mr-1" />
-              <span>Assign</span>
-            </Button>
-
-            <Button
-              variant="nfiNavy"
-              size="sm"
-              onClick={() => {
-                onClose();
-                if (onReply) onReply(t);
-              }}
-              className="h-8 rounded-xl font-bold text-xs cursor-pointer"
-            >
-              <Send className="w-3.5 h-3.5 mr-1" />
-              <span>Reply / Note</span>
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Tab Navigation */}

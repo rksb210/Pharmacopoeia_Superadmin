@@ -43,6 +43,7 @@ import PermissionAssignmentModal from '../../components/admin/admins/PermissionA
 export const AdminsPage = () => {
   const { user: currentUser } = useAuth();
   const { can } = usePermission();
+  const canEditAdmin = can('EDIT', 'USERS', 'ADMINS');
 
   const [stats, setStats] = useState({
     totalAdmins: 0,
@@ -324,7 +325,7 @@ export const AdminsPage = () => {
             {admins.map((adm) => {
               const isSelf = adm._id === currentUser?.id;
               const isSuper = adm.role === 'superadmin';
-              const canModify = currentUser?.role === 'superadmin' || !isSuper;
+              const canModify = canEditAdmin && (currentUser?.role === 'superadmin' || !isSuper);
 
               return (
                 <TableRow key={adm._id}>
@@ -376,34 +377,54 @@ export const AdminsPage = () => {
 
                   {/* Status Toggle */}
                   <TableCell>
-                    <button
-                      type="button"
-                      disabled={!canModify || isSelf}
-                      onClick={() => handleToggleStatus(adm)}
-                      className={`
-                        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
-                        ${
-                          adm.isActive
-                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                            : 'bg-red-50 text-red-600 hover:bg-red-100'
+                    {canEditAdmin ? (
+                      <button
+                        type="button"
+                        disabled={!canModify || isSelf}
+                        onClick={() => handleToggleStatus(adm)}
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
+                          ${
+                            adm.isActive
+                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                              : 'bg-red-50 text-red-600 hover:bg-red-100'
+                          }
+                          ${!canModify || isSelf ? 'opacity-80 cursor-default hover:bg-transparent' : ''}
+                        `}
+                        title={
+                          isSelf
+                            ? 'You cannot deactivate your own account'
+                            : canModify
+                            ? 'Click to toggle status'
+                            : 'Superadmin accounts can only be modified by Superadmin'
                         }
-                        ${!canModify || isSelf ? 'opacity-80 cursor-default hover:bg-transparent' : ''}
-                      `}
-                      title={
-                        isSelf
-                          ? 'You cannot deactivate your own account'
-                          : canModify
-                          ? 'Click to toggle status'
-                          : 'Superadmin accounts can only be modified by Superadmin'
-                      }
-                    >
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            adm.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span>{adm.isActive ? 'Active' : 'Inactive'}</span>
+                      </button>
+                    ) : (
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          adm.isActive ? 'bg-emerald-500' : 'bg-red-500'
-                        }`}
-                      />
-                      <span>{adm.isActive ? 'Active' : 'Inactive'}</span>
-                    </button>
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold
+                          ${
+                            adm.isActive
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-red-50 text-red-600'
+                          }
+                        `}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            adm.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span>{adm.isActive ? 'Active' : 'Inactive'}</span>
+                      </span>
+                    )}
                   </TableCell>
 
                   {/* Last Activity */}

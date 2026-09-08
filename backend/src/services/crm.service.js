@@ -94,11 +94,12 @@ export const crmService = {
       query.$or = [
         { name: searchRegex },
         { email: searchRegex },
-        { phone: searchRegex },
-        { apaarId: searchRegex },
-        { registrationNo: searchRegex },
-        { gstin: searchRegex },
-        { pan: searchRegex },
+        { phoneNumber: searchRegex },
+        { 'dynamicFields.apaarId': searchRegex },
+        { 'dynamicFields.registrationNo': searchRegex },
+        { 'dynamicFields.regNo': searchRegex },
+        { 'dynamicFields.gstin': searchRegex },
+        { 'dynamicFields.pan': searchRegex },
       ];
     }
 
@@ -107,8 +108,8 @@ export const crmService = {
     }
 
     if (status && status !== 'all') {
-      if (status === 'active') query.status = 'active';
-      else if (status === 'inactive') query.status = 'inactive';
+      if (status === 'active') query.isActive = true;
+      else if (status === 'inactive') query.isActive = false;
     }
 
     const pageNumber = Math.max(1, parseInt(page, 10));
@@ -139,9 +140,19 @@ export const crmService = {
         );
 
         const computedSegment = crmService.determineSegment(sub, latestSub);
+        const df = sub.dynamicFields instanceof Map
+          ? Object.fromEntries(sub.dynamicFields)
+          : (sub.dynamicFields || {});
 
         return {
           ...sub,
+          status: sub.isActive !== false ? 'active' : 'inactive',
+          registrationNo: df.registrationNo || df.regNo || '',
+          registrationState: df.registrationState || df.stateCouncil || df.state || '',
+          apaarId: df.apaarId || '',
+          gstin: df.gstin || '',
+          pan: df.pan || '',
+          designation: df.designation || '',
           latestSubscription: latestSub || null,
           totalOrders,
           totalLTVSpendINR,
@@ -280,12 +291,37 @@ export const crmService = {
       });
     });
 
+    // Staff CRM Notes Timeline Events
+    if (subscriber.crmNotes && Array.isArray(subscriber.crmNotes)) {
+      subscriber.crmNotes.forEach((n) => {
+        timelineEvents.push({
+          system: 'CRM_NOTE',
+          action: `Staff Touchpoint (${n.authorName || 'Staff'})`,
+          timestamp: n.createdAt,
+          details: n.note,
+          icon: 'file-text',
+          badge: (n.priority || 'note').toUpperCase(),
+        });
+      });
+    }
+
     // Sort Unified Timeline Chronologically (Descending)
     timelineEvents.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    const df = subscriber.dynamicFields instanceof Map
+      ? Object.fromEntries(subscriber.dynamicFields)
+      : (subscriber.dynamicFields || {});
 
     return {
       customer: {
         ...subscriber,
+        status: subscriber.isActive !== false ? 'active' : 'inactive',
+        registrationNo: df.registrationNo || df.regNo || '',
+        registrationState: df.registrationState || df.stateCouncil || df.state || '',
+        apaarId: df.apaarId || '',
+        gstin: df.gstin || '',
+        pan: df.pan || '',
+        designation: df.designation || '',
         segment,
         totalOrders: subscriptions.length,
         totalLTVSpendINR,

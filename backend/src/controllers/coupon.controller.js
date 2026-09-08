@@ -84,7 +84,7 @@ export const toggleCouponStatus = async (req, res) => {
     const coupon = await couponService.toggleCouponStatus(req.params.id, isActive);
     return res.status(200).json({
       success: true,
-      message: `Coupon ${isActive ? 'activated' : 'deactivated'} successfully.`,
+      message: `Coupon status set to ${isActive ? 'Active' : 'Inactive'} successfully.`,
       coupon,
     });
   } catch (error) {
