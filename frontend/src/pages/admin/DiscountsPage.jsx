@@ -36,6 +36,7 @@ import {
 
 import couponService from '../../services/coupon.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { usePermission } from '../../context/PermissionContext';
 
 // Components & Modals
 import CouponStatusBadge from '../../components/admin/coupons/CouponStatusBadge';
@@ -47,6 +48,10 @@ import AssignDirectDiscountModal from '../../components/admin/coupons/AssignDire
 const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'OTHERS'];
 
 export const DiscountsPage = () => {
+  const { can } = usePermission();
+  const canAdd = can('ADD', 'COMMERCIAL', 'COUPONS') || can('ADD', 'COMMERCIAL', 'DISCOUNTS');
+  const canEdit = can('EDIT', 'COMMERCIAL', 'COUPONS') || can('EDIT', 'COMMERCIAL', 'DISCOUNTS');
+
   const [stats, setStats] = useState({
     totalCoupons: 0,
     activeCoupons: 0,
@@ -157,7 +162,7 @@ export const DiscountsPage = () => {
     try {
       const newStatus = !c.isActive;
       await couponService.toggleStatus(c._id, newStatus);
-      showFeedback(`Coupon voucher ${newStatus ? 'activated' : 'disabled'} successfully.`);
+      showFeedback(`Coupon voucher status set to ${newStatus ? 'Active' : 'Inactive'} successfully.`);
       fetchCoupons();
       fetchStats();
     } catch (err) {
@@ -186,29 +191,29 @@ export const DiscountsPage = () => {
           <span>Refresh</span>
         </Button>
 
-        <PermissionGuard module="SUBSCRIPTIONS" section="DISCOUNTS" action="ADD">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsDirectAssignOpen(true)}
-            className="rounded-xl text-xs font-bold"
-          >
-            <UserPlus className="w-4 h-4 mr-1" />
-            <span>Direct User Concession</span>
-          </Button>
-        </PermissionGuard>
+        {canAdd && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDirectAssignOpen(true)}
+              className="rounded-xl text-xs font-bold"
+            >
+              <UserPlus className="w-4 h-4 mr-1" />
+              <span>Direct User Concession</span>
+            </Button>
 
-        <PermissionGuard module="SUBSCRIPTIONS" section="DISCOUNTS" action="ADD">
-          <Button
-            variant="nfiYellow"
-            size="sm"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="rounded-xl text-xs font-bold shadow-2xs"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            <span>Create Promo Coupon</span>
-          </Button>
-        </PermissionGuard>
+            <Button
+              variant="nfiYellow"
+              size="sm"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="rounded-xl text-xs font-bold shadow-2xs"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              <span>Create Promo Coupon</span>
+            </Button>
+          </>
+        )}
       </PageHeader>
 
       {/* Global Feedback Banner */}
@@ -391,8 +396,8 @@ export const DiscountsPage = () => {
         <AdminEmptyState
           title="No vouchers found"
           description="No promotional coupons or discount concessions match your filter criteria."
-          actionLabel="Create Coupon"
-          onAction={() => setIsCreateModalOpen(true)}
+          actionLabel={canAdd ? 'Create Coupon' : undefined}
+          onAction={canAdd ? () => setIsCreateModalOpen(true) : undefined}
         />
       ) : viewMode === 'grid' ? (
         /* Visual Ticket Card Grid */
@@ -401,9 +406,9 @@ export const DiscountsPage = () => {
             <CouponCard
               key={c._id}
               coupon={c}
-              onEdit={(coup) => setEditingCoupon(coup)}
+              onEdit={canEdit ? (coup) => setEditingCoupon(coup) : undefined}
               onViewDetails={(coup) => setViewingCoupon(coup)}
-              onToggleStatus={handleToggleStatus}
+              onToggleStatus={canEdit ? handleToggleStatus : undefined}
             />
           ))}
         </div>
@@ -465,7 +470,30 @@ export const DiscountsPage = () => {
                   </TableCell>
 
                   <TableCell>
-                    <CouponStatusBadge coupon={c} />
+                    {canEdit ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(c)}
+                        className={`
+                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
+                          ${
+                            c.isActive
+                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                              : 'bg-red-50 text-red-600 hover:bg-red-100'
+                          }
+                        `}
+                        title="Click to toggle status"
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            c.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
+                        <span>{c.isActive ? 'Active' : 'Inactive'}</span>
+                      </button>
+                    ) : (
+                      <CouponStatusBadge coupon={c} />
+                    )}
                   </TableCell>
 
                   <TableCell className="text-right">
@@ -479,7 +507,7 @@ export const DiscountsPage = () => {
                         <Eye className="w-4 h-4" />
                       </button>
 
-                      <PermissionGuard module="SUBSCRIPTIONS" section="DISCOUNTS" action="EDIT">
+                      {canEdit && (
                         <button
                           type="button"
                           onClick={() => setEditingCoupon(c)}
@@ -488,7 +516,7 @@ export const DiscountsPage = () => {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                      </PermissionGuard>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -521,7 +549,8 @@ export const DiscountsPage = () => {
         isOpen={!!viewingCoupon}
         onClose={() => setViewingCoupon(null)}
         coupon={viewingCoupon}
-        onEdit={(coup) => setEditingCoupon(coup)}
+        onEdit={canEdit ? (coup) => setEditingCoupon(coup) : undefined}
+        onToggleStatus={canEdit ? handleToggleStatus : undefined}
       />
     </PageContainer>
   );

@@ -20,8 +20,61 @@ export const DynamicPermissionMatrix = ({
       try {
         const res = await api.get('/rbac/permissions');
         if (res && res.permissions) {
-          setPermissions(res.permissions);
-          setGroupedPermissions(res.grouped || {});
+          const rawPermissions = res.permissions || [];
+          const rawGrouped = res.grouped || {};
+
+          // Exclude KAYM permissions since KAYM module is temporarily commented out
+          const filteredPerms = rawPermissions.filter((p) => p.section !== 'KAYM');
+          const cleanGrouped = {};
+
+          Object.entries(rawGrouped).forEach(([mod, secs]) => {
+            const cleanSecs = {};
+
+            if (mod === 'COMMERCIAL' && (secs.COUPONS || secs.DISCOUNTS)) {
+              // Merge COUPONS and DISCOUNTS into a unified "COUPONS & DISCOUNTS" section (DELETE excluded as vouchers are toggled Inactive rather than deleted)
+              const couponPerms = secs.COUPONS || [];
+              const discountPerms = secs.DISCOUNTS || [];
+              const mergedActions = ['VIEW', 'ADD', 'EDIT', 'EXPORT'];
+
+              const unifiedPerms = mergedActions
+                .map((act) => {
+                  const cPerm = couponPerms.find((p) => p.action === act);
+                  const dPerm = discountPerms.find((p) => p.action === act);
+                  if (!cPerm && !dPerm) return null;
+
+                  const codes = [cPerm?.code, dPerm?.code].filter(Boolean);
+                  return {
+                    code: cPerm?.code || dPerm?.code,
+                    codes,
+                    action: act,
+                    module: 'COMMERCIAL',
+                    section: 'COUPONS & DISCOUNTS',
+                    name: `${act} COUPONS & DISCOUNTS`,
+                    description: `Allow user to ${act.toLowerCase()} in Coupons & Discounts`,
+                  };
+                })
+                .filter(Boolean);
+
+              cleanSecs['COUPONS & DISCOUNTS'] = unifiedPerms;
+            }
+
+            Object.entries(secs).forEach(([sec, perms]) => {
+              if (sec === 'KAYM') return; // temporarily disabled
+              if (mod === 'COMMERCIAL' && (sec === 'COUPONS' || sec === 'DISCOUNTS')) return; // merged above
+
+              cleanSecs[sec] = perms.map((p) => ({
+                ...p,
+                codes: [p.code],
+              }));
+            });
+
+            if (Object.keys(cleanSecs).length > 0) {
+              cleanGrouped[mod] = cleanSecs;
+            }
+          });
+
+          setPermissions(filteredPerms);
+          setGroupedPermissions(cleanGrouped);
         }
       } catch (err) {
         setError(err.message || 'Failed to load permissions catalog.');
@@ -33,17 +86,18 @@ export const DynamicPermissionMatrix = ({
     fetchPermissions();
   }, []);
 
-  const handleToggle = (code) => {
-    const isChecked = selectedPermissions.includes(code);
+  const handleToggle = (perm) => {
+    const codes = perm?.codes || [typeof perm === 'string' ? perm : perm?.code];
+    const isChecked = codes.some((c) => selectedPermissions.includes(c));
     const updated = isChecked
-      ? selectedPermissions.filter((p) => p !== code)
-      : [...selectedPermissions, code];
+      ? selectedPermissions.filter((p) => !codes.includes(p))
+      : Array.from(new Set([...selectedPermissions, ...codes]));
     onChange(updated);
   };
 
   const handleToggleSection = (sectionPermissions) => {
-    const sectionCodes = sectionPermissions.map((p) => p.code);
-    const allSelected = sectionCodes.every((c) => selectedPermissions.includes(c));
+    const sectionCodes = sectionPermissions.flatMap((p) => p.codes || [p.code]);
+    const allSelected = sectionCodes.length > 0 && sectionCodes.every((c) => selectedPermissions.includes(c));
 
     const updated = allSelected
       ? selectedPermissions.filter((c) => !sectionCodes.includes(c))
@@ -53,8 +107,10 @@ export const DynamicPermissionMatrix = ({
   };
 
   const handleToggleModule = (sections) => {
-    const allModuleCodes = Object.values(sections).flatMap((perms) => perms.map((p) => p.code));
-    const allSelected = allModuleCodes.every((c) => selectedPermissions.includes(c));
+    const allModuleCodes = Object.values(sections).flatMap((perms) =>
+      perms.flatMap((p) => p.codes || [p.code])
+    );
+    const allSelected = allModuleCodes.length > 0 && allModuleCodes.every((c) => selectedPermissions.includes(c));
 
     const updated = allSelected
       ? selectedPermissions.filter((c) => !allModuleCodes.includes(c))
@@ -64,8 +120,10 @@ export const DynamicPermissionMatrix = ({
   };
 
   const handleSelectAll = () => {
-    const allCodes = permissions.map((p) => p.code);
-    onChange(allCodes);
+    const allCodes = Object.values(groupedPermissions).flatMap((sections) =>
+      Object.values(sections).flatMap((perms) => perms.flatMap((p) => p.codes || [p.code]))
+    );
+    onChange(Array.from(new Set(allCodes)));
   };
 
   const handleClearAll = () => {
@@ -155,10 +213,12 @@ export const DynamicPermissionMatrix = ({
 
           if (!hasMatchingPerms) return null;
 
-          const allModuleCodes = Object.values(sections).flatMap((perms) => perms.map((p) => p.code));
+          const allModuleCodes = Object.values(sections).flatMap((perms) =>
+            perms.flatMap((p) => p.codes || [p.code])
+          );
           const selectedInModule = allModuleCodes.filter((c) => selectedPermissions.includes(c));
           const hasAnyModuleSelected = selectedInModule.length > 0;
-          const allModuleSelected = allModuleCodes.length > 0 && selectedInModule.length === allModuleCodes.length;
+          const allModuleSelected = allModuleCodes.length > 0 && allModuleCodes.every((c) => selectedPermissions.includes(c));
 
           return (
             <div key={moduleName} className="border border-slate-200/80 rounded-2xl p-4 bg-white shadow-2xs space-y-3.5">
@@ -209,8 +269,8 @@ export const DynamicPermissionMatrix = ({
               {/* Sections Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {Object.entries(filteredSections).map(([sectionName, perms]) => {
-                  const sectionCodes = perms.map((p) => p.code);
-                  const allSectionSelected = sectionCodes.every((c) => selectedPermissions.includes(c));
+                  const sectionCodes = perms.flatMap((p) => p.codes || [p.code]);
+                  const allSectionSelected = sectionCodes.length > 0 && sectionCodes.every((c) => selectedPermissions.includes(c));
 
                   return (
                     <div
@@ -232,12 +292,12 @@ export const DynamicPermissionMatrix = ({
                       {/* Actions Badges/Checkboxes */}
                       <div className="flex flex-wrap gap-1.5">
                         {perms.map((p) => {
-                          const isChecked = selectedPermissions.includes(p.code);
+                          const isChecked = (p.codes || [p.code]).some((c) => selectedPermissions.includes(c));
                           return (
                             <button
                               key={p.code}
                               type="button"
-                              onClick={() => handleToggle(p.code)}
+                              onClick={() => handleToggle(p)}
                               className={`
                                 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all cursor-pointer
                                 ${

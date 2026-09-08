@@ -86,7 +86,11 @@ export const getRoleById = async (req, res, next) => {
  */
 export const getPermissions = async (req, res, next) => {
   try {
-    const permissions = await Permission.find({ isActive: true }).sort({ module: 1, section: 1, action: 1 });
+    // Exclude KAYM permissions since KAYM module is temporarily commented out / inactive
+    const permissions = await Permission.find({
+      isActive: true,
+      section: { $ne: 'KAYM' },
+    }).sort({ module: 1, section: 1, action: 1 });
 
     // Group by module and section for UI matrix
     const grouped = {};
@@ -451,7 +455,7 @@ export const seedRBAC = async (req, res, next) => {
       { module: 'ENGAGEMENT', section: 'FEEDBACK', actions: ['VIEW', 'EDIT', 'DELETE', 'REJECT', 'EXPORT'] },
       { module: 'ENGAGEMENT', section: 'NOTIFICATIONS', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE', 'PUBLISH'] },
       { module: 'INTEGRATED', section: 'DIKSHA', actions: ['VIEW', 'ADD', 'EDIT', 'EXPORT'] },
-      { module: 'INTEGRATED', section: 'KAYM', actions: ['VIEW', 'ADD', 'EDIT', 'EXPORT'] },
+      // { module: 'INTEGRATED', section: 'KAYM', actions: ['VIEW', 'ADD', 'EDIT', 'EXPORT'] },
       { module: 'SYSTEM', section: 'REPORTS', actions: ['VIEW', 'EXPORT', 'DOWNLOAD', 'PRINT'] },
       { module: 'SYSTEM', section: 'AUDIT_LOGS', actions: ['VIEW', 'EXPORT', 'PRINT'] },
       { module: 'SYSTEM', section: 'SETTINGS', actions: ['VIEW', 'EDIT'] },
@@ -522,8 +526,8 @@ export const seedRBAC = async (req, res, next) => {
           'CONTENT:WORKFLOW:EDIT',
           'INTEGRATED:DIKSHA:VIEW',
           'INTEGRATED:DIKSHA:ADD',
-          'INTEGRATED:KAYM:VIEW',
-          'INTEGRATED:KAYM:ADD',
+          // 'INTEGRATED:KAYM:VIEW',
+          // 'INTEGRATED:KAYM:ADD',
         ],
       },
       {

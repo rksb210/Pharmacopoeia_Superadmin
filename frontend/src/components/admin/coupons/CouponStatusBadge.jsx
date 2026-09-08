@@ -15,9 +15,10 @@ export const CouponStatusBadge = ({ coupon }) => {
 
   if (!coupon.isActive) {
     return (
-      <Badge variant="outline" className="text-[9px] font-bold text-slate-500 bg-slate-100">
-        Disabled
-      </Badge>
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+        <span>Inactive</span>
+      </span>
     );
   }
 
@@ -49,10 +50,10 @@ export const CouponStatusBadge = ({ coupon }) => {
   }
 
   return (
-    <Badge variant="nfiNavy" className="text-[9px] font-bold">
-      <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
       <span>Active</span>
-    </Badge>
+    </span>
   );
 };
 

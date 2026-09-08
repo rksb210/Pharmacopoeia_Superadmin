@@ -18,7 +18,7 @@ export const PermissionAssignmentModal = ({
   useEffect(() => {
     if (admin && isOpen) {
       if (admin.hasCustomPermissions) {
-        setSelectedPermissions(admin.customPermissions || []);
+        setSelectedPermissions((admin.customPermissions || []).filter((c) => !c.includes(':KAYM:')));
       } else {
         // Fetch role's baseline permissions so superadmin can start from current role grants
         api
@@ -26,13 +26,13 @@ export const PermissionAssignmentModal = ({
           .then((res) => {
             const currentRole = res.roles?.find((r) => r.code === admin.role?.toLowerCase());
             if (currentRole && Array.isArray(currentRole.permissionCodes)) {
-              setSelectedPermissions(currentRole.permissionCodes);
+              setSelectedPermissions(currentRole.permissionCodes.filter((c) => !c.includes(':KAYM:')));
             } else {
-              setSelectedPermissions(admin.customPermissions || []);
+              setSelectedPermissions((admin.customPermissions || []).filter((c) => !c.includes(':KAYM:')));
             }
           })
           .catch(() => {
-            setSelectedPermissions(admin.customPermissions || []);
+            setSelectedPermissions((admin.customPermissions || []).filter((c) => !c.includes(':KAYM:')));
           });
       }
       setError('');

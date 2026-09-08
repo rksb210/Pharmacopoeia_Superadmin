@@ -256,7 +256,7 @@ export const couponService = {
       applicableUserTypes,
       specificUsers,
       specificEmails: specificEmails.map((e) => e.toLowerCase().trim()),
-      isActive: true,
+      isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
       createdBy: adminUser?._id || null,
     });
 
@@ -301,6 +301,7 @@ export const couponService = {
     if (applicableUserTypes) coupon.applicableUserTypes = applicableUserTypes;
     if (specificUsers) coupon.specificUsers = specificUsers;
     if (specificEmails) coupon.specificEmails = specificEmails.map((e) => e.toLowerCase().trim());
+    if (data.isActive !== undefined) coupon.isActive = Boolean(data.isActive);
 
     await coupon.save();
     return coupon;

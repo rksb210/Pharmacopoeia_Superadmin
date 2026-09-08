@@ -13,15 +13,21 @@ import {
   History,
   ShoppingBag,
   Percent,
+  Power,
 } from 'lucide-react';
 import couponService from '../../../services/coupon.service';
+import { usePermission } from '../../../context/PermissionContext';
 
 export const CouponDetailsModal = ({
   isOpen,
   onClose,
   coupon,
   onEdit,
+  onToggleStatus,
 }) => {
+  const { can } = usePermission();
+  const canEdit = can('EDIT', 'COMMERCIAL', 'COUPONS') || can('EDIT', 'COMMERCIAL', 'DISCOUNTS');
+
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'redemptions'
   const [detailedCoupon, setDetailedCoupon] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -59,11 +65,16 @@ export const CouponDetailsModal = ({
       onClose={onClose}
       title={`Coupon Details: ${c.code}`}
       description={`Promotional campaign parameters, targeting criteria, and redemption history.`}
-      confirmLabel="Edit Voucher"
-      onConfirm={() => {
-        onClose();
-        if (onEdit) onEdit(c);
-      }}
+      cancelLabel="Close"
+      confirmLabel={canEdit ? 'Edit Voucher' : null}
+      onConfirm={
+        canEdit && onEdit
+          ? () => {
+              onClose();
+              onEdit(c);
+            }
+          : null
+      }
       size="lg"
     >
       <div className="space-y-4 text-xs select-none font-sans overflow-hidden">
@@ -74,7 +85,36 @@ export const CouponDetailsModal = ({
               <span className="font-mono font-black text-slate-900 text-sm tracking-wider">
                 {c.code}
               </span>
-              <CouponStatusBadge coupon={c} />
+
+              {onToggleStatus && canEdit ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await onToggleStatus(c);
+                    setDetailedCoupon((prev) =>
+                      prev ? { ...prev, isActive: !prev.isActive } : { ...c, isActive: !c.isActive }
+                    );
+                  }}
+                  className={`
+                    inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer border
+                    ${
+                      c.isActive
+                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
+                        : 'bg-red-50 text-red-600 hover:bg-red-100 border-red-200'
+                    }
+                  `}
+                  title="Click to toggle status"
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      c.isActive ? 'bg-emerald-500' : 'bg-red-500'
+                    }`}
+                  />
+                  <span>{c.isActive ? 'Active' : 'Inactive'}</span>
+                </button>
+              ) : (
+                <CouponStatusBadge coupon={c} />
+              )}
             </div>
             <h3 className="font-bold text-slate-900 text-base mt-1 break-words">{c.title}</h3>
             <p className="text-slate-500 text-xs mt-0.5 break-words">{c.description}</p>

@@ -37,7 +37,11 @@ export const PermissionGuard = ({
   if (permissionCode) {
     isAllowed = hasPermission(permissionCode);
   } else if (module) {
-    isAllowed = can(action, module, section);
+    if (Array.isArray(section)) {
+      isAllowed = section.some((sec) => can(action, module, sec));
+    } else {
+      isAllowed = can(action, module, section);
+    }
   }
 
   if (!isAllowed) {
