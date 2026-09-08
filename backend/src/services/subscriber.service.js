@@ -359,6 +359,51 @@ export const subscriberService = {
       }
     }
 
+    // Dynamic credentials uniqueness checks
+    const regNo = (dynamicFields?.registrationNo || dynamicFields?.regNo || '').trim().toUpperCase();
+    const apaarId = (dynamicFields?.apaarId || '').trim().toUpperCase();
+    const gstin = (dynamicFields?.gstin || '').trim().toUpperCase();
+    const pan = (dynamicFields?.pan || '').trim().toUpperCase();
+
+    if (regNo) {
+      const duplicateReg = await Subscriber.findOne({
+        $or: [
+          { 'dynamicFields.registrationNo': { $regex: new RegExp(`^${escapeRegex(regNo)}$`, 'i') } },
+          { 'dynamicFields.regNo': { $regex: new RegExp(`^${escapeRegex(regNo)}$`, 'i') } },
+        ],
+      });
+      if (duplicateReg) {
+        throw new Error(`Registration Number '${regNo}' is already registered with another subscriber account.`);
+      }
+    }
+
+    if (apaarId) {
+      const duplicateApaar = await Subscriber.findOne({
+        'dynamicFields.apaarId': { $regex: new RegExp(`^${escapeRegex(apaarId)}$`, 'i') },
+      });
+      if (duplicateApaar) {
+        throw new Error(`APAAR ID '${apaarId}' is already registered with another student account.`);
+      }
+    }
+
+    if (gstin) {
+      const duplicateGstin = await Subscriber.findOne({
+        'dynamicFields.gstin': { $regex: new RegExp(`^${escapeRegex(gstin)}$`, 'i') },
+      });
+      if (duplicateGstin) {
+        throw new Error(`GSTIN '${gstin}' is already registered with another industry subscriber.`);
+      }
+    }
+
+    if (pan) {
+      const duplicatePan = await Subscriber.findOne({
+        'dynamicFields.pan': { $regex: new RegExp(`^${escapeRegex(pan)}$`, 'i') },
+      });
+      if (duplicatePan) {
+        throw new Error(`Corporate PAN '${pan}' is already registered with another industry subscriber.`);
+      }
+    }
+
     const userTypeDoc = await UserType.findOne({ code: uType });
 
     const newSubscriber = await Subscriber.create({
@@ -421,6 +466,54 @@ export const subscriberService = {
     }
 
     if (dynamicFields) {
+      const regNo = (dynamicFields.registrationNo || dynamicFields.regNo || '').trim().toUpperCase();
+      const apaarId = (dynamicFields.apaarId || '').trim().toUpperCase();
+      const gstin = (dynamicFields.gstin || '').trim().toUpperCase();
+      const pan = (dynamicFields.pan || '').trim().toUpperCase();
+
+      if (regNo) {
+        const duplicateReg = await Subscriber.findOne({
+          _id: { $ne: subscriber._id },
+          $or: [
+            { 'dynamicFields.registrationNo': { $regex: new RegExp(`^${escapeRegex(regNo)}$`, 'i') } },
+            { 'dynamicFields.regNo': { $regex: new RegExp(`^${escapeRegex(regNo)}$`, 'i') } },
+          ],
+        });
+        if (duplicateReg) {
+          throw new Error(`Registration Number '${regNo}' is already registered with another subscriber account.`);
+        }
+      }
+
+      if (apaarId) {
+        const duplicateApaar = await Subscriber.findOne({
+          _id: { $ne: subscriber._id },
+          'dynamicFields.apaarId': { $regex: new RegExp(`^${escapeRegex(apaarId)}$`, 'i') },
+        });
+        if (duplicateApaar) {
+          throw new Error(`APAAR ID '${apaarId}' is already registered with another student account.`);
+        }
+      }
+
+      if (gstin) {
+        const duplicateGstin = await Subscriber.findOne({
+          _id: { $ne: subscriber._id },
+          'dynamicFields.gstin': { $regex: new RegExp(`^${escapeRegex(gstin)}$`, 'i') },
+        });
+        if (duplicateGstin) {
+          throw new Error(`GSTIN '${gstin}' is already registered with another industry subscriber.`);
+        }
+      }
+
+      if (pan) {
+        const duplicatePan = await Subscriber.findOne({
+          _id: { $ne: subscriber._id },
+          'dynamicFields.pan': { $regex: new RegExp(`^${escapeRegex(pan)}$`, 'i') },
+        });
+        if (duplicatePan) {
+          throw new Error(`Corporate PAN '${pan}' is already registered with another industry subscriber.`);
+        }
+      }
+
       subscriber.dynamicFields = dynamicFields;
     }
 

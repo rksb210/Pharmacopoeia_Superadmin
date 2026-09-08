@@ -483,7 +483,7 @@ export const UsersPage = () => {
                 <TableCell>
                   <div className="flex items-center gap-1.5">
                     {getSubscriptionBadge(sub.subscription)}
-                    {sub.subscription?.discountPercent > 0 && (
+                    {sub.subscription?.status === 'active' && sub.subscription?.discountPercent > 0 && (
                       <span className="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">
                         -{sub.subscription.discountPercent}%
                       </span>

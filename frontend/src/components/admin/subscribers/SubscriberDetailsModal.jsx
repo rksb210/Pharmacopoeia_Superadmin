@@ -155,7 +155,7 @@ export const SubscriberDetailsModal = ({
                 <div className="bg-white p-2.5 rounded-xl border border-slate-100">
                   <span className="text-slate-400 block mb-0.5">Discount Rate</span>
                   <span className="font-bold text-emerald-600">
-                    {sub.discountPercent ? `${sub.discountPercent}% Off` : 'Standard'}
+                    {sub.status === 'active' && sub.discountPercent ? `${sub.discountPercent}% Off` : 'Standard'}
                   </span>
                 </div>
               </div>
