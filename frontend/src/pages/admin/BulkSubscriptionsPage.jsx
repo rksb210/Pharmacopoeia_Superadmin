@@ -194,8 +194,8 @@ export const BulkSubscriptionsPage = () => {
               { num: 2, label: 'Validate & Preview', desc: 'Row-Level Error Checks' },
               { num: 3, label: 'Consolidated Billing', desc: 'Passes & Invoice Generated' },
             ].map((step, idx) => {
-              const isCurrent = wizardStep === step.num;
-              const isDone = wizardStep > step.num;
+              const isDone = wizardStep > step.num || (step.num === 3 && Boolean(completedJob));
+              const isCurrent = wizardStep === step.num && !isDone;
 
               return (
                 <div key={step.num} className="flex items-center gap-3 flex-1">

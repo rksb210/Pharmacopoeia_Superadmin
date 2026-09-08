@@ -209,12 +209,23 @@ export const UsersPage = () => {
       ? Object.fromEntries(sub.dynamicFields)
       : sub.dynamicFields || {};
 
-    if (sub.userType === 'STUDENT') return `APAAR: ${dFields.apaarId || 'N/A'}`;
-    if (sub.userType === 'DOCTOR' || sub.userType === 'PHARMACIST' || sub.userType === 'NURSE') {
-      return `Reg: ${dFields.registrationNo || 'N/A'} (${dFields.stateCouncil || ''})`;
+    const stateVal = dFields.registrationState || dFields.stateCouncil || dFields.state || '';
+
+    if (sub.userType === 'STUDENT') {
+      return `APAAR: ${dFields.apaarId || 'N/A'}${stateVal ? ` (${stateVal})` : ''}`;
     }
-    if (sub.userType === 'INDUSTRY') return `${dFields.companyName || ''} · GST: ${dFields.gstin || 'N/A'}`;
-    return dFields.designation || 'General Public';
+    if (sub.userType === 'DOCTOR' || sub.userType === 'PHARMACIST' || sub.userType === 'NURSE') {
+      return `Reg: ${dFields.registrationNo || 'N/A'}${stateVal ? ` (${stateVal})` : ''}`;
+    }
+    if (sub.userType === 'INDUSTRY') {
+      const company = dFields.companyName || '';
+      const taxId = dFields.gstin ? `GST: ${dFields.gstin}` : dFields.pan ? `PAN: ${dFields.pan}` : '';
+      const parts = [company, taxId, stateVal ? `(${stateVal})` : ''].filter(Boolean);
+      return parts.join(' · ') || 'Industry Entity';
+    }
+    return dFields.designation
+      ? `${dFields.designation}${stateVal ? ` (${stateVal})` : ''}`
+      : (stateVal ? `State: ${stateVal}` : 'General Public');
   };
 
   return (

@@ -120,13 +120,40 @@ export const bulkImportService = {
     const planName = selectedPlan?.name || 'NFI 9th Edition Formulary';
     const tier = selectedPlan?.tier || 'Institutional';
 
-    // In-file duplicate tracker
+    // In-file duplicate trackers
     const seenEmailsInFile = new Set();
+    const seenPhonesInFile = new Set();
+    const seenRegNosInFile = new Set();
+    const seenApaarIdsInFile = new Set();
+    const seenPansInFile = new Set();
+    const seenGstinsInFile = new Set();
     const validatedRecords = [];
 
-    // Pre-fetch all registered subscriber emails in database for fast duplicate check
-    const existingEmailsList = await Subscriber.find({}).select('email').lean();
-    const registeredEmails = new Set(existingEmailsList.map((s) => s.email.toLowerCase()));
+    // Pre-fetch all registered subscriber credentials in database for fast duplicate check
+    const existingSubscribers = await Subscriber.find({})
+      .select('email phoneNumber dynamicFields')
+      .lean();
+
+    const registeredEmails = new Set();
+    const registeredPhones = new Set();
+    const registeredRegNos = new Set();
+    const registeredApaarIds = new Set();
+    const registeredPans = new Set();
+    const registeredGstins = new Set();
+
+    for (const sub of existingSubscribers) {
+      if (sub.email) registeredEmails.add(String(sub.email).toLowerCase().trim());
+      if (sub.phoneNumber) {
+        const norm = String(sub.phoneNumber).replace(/[\s\-()+]/g, '').trim();
+        if (norm) registeredPhones.add(norm);
+      }
+      const df = sub.dynamicFields || {};
+      const reg = df.registrationNo || df.regNo;
+      if (reg) registeredRegNos.add(String(reg).toUpperCase().trim());
+      if (df.apaarId) registeredApaarIds.add(String(df.apaarId).toUpperCase().trim());
+      if (df.pan) registeredPans.add(String(df.pan).toUpperCase().trim());
+      if (df.gstin) registeredGstins.add(String(df.gstin).toUpperCase().trim());
+    }
 
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
@@ -164,22 +191,65 @@ export const bulkImportService = {
 
       if (email) seenEmailsInFile.add(email);
 
-      // 3. User Type Check
+      // 3. Phone Number Validation
+      if (phoneNumber) {
+        const cleanPhone = phoneNumber.replace(/[\s\-()+]/g, '').trim();
+        if (cleanPhone.length > 0) {
+          if (seenPhonesInFile.has(cleanPhone)) {
+            errors.push(`Duplicate phone number in this upload file (${phoneNumber})`);
+          } else if (registeredPhones.has(cleanPhone)) {
+            errors.push(`Phone number '${phoneNumber}' is already registered in the platform`);
+          }
+          seenPhonesInFile.add(cleanPhone);
+        }
+      }
+
+      // 4. User Type Check
       const validUserTypes = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'OTHERS'];
       if (!validUserTypes.includes(userType)) {
         errors.push(`Invalid User Type '${userType}'. Allowed: ${validUserTypes.join(', ')}`);
       }
 
-      // 4. Dynamic Fields Check
+      // 5. Dynamic Fields & Uniqueness Check
       const dynamicFields = {};
       if (userType === 'STUDENT') {
-        if (!apaarId) errors.push('APAAR ID / Edu-ID is required for Student accounts');
-        dynamicFields.apaarId = apaarId;
+        if (!apaarId) {
+          errors.push('APAAR ID / Edu-ID is required for Student accounts');
+        } else {
+          const cleanApaar = apaarId.toUpperCase().trim();
+          if (seenApaarIdsInFile.has(cleanApaar)) {
+            errors.push(`Duplicate APAAR ID in this upload file (${apaarId})`);
+          } else if (registeredApaarIds.has(cleanApaar)) {
+            errors.push(`APAAR ID '${apaarId}' is already registered in the platform`);
+          }
+          seenApaarIdsInFile.add(cleanApaar);
+          dynamicFields.apaarId = apaarId;
+        }
+        if (state) {
+          dynamicFields.state = state;
+          dynamicFields.registrationState = state;
+        }
       } else if (['DOCTOR', 'PHARMACIST', 'NURSE'].includes(userType)) {
-        if (!regNo) errors.push(`Registration No is mandatory for ${userType}`);
-        if (!state) errors.push(`State of Registration is mandatory for ${userType}`);
-        dynamicFields.registrationNo = regNo;
-        dynamicFields.registrationState = state;
+        if (!regNo) {
+          errors.push(`Registration No is mandatory for ${userType}`);
+        } else {
+          const cleanRegNo = regNo.toUpperCase().trim();
+          if (seenRegNosInFile.has(cleanRegNo)) {
+            errors.push(`Duplicate Registration No in this upload file (${regNo})`);
+          } else if (registeredRegNos.has(cleanRegNo)) {
+            errors.push(`Registration No '${regNo}' is already registered in the platform`);
+          }
+          seenRegNosInFile.add(cleanRegNo);
+          dynamicFields.registrationNo = regNo;
+        }
+
+        if (!state) {
+          errors.push(`State of Registration is mandatory for ${userType}`);
+        } else {
+          dynamicFields.registrationState = state;
+          dynamicFields.stateCouncil = state;
+          dynamicFields.state = state;
+        }
       } else if (userType === 'INDUSTRY') {
         const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
         const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
@@ -187,17 +257,40 @@ export const bulkImportService = {
         if (!gstin && !pan) {
           errors.push('Either GSTIN or PAN is mandatory for Industry entities');
         }
-        if (gstin && !gstinRegex.test(gstin.toUpperCase())) {
-          errors.push(`Invalid GSTIN format '${gstin}'. Must be 15 characters (e.g. 22AAAAA0000A1Z5)`);
+        if (gstin) {
+          const upperGstin = gstin.toUpperCase().trim();
+          if (!gstinRegex.test(upperGstin)) {
+            errors.push(`Invalid GSTIN format '${gstin}'. Must be 15 characters (e.g. 22AAAAA0000A1Z5)`);
+          } else if (seenGstinsInFile.has(upperGstin)) {
+            errors.push(`Duplicate GSTIN in this upload file (${gstin})`);
+          } else if (registeredGstins.has(upperGstin)) {
+            errors.push(`GSTIN '${gstin}' is already registered in the platform`);
+          }
+          seenGstinsInFile.add(upperGstin);
+          dynamicFields.gstin = upperGstin;
         }
-        if (pan && !panRegex.test(pan.toUpperCase())) {
-          errors.push(`Invalid Corporate PAN format '${pan}'. Must be 10 characters (e.g. AAAAA9999A)`);
+        if (pan) {
+          const upperPan = pan.toUpperCase().trim();
+          if (!panRegex.test(upperPan)) {
+            errors.push(`Invalid Corporate PAN format '${pan}'. Must be 10 characters (e.g. AAAAA9999A)`);
+          } else if (seenPansInFile.has(upperPan)) {
+            errors.push(`Duplicate PAN in this upload file (${pan})`);
+          } else if (registeredPans.has(upperPan)) {
+            errors.push(`PAN '${pan}' is already registered in the platform`);
+          }
+          seenPansInFile.add(upperPan);
+          dynamicFields.pan = upperPan;
         }
-
-        dynamicFields.gstin = gstin ? gstin.toUpperCase() : '';
-        dynamicFields.pan = pan ? pan.toUpperCase() : '';
+        if (state) {
+          dynamicFields.state = state;
+          dynamicFields.registrationState = state;
+        }
       } else if (userType === 'OTHERS') {
         dynamicFields.designation = designation || 'Professional';
+        if (state) {
+          dynamicFields.state = state;
+          dynamicFields.registrationState = state;
+        }
       }
 
       const status = errors.length === 0 ? 'valid' : 'invalid';

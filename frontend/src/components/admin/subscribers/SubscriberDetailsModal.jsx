@@ -110,14 +110,20 @@ export const SubscriberDetailsModal = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {Object.entries(dynamicFields).map(([key, val]) => (
-                  <div key={key} className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">
-                      {key.replace(/([A-Z])/g, ' $1')}
-                    </span>
-                    <span className="font-bold text-slate-900 break-all">{val || 'N/A'}</span>
-                  </div>
-                ))}
+                {Object.entries(dynamicFields)
+                  .filter(([key]) => {
+                    if (key === 'stateCouncil' && dynamicFields.registrationState) return false;
+                    if (key === 'state' && (dynamicFields.registrationState || dynamicFields.stateCouncil)) return false;
+                    return true;
+                  })
+                  .map(([key, val]) => (
+                    <div key={key} className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">
+                        {key === 'registrationState' ? 'Registration State' : key.replace(/([A-Z])/g, ' $1')}
+                      </span>
+                      <span className="font-bold text-slate-900 break-all">{val || 'N/A'}</span>
+                    </div>
+                  ))}
               </div>
             </div>
 
