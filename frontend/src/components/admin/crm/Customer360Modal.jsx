@@ -25,12 +25,16 @@ import {
   Sparkles,
 } from 'lucide-react';
 import crmService from '../../../services/crm.service';
+import { usePermission } from '../../../context/PermissionContext';
 
 export const Customer360Modal = ({
   isOpen,
   onClose,
   customer,
 }) => {
+  const { can } = usePermission();
+  const canAddNote = can('ADD', 'ENGAGEMENT', 'CRM') || can('EDIT', 'ENGAGEMENT', 'CRM');
+
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'subscriptions' | 'timeline' | 'communications' | 'feedback' | 'discounts'
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -90,6 +94,17 @@ export const Customer360Modal = ({
   const notifs = profileData?.notificationsReceived || [];
   const timeline = profileData?.unifiedTimeline || [];
 
+  const dFields = c.dynamicFields instanceof Map
+    ? Object.fromEntries(c.dynamicFields)
+    : (c.dynamicFields || {});
+
+  const regNo = c.registrationNo || dFields.registrationNo || dFields.regNo || '';
+  const regState = c.registrationState || dFields.registrationState || dFields.stateCouncil || dFields.state || '';
+  const apaarId = c.apaarId || dFields.apaarId || '';
+  const gstin = c.gstin || dFields.gstin || '';
+  const pan = c.pan || dFields.pan || '';
+  const designation = c.designation || dFields.designation || '';
+
   return (
     <AdminModal
       isOpen={isOpen}
@@ -112,7 +127,7 @@ export const Customer360Modal = ({
               </Badge>
             </div>
             <p className="text-slate-500 text-xs mt-0.5 truncate">
-              {c.email} {c.phone ? `· ${c.phone}` : ''} · Registered{' '}
+              {c.email} {(c.phoneNumber || c.phone) ? `· ${c.phoneNumber || c.phone}` : ''} · Registered{' '}
               {new Date(c.createdAt).toLocaleDateString('en-IN')}
             </p>
           </div>
@@ -198,21 +213,29 @@ export const Customer360Modal = ({
               <span className="font-bold text-slate-800 block">Verified Category Credentials</span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px] bg-white p-3 rounded-xl border border-slate-100">
                 {c.userType === 'STUDENT' && (
-                  <div>
-                    <span className="text-slate-400 block">APAAR ID</span>
-                    <span className="font-bold text-slate-900">{c.apaarId || 'N/A'}</span>
-                  </div>
+                  <>
+                    <div>
+                      <span className="text-slate-400 block">APAAR ID</span>
+                      <span className="font-bold text-slate-900">{apaarId || 'N/A'}</span>
+                    </div>
+                    {regState && (
+                      <div>
+                        <span className="text-slate-400 block">State</span>
+                        <span className="font-bold text-slate-900">{regState}</span>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {['DOCTOR', 'PHARMACIST', 'NURSE'].includes(c.userType) && (
                   <>
                     <div>
                       <span className="text-slate-400 block">Medical Registration No</span>
-                      <span className="font-bold text-slate-900">{c.registrationNo || 'N/A'}</span>
+                      <span className="font-bold text-slate-900">{regNo || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block">States</span>
-                      <span className="font-bold text-slate-900">{c.registrationState || c.dynamicFields?.stateCouncil || 'N/A'}</span>
+                      <span className="text-slate-400 block">State / Council</span>
+                      <span className="font-bold text-slate-900">{regState || 'N/A'}</span>
                     </div>
                   </>
                 )}
@@ -221,20 +244,34 @@ export const Customer360Modal = ({
                   <>
                     <div>
                       <span className="text-slate-400 block">GSTIN</span>
-                      <span className="font-bold text-slate-900">{c.gstin || 'N/A'}</span>
+                      <span className="font-bold text-slate-900">{gstin || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-slate-400 block">PAN</span>
-                      <span className="font-bold text-slate-900">{c.pan || 'N/A'}</span>
+                      <span className="font-bold text-slate-900">{pan || 'N/A'}</span>
                     </div>
+                    {regState && (
+                      <div>
+                        <span className="text-slate-400 block">State</span>
+                        <span className="font-bold text-slate-900">{regState}</span>
+                      </div>
+                    )}
                   </>
                 )}
 
                 {c.userType === 'OTHERS' && (
-                  <div>
-                    <span className="text-slate-400 block">Designation</span>
-                    <span className="font-bold text-slate-900">{c.designation || 'N/A'}</span>
-                  </div>
+                  <>
+                    <div>
+                      <span className="text-slate-400 block">Designation</span>
+                      <span className="font-bold text-slate-900">{designation || 'General Public'}</span>
+                    </div>
+                    {regState && (
+                      <div>
+                        <span className="text-slate-400 block">State</span>
+                        <span className="font-bold text-slate-900">{regState}</span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -249,47 +286,49 @@ export const Customer360Modal = ({
                 </div>
               )}
 
-              <form onSubmit={handleAddNote} className="space-y-2">
-                <textarea
-                  rows={2}
-                  placeholder="Record customer communication summary, phone interaction, or institutional preference..."
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120]"
-                />
+              {canAddNote && (
+                <form onSubmit={handleAddNote} className="space-y-2">
+                  <textarea
+                    rows={2}
+                    placeholder="Record customer communication summary, phone interaction, or institutional preference..."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120]"
+                  />
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-500 font-semibold">Priority:</span>
-                    {['low', 'medium', 'high'].map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setNotePriority(p)}
-                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase cursor-pointer ${
-                          notePriority === p ? 'bg-[#284661] text-white' : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    ))}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-slate-500 font-semibold">Priority:</span>
+                      {['low', 'medium', 'high'].map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setNotePriority(p)}
+                          className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase cursor-pointer ${
+                            notePriority === p ? 'bg-[#284661] text-white' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      variant="nfiYellow"
+                      size="sm"
+                      loading={addingNote}
+                      className="h-7 rounded-xl font-bold text-xs shadow-2xs"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      <span>Add Note</span>
+                    </Button>
                   </div>
-
-                  <Button
-                    type="submit"
-                    variant="nfiYellow"
-                    size="sm"
-                    loading={addingNote}
-                    className="h-7 rounded-xl font-bold text-xs shadow-2xs"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    <span>Add Note</span>
-                  </Button>
-                </div>
-              </form>
+                </form>
+              )}
 
               {/* Past Notes Stream */}
-              {c.crmNotes && c.crmNotes.length > 0 && (
+              {c.crmNotes && c.crmNotes.length > 0 ? (
                 <div className="space-y-2 pt-2 border-t border-slate-100 max-h-36 overflow-y-auto">
                   {c.crmNotes.map((n, i) => (
                     <div key={i} className="p-2.5 bg-slate-50 rounded-xl space-y-1">
@@ -301,6 +340,10 @@ export const Customer360Modal = ({
                     </div>
                   ))}
                 </div>
+              ) : (
+                !canAddNote && (
+                  <p className="text-slate-400 text-xs italic py-1">No relationship notes recorded for this subscriber.</p>
+                )
               )}
             </div>
           </div>
