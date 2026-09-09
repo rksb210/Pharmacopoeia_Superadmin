@@ -36,6 +36,7 @@ import PermissionGuard from '../../components/admin/common/PermissionGuard';
 import AuditStatusBadge from '../../components/admin/audit/AuditStatusBadge';
 import AuditModuleBadge from '../../components/admin/audit/AuditModuleBadge';
 import AuditDetailsModal from '../../components/admin/audit/AuditDetailsModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 const MODULES = [
   { id: 'all', label: 'All Modules' },
@@ -63,7 +64,6 @@ export const AuditLogsPage = () => {
 
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
 
   // Filters
@@ -127,34 +127,48 @@ export const AuditLogsPage = () => {
     fetchLogs();
   }, [fetchLogs]);
 
-  // Export Excel Handler
-  const handleExportExcel = async () => {
-    setExporting(true);
+  const fetchAllLogsForExport = async () => {
     try {
-      const blob = await auditService.exportExcel({
+      const res = await auditService.getAuditLogs({
+        page: 1,
+        limit: 5000,
         search: searchQuery,
         module: selectedModule,
         status: selectedStatus,
         startDate,
         endDate,
       });
-
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute(
-        'download',
-        `NFI_Audit_Trail_${new Date().toISOString().split('T')[0]}.xlsx`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error('Audit export failed:', err);
-    } finally {
-      setExporting(false);
+      return res?.logs || logs;
+    } catch {
+      return logs;
     }
   };
+
+  const auditExportColumns = [
+    {
+      header: 'Timestamp',
+      key: 'createdAt',
+      format: (val) => (val ? new Date(val).toLocaleString('en-IN') : '—'),
+    },
+    { header: 'Action', key: 'action' },
+    { header: 'Module', key: 'module' },
+    { header: 'Operator Name', key: 'userName' },
+    { header: 'Operator Email', key: 'userEmail' },
+    { header: 'Operator Role', key: 'userRole' },
+    { header: 'Target Entity', key: 'entity' },
+    { header: 'Entity ID', key: 'entityId' },
+    { header: 'Client IP Address', key: 'ipAddress' },
+    {
+      header: 'Request Method & URL',
+      key: 'requestUrl',
+      format: (val, item) => `${item.requestMethod || 'GET'} ${val || '/'}`,
+    },
+    {
+      header: 'Status',
+      key: 'status',
+      format: (val) => (val || 'SUCCESS').toUpperCase(),
+    },
+  ];
 
   return (
     <PageContainer>
@@ -163,6 +177,21 @@ export const AuditLogsPage = () => {
         title="Centralized Security Audit Trail"
         subtitle="Tamper-evident system activity ledger tracking authentication events, role changes, commercial pricing updates, and administrative interventions."
       >
+        <ExportDropdown
+          filename="security_audit_trail_export"
+          title="Security Audit Trail & Activity Ledger"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Module Filter', value: selectedModule.toUpperCase() },
+            { label: 'Status Filter', value: selectedStatus.toUpperCase() },
+            { label: 'Total Records', value: totalItems || logs.length },
+          ]}
+          columns={auditExportColumns}
+          data={logs}
+          onFetchData={fetchAllLogsForExport}
+          permission={{ module: 'SYSTEM', section: 'AUDIT_LOGS', action: 'EXPORT' }}
+        />
+
         <Button
           variant="outline"
           size="sm"
@@ -176,19 +205,6 @@ export const AuditLogsPage = () => {
           <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
         </Button>
-
-        <PermissionGuard module="SYSTEM" section="AUDIT_LOGS" action="EXPORT">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportExcel}
-            loading={exporting}
-            className="rounded-xl text-xs font-bold cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5 mr-1.5" />
-            <span>Export Excel</span>
-          </Button>
-        </PermissionGuard>
       </PageHeader>
 
       {/* 4 KPI Stat Cards */}

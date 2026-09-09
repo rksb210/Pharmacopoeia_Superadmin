@@ -11,6 +11,7 @@ import departmentService from '../../services/department.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
 import { usePermission } from '../../context/PermissionContext';
 import CreateEditDepartmentModal from '../../components/admin/departments/CreateEditDepartmentModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 export const DepartmentsPage = () => {
   const { can } = usePermission();
@@ -58,9 +59,45 @@ export const DepartmentsPage = () => {
     try { await departmentService.deleteDepartment(d._id); showFeedback('Department deleted'); fetchDepartments(); fetchStats(); } catch(e){ showFeedback(e.message,'error'); }
   };
 
+  const fetchAllDepartmentsForExport = async () => {
+    try {
+      const res = await departmentService.getDepartments({
+        limit: 5000,
+        search: searchQuery,
+        status: statusFilter,
+      });
+      return res?.departments || departments;
+    } catch {
+      return departments;
+    }
+  };
+
+  const departmentExportColumns = [
+    { header: 'Department Name', key: 'name' },
+    { header: 'Code', key: 'code' },
+    { header: 'Description', key: 'description' },
+    { header: 'Designations Count', key: 'designationsCount', format: (val) => val ?? 0 },
+    { header: 'Assigned Users', key: 'usersCount', format: (val) => val ?? 0 },
+    { header: 'Status', key: 'isActive', format: (val) => (val ? 'Active' : 'Inactive') },
+  ];
+
   return (
     <PageContainer>
       <PageHeader title="Department Master" subtitle="Manage organisational departments. Designations are grouped under each department.">
+        <ExportDropdown
+          filename="departments_export"
+          title="Departments Directory"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Status Filter', value: statusFilter.toUpperCase() },
+            { label: 'Total Records', value: totalItems || departments.length },
+          ]}
+          columns={departmentExportColumns}
+          data={departments}
+          onFetchData={fetchAllDepartmentsForExport}
+          onFeedback={showFeedback}
+          permission={{ module: 'SYSTEM', section: 'DEPARTMENTS', action: 'VIEW' }}
+        />
         <Button variant="outline" size="sm" onClick={()=>{fetchStats(); fetchDepartments();}} className="rounded-xl text-xs font-semibold"><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading?'animate-spin':''}`} /><span>Refresh</span></Button>
         <PermissionGuard module="SYSTEM" section="DEPARTMENTS" action="ADD">
           <Button variant="nfiYellow" size="sm" onClick={()=>setIsCreateOpen(true)} className="rounded-xl text-xs font-bold"><Plus className="w-4 h-4 mr-1" /><span>Add Department</span></Button>

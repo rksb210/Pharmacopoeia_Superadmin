@@ -41,6 +41,7 @@ import PaymentStatusBadge from '../../components/admin/orders/PaymentStatusBadge
 import InvoiceModal from '../../components/admin/orders/InvoiceModal';
 import RefundOrderModal from '../../components/admin/orders/RefundOrderModal';
 import OrderDetailsModal from '../../components/admin/orders/OrderDetailsModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 const PAYMENT_METHODS = [
   { id: 'all', label: 'All Payment Modes' },
@@ -64,7 +65,6 @@ export const OrdersPage = () => {
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState({ message: '', type: '' });
 
@@ -142,41 +142,68 @@ export const OrdersPage = () => {
     setTimeout(() => setFeedback({ message: '', type: '' }), 4000);
   };
 
-  // Export Excel Handler
-  const handleExportExcel = async () => {
-    setExporting(true);
-    try {
-      let computedStatus = 'all';
-      if (activeTab === 'completed') computedStatus = 'completed';
-      else if (activeTab === 'processing') computedStatus = 'processing';
-      else if (activeTab === 'failed') computedStatus = 'failed';
-      else if (activeTab === 'refunded') computedStatus = 'refunded';
+  const fetchAllOrdersForExport = async () => {
+    let computedStatus = 'all';
+    if (activeTab === 'completed') computedStatus = 'completed';
+    else if (activeTab === 'processing') computedStatus = 'processing';
+    else if (activeTab === 'failed') computedStatus = 'failed';
+    else if (activeTab === 'refunded') computedStatus = 'refunded';
 
-      const blob = await orderService.exportExcel({
+    try {
+      const res = await orderService.getOrders({
+        page: 1,
+        limit: 5000,
         search: searchQuery,
         orderStatus: computedStatus,
         paymentMethod: paymentMethodFilter,
         startDate,
         endDate,
       });
-
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute(
-        'download',
-        `NFI_Orders_Ledger_${new Date().toISOString().split('T')[0]}.xlsx`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      showFeedback('Orders transaction spreadsheet exported successfully.');
-    } catch (err) {
-      showFeedback(err.message || 'Export failed', 'error');
-    } finally {
-      setExporting(false);
+      return res?.orders || orders;
+    } catch {
+      return orders;
     }
   };
+
+  const orderExportColumns = [
+    { header: 'Order Number', key: 'orderNumber' },
+    { header: 'Invoice Number', key: 'invoiceNumber' },
+    { header: 'Plan Name', key: 'planName' },
+    { header: 'Tier', key: 'tier' },
+    { header: 'Subscriber Name', key: 'userName' },
+    { header: 'Email Address', key: 'userEmail' },
+    { header: 'Healthcare Category', key: 'userType' },
+    {
+      header: 'Base Amount (INR)',
+      key: 'pricing',
+      format: (val) => val?.baseAmount || 0,
+    },
+    {
+      header: 'GST 18% (INR)',
+      key: 'pricing',
+      format: (val) => val?.taxAmount || 0,
+    },
+    {
+      header: 'Total Paid (INR)',
+      key: 'pricing',
+      format: (val) => val?.totalAmount || 0,
+    },
+    {
+      header: 'Payment Mode',
+      key: 'paymentMethod',
+      format: (val, item) => val || item.paymentDetails?.method || 'ONLINE',
+    },
+    {
+      header: 'Order Status',
+      key: 'orderStatus',
+      format: (val) => (val || 'COMPLETED').toUpperCase(),
+    },
+    {
+      header: 'Order Date',
+      key: 'createdAt',
+      format: (val) => (val ? new Date(val).toLocaleDateString('en-GB') : '—'),
+    },
+  ];
 
   // Refund Handler
   const handleProcessRefund = async (orderId, { refundAmount, reason }) => {
@@ -190,9 +217,25 @@ export const OrdersPage = () => {
     <PageContainer>
       {/* Header */}
       <PageHeader
-        title="Order &amp; Payment Management"
+        title="Order & Payment Management"
         subtitle="Immutable financial ledgers, server-side gateway transaction verification, official GST tax invoicing, and refund telemetry."
       >
+        <ExportDropdown
+          filename="orders_transactions_ledger_export"
+          title="Orders & Payment Transactions Ledger"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Status Filter', value: activeTab.toUpperCase() },
+            { label: 'Payment Mode', value: paymentMethodFilter.toUpperCase() },
+            { label: 'Total Records', value: totalItems || orders.length },
+          ]}
+          columns={orderExportColumns}
+          data={orders}
+          onFetchData={fetchAllOrdersForExport}
+          onFeedback={showFeedback}
+          permission={{ module: 'COMMERCIAL', section: 'ORDERS', action: 'VIEW' }}
+        />
+
         <Button
           variant="outline"
           size="sm"
@@ -205,17 +248,6 @@ export const OrdersPage = () => {
         >
           <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportExcel}
-          loading={exporting}
-          className="rounded-xl text-xs font-bold cursor-pointer"
-        >
-          <Download className="w-3.5 h-3.5 mr-1.5" />
-          <span>Export Excel</span>
         </Button>
       </PageHeader>
 

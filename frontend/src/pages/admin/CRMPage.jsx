@@ -42,6 +42,7 @@ import PermissionGuard from '../../components/admin/common/PermissionGuard';
 import CRMSegmentBadge from '../../components/admin/crm/CRMSegmentBadge';
 import Customer360Modal from '../../components/admin/crm/Customer360Modal';
 import MarqueeAlertMasterModal from '../../components/admin/crm/MarqueeAlertMasterModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 const USER_TYPES = [
   { id: 'all', label: 'All Healthcare Categories' },
@@ -137,6 +138,59 @@ export const CRMPage = () => {
     fetchCustomers();
   }, [fetchCustomers]);
 
+  const fetchAllCustomersForExport = async () => {
+    try {
+      const res = await crmService.getCustomers({
+        page: 1,
+        limit: 5000,
+        segment: activeSegmentTab,
+        search: searchQuery,
+        userType: userTypeFilter,
+        status: statusFilter,
+      });
+      return res?.customers || customers;
+    } catch {
+      return customers;
+    }
+  };
+
+  const crmExportColumns = [
+    { header: 'Customer Name', key: 'name' },
+    { header: 'Email Address', key: 'email' },
+    { header: 'Healthcare Category', key: 'userType' },
+    { header: 'CRM Segment', key: 'segment' },
+    {
+      header: 'Active Formulary Pass',
+      key: 'latestSubscription',
+      format: (val) => val?.planName || 'None (Prospect)',
+    },
+    {
+      header: 'Pass Tier',
+      key: 'latestSubscription',
+      format: (val) => val?.tier || 'N/A',
+    },
+    {
+      header: 'Access Validity',
+      key: 'latestSubscription',
+      format: (val) => (val?.endDate ? new Date(val.endDate).toLocaleDateString('en-GB') : 'N/A'),
+    },
+    {
+      header: 'Lifetime Spend (INR)',
+      key: 'totalLTVSpendINR',
+      format: (val) => `₹${(val || 0).toLocaleString('en-IN')}`,
+    },
+    {
+      header: 'Total Orders',
+      key: 'totalOrders',
+      format: (val) => val || 0,
+    },
+    {
+      header: 'Account Status',
+      key: 'status',
+      format: (val, item) => val || (item.isActive !== false ? 'ACTIVE' : 'INACTIVE'),
+    },
+  ];
+
   return (
     <PageContainer>
       {/* Header */}
@@ -144,6 +198,21 @@ export const CRMPage = () => {
         title="Customer Relationship Management (CRM)"
         subtitle="Holistic 360-degree customer-centric view aggregating subscription history, lifetime spend (LTV), communication feeds, and verified credentials."
       >
+        <ExportDropdown
+          filename="crm_customers_export"
+          title="Customer Relationship Management (CRM) Directory"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Segment Filter', value: activeSegmentTab.toUpperCase() },
+            { label: 'Category Filter', value: userTypeFilter.toUpperCase() },
+            { label: 'Total Records', value: totalItems || customers.length },
+          ]}
+          columns={crmExportColumns}
+          data={customers}
+          onFetchData={fetchAllCustomersForExport}
+          permission={{ module: 'COMMERCIAL', section: 'CRM', action: 'VIEW' }}
+        />
+
         <Button
           variant="outline"
           size="sm"

@@ -32,6 +32,7 @@ import { useAuth } from '../../context/AuthContext';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
 import { usePermission } from '../../context/PermissionContext';
 import api from '../../services/api';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 // Modals
 import CreateEditAdminModal from '../../components/admin/admins/CreateEditAdminModal';
@@ -172,6 +173,50 @@ export const SubAdminsPage = () => {
     fetchSubAdmins();
   };
 
+  const fetchAllSubAdminsForExport = async () => {
+    try {
+      const res = await subadminService.getSubAdmins({
+        page: 1,
+        limit: 5000,
+        search: searchQuery,
+        role: roleFilter,
+        status: statusFilter,
+      });
+      return res?.admins || subAdmins;
+    } catch {
+      return subAdmins;
+    }
+  };
+
+  const subAdminExportColumns = [
+    { header: 'Full Name', key: 'name' },
+    { header: 'Email Address', key: 'email' },
+    { header: 'Username', key: 'username' },
+    {
+      header: 'Assigned Role',
+      key: 'role',
+      format: (v, row) => row.roleRef?.name || v?.replace(/_/g, ' ')?.toUpperCase(),
+    },
+    { header: 'Department', key: 'department' },
+    { header: 'Designation', key: 'designation' },
+    { header: 'Phone Number', key: 'phoneNumber' },
+    {
+      header: 'Custom Permissions',
+      key: 'customPermissions',
+      format: (v) => `${v?.length || 0} Permissions`,
+    },
+    {
+      header: 'Account Status',
+      key: 'isActive',
+      format: (v) => (v !== false ? 'ACTIVE' : 'INACTIVE'),
+    },
+    {
+      header: 'Created Date',
+      key: 'createdAt',
+      format: (v) => (v ? new Date(v).toLocaleDateString('en-IN') : 'N/A'),
+    },
+  ];
+
   return (
     <PageContainer>
       {/* Header */}
@@ -179,6 +224,21 @@ export const SubAdminsPage = () => {
         title="Sub Administrator Management"
         subtitle="Manage departmental coordinators, content authors, reviewers, and fine-grained module permissions."
       >
+        <ExportDropdown
+          filename="NFI_Sub_Administrators_Ledger"
+          title="Indian Pharmacopoeia Commission - Sub-Administrators & Departmental Staff"
+          subtitle={`Role: ${roleFilter || 'All'} | Status: ${statusFilter || 'All'}`}
+          metadata={[
+            `Total: ${stats.totalSubAdmins || 0}`,
+            `Active: ${stats.activeSubAdmins || 0}`,
+            `Inactive: ${stats.inactiveSubAdmins || 0}`,
+          ]}
+          columns={subAdminExportColumns}
+          onFetchData={fetchAllSubAdminsForExport}
+          onFeedback={showFeedback}
+          permission={{ module: 'USERS', section: 'SUBADMINS', action: 'EXPORT' }}
+        />
+
         <Button
           variant="outline"
           size="sm"

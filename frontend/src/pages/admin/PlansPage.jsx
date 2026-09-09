@@ -41,6 +41,7 @@ import PlanCard from '../../components/admin/plans/PlanCard';
 import CreateEditPlanModal from '../../components/admin/plans/CreateEditPlanModal';
 import PlanDetailsModal from '../../components/admin/plans/PlanDetailsModal';
 import PlanSubscribersModal from '../../components/admin/plans/PlanSubscribersModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 const TIERS = ['Individual', 'Institutional', 'Student', 'Doctor Professional', 'Corporate', 'General'];
 
@@ -143,13 +144,62 @@ export const PlansPage = () => {
     }
   };
 
+  const planExportColumns = [
+    { header: 'Plan Name', key: 'name' },
+    { header: 'Plan Code', key: 'code' },
+    { header: 'Tier', key: 'tier' },
+    {
+      header: 'Base Price (INR)',
+      key: 'priceINR',
+      format: (val) => (val !== undefined && val !== null ? `₹${val.toLocaleString('en-IN')}` : '₹0'),
+    },
+    {
+      header: 'Validity Policy',
+      key: 'validityType',
+      format: (val, item) =>
+        val === 'fixed_date'
+          ? (item.fixedDate ? new Date(item.fixedDate).toLocaleDateString('en-GB') : 'Fixed Date')
+          : `${item.durationValue || 0} ${val?.replace('duration_', '') || 'days'}`,
+    },
+    {
+      header: 'Seat Quota',
+      key: 'seatQuota',
+      format: (val) => (val === 0 ? 'Unlimited' : val === 1 ? '1 Seat' : `${val} Seats`),
+    },
+    {
+      header: 'Active Subscribers',
+      key: 'activeSubscribersCount',
+      format: (val) => val ?? 0,
+    },
+    {
+      header: 'Status',
+      key: 'isActive',
+      format: (val) => (val ? 'Active' : 'Inactive'),
+    },
+  ];
+
   return (
     <PageContainer>
       {/* Header */}
       <PageHeader
-        title="Plans &amp; Pricing Management"
+        title="Plans & Pricing Management"
         subtitle="Configure commercial digital formulary tiers, seat quotas, BRD validity policies, and user category eligibility."
       >
+        <ExportDropdown
+          filename="plans_pricing_export"
+          title="Plans & Pricing Master Directory"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Tier Filter', value: tierFilter.toUpperCase() },
+            { label: 'Status Filter', value: statusFilter.toUpperCase() },
+            { label: 'Total Records', value: plans.length },
+          ]}
+          columns={planExportColumns}
+          data={plans}
+          onFeedback={showFeedback}
+          permission={{ module: 'COMMERCIAL', section: 'PLANS', action: 'VIEW' }}
+        />
+
         <Button
           variant="outline"
           size="sm"

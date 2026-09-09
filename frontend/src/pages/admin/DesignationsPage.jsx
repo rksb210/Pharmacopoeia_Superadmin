@@ -12,6 +12,7 @@ import departmentService from '../../services/department.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
 import { usePermission } from '../../context/PermissionContext';
 import CreateEditDesignationModal from '../../components/admin/designations/CreateEditDesignationModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 export const DesignationsPage = () => {
   const { can } = usePermission();
@@ -61,9 +62,50 @@ export const DesignationsPage = () => {
     try{ await designationService.deleteDesignation(d._id); showFeedback('Designation deleted'); fetchDesignations(); fetchStats(); }catch(e){ showFeedback(e.message,'error'); }
   };
 
+  const fetchAllDesignationsForExport = async () => {
+    try {
+      const res = await designationService.getDesignations({
+        limit: 5000,
+        search: searchQuery,
+        department: departmentFilter,
+        status: statusFilter,
+      });
+      return res?.designations || designations;
+    } catch {
+      return designations;
+    }
+  };
+
+  const designationExportColumns = [
+    { header: 'Designation Name', key: 'name' },
+    { header: 'Code', key: 'code' },
+    {
+      header: 'Department',
+      key: 'department',
+      format: (val) => (typeof val === 'object' ? val?.name || '—' : val || '—'),
+    },
+    { header: 'Description', key: 'description' },
+    { header: 'Users Count', key: 'usersCount', format: (val) => val ?? 0 },
+    { header: 'Status', key: 'isActive', format: (val) => (val ? 'Active' : 'Inactive') },
+  ];
+
   return (
     <PageContainer>
       <PageHeader title="Designation Master" subtitle="Designations are scoped under a department. Select department when creating a designation.">
+        <ExportDropdown
+          filename="designations_export"
+          title="Designations Directory"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Status Filter', value: statusFilter.toUpperCase() },
+            { label: 'Total Records', value: totalItems || designations.length },
+          ]}
+          columns={designationExportColumns}
+          data={designations}
+          onFetchData={fetchAllDesignationsForExport}
+          onFeedback={showFeedback}
+          permission={{ module: 'SYSTEM', section: 'DESIGNATIONS', action: 'VIEW' }}
+        />
         <Button variant="outline" size="sm" onClick={()=>{fetchStats(); fetchDesignations(); fetchDepartments();}} className="rounded-xl text-xs font-semibold"><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading?'animate-spin':''}`} /><span>Refresh</span></Button>
         <PermissionGuard module="SYSTEM" section="DESIGNATIONS" action="ADD">
           <Button variant="nfiYellow" size="sm" onClick={()=>setIsCreateOpen(true)} className="rounded-xl text-xs font-bold"><Plus className="w-4 h-4 mr-1" /><span>Add Designation</span></Button>

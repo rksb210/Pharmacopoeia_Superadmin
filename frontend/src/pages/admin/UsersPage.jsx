@@ -33,6 +33,7 @@ import {
 import subscriberService from '../../services/subscriber.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
 import { usePermission } from '../../context/PermissionContext';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 // Modals
 import CreateEditSubscriberModal from '../../components/admin/subscribers/CreateEditSubscriberModal';
@@ -228,6 +229,62 @@ export const UsersPage = () => {
       : (stateVal ? `State: ${stateVal}` : 'General Public');
   };
 
+  const fetchAllUsersForExport = async () => {
+    try {
+      const res = await subscriberService.getSubscribers({
+        page: 1,
+        limit: 5000,
+        search: searchQuery,
+        userType: userTypeFilter,
+        subscriptionStatus: subscriptionFilter,
+        status: statusFilter,
+        dateFrom,
+        dateTo,
+      });
+      return res?.subscribers || subscribers;
+    } catch {
+      return subscribers;
+    }
+  };
+
+  const userExportColumns = [
+    { header: 'Full Name', key: 'name' },
+    { header: 'Email Address', key: 'email' },
+    { header: 'Username', key: 'username' },
+    { header: 'Contact No', key: 'phoneNumber' },
+    { header: 'User Category', key: 'userType', format: (v) => v?.toUpperCase() },
+    {
+      header: 'License / Reg No',
+      key: 'dynamicFields',
+      format: (v) => v?.registrationNo || v?.apaarId || v?.gstin || 'N/A',
+    },
+    {
+      header: 'State / Council',
+      key: 'dynamicFields',
+      format: (v) => v?.stateCouncil || v?.registrationState || v?.state || 'N/A',
+    },
+    {
+      header: 'Subscription Plan',
+      key: 'subscription',
+      format: (v) => v?.planName || 'Free Access Tier',
+    },
+    {
+      header: 'Plan Status',
+      key: 'subscription',
+      format: (v) => (v?.status || 'Active').toUpperCase(),
+    },
+    {
+      header: 'Account Status',
+      key: 'isActive',
+      format: (v) => (v !== false ? 'ACTIVE' : 'INACTIVE'),
+    },
+    {
+      header: 'Joined Date',
+      key: 'createdAt',
+      format: (v) => (v ? new Date(v).toLocaleDateString('en-IN') : 'N/A'),
+    },
+  ];
+
   return (
     <PageContainer>
       {/* Header */}
@@ -235,6 +292,21 @@ export const UsersPage = () => {
         title="Public User &amp; Subscriber Management"
         subtitle="Manage registered healthcare professionals, students, researchers, institutional accounts, and subscription licenses."
       >
+        <ExportDropdown
+          filename="NFI_Subscribers_Directory"
+          title="Indian Pharmacopoeia Commission - Registered Subscribers Directory"
+          subtitle={`Filters: Category [${userTypeFilter || 'All'}], Status [${statusFilter || 'All'}]`}
+          metadata={[
+            `Total: ${stats.totalUsers || 0}`,
+            `Active Subscriptions: ${stats.activeSubscribers || 0}`,
+            `Free Trials: ${stats.trialUsers || 0}`,
+          ]}
+          columns={userExportColumns}
+          onFetchData={fetchAllUsersForExport}
+          onFeedback={showFeedback}
+          permission={{ module: 'USERS', section: 'USERS', action: 'EXPORT' }}
+        />
+
         <Button
           variant="outline"
           size="sm"

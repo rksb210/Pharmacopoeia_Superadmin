@@ -40,6 +40,7 @@ import BulkUploadZone from '../../components/admin/bulk/BulkUploadZone';
 import BulkPreviewTable from '../../components/admin/bulk/BulkPreviewTable';
 import ConsolidatedInvoiceCard from '../../components/admin/bulk/ConsolidatedInvoiceCard';
 import BulkImportDetailsModal from '../../components/admin/bulk/BulkImportDetailsModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 export const BulkSubscriptionsPage = () => {
   const { can, isSuperAdmin } = usePermission();
@@ -142,14 +143,65 @@ export const BulkSubscriptionsPage = () => {
     setError('');
   };
 
+  const bulkExportColumns = [
+    { header: 'Batch Job ID', key: 'jobId' },
+    { header: 'Institution Name', key: 'institutionName' },
+    { header: 'Source File', key: 'fileName' },
+    { header: 'Target Plan', key: 'planCode' },
+    {
+      header: 'Enrolled Count',
+      key: 'validCount',
+      format: (val, item) => `${val || 0} / ${item.totalRows || 0}`,
+    },
+    {
+      header: 'Invoice Number',
+      key: 'consolidatedInvoice',
+      format: (val) => val?.invoiceNumber || '—',
+    },
+    {
+      header: 'Invoice Amount (INR)',
+      key: 'consolidatedInvoice',
+      format: (val) => (val?.finalAmountINR ? `₹${val.finalAmountINR.toLocaleString('en-IN')}` : '—'),
+    },
+    {
+      header: 'Created Date',
+      key: 'createdAt',
+      format: (val) => (val ? new Date(val).toLocaleDateString('en-GB') : '—'),
+    },
+    { header: 'Status', key: 'status' },
+  ];
+
+  const fetchAllBulkHistoryForExport = async () => {
+    try {
+      const res = await bulkImportService.getHistory({ limit: 5000 });
+      return res?.jobs || historyJobs;
+    } catch {
+      return historyJobs;
+    }
+  };
+
   return (
     <PageContainer>
       {/* Header */}
       <PageHeader
-        title="Bulk Subscription Management"
+        title="Bulk Subscriptions & Institutional Onboarding"
         subtitle="Batch enroll institutional rosters, university student cohorts, and corporate teams via Excel with pre-flight validation and consolidated billing."
       >
         <div className="flex items-center gap-2">
+          <ExportDropdown
+            filename="bulk_subscriptions_history_export"
+            title="Bulk Subscriptions History"
+            metadata={[
+              { label: 'Export Date', value: new Date().toLocaleString() },
+              { label: 'Total Batch Records', value: historyTotal || historyJobs.length },
+            ]}
+            columns={bulkExportColumns}
+            data={historyJobs}
+            onFetchData={fetchAllBulkHistoryForExport}
+            onFeedback={showFeedback}
+            permission={{ module: 'COMMERCIAL', section: 'BULK_SUBSCRIPTION', action: 'VIEW' }}
+          />
+
           {canAdd && (
             <Button
               variant={activeMainTab === 'wizard' ? 'nfiYellow' : 'outline'}
