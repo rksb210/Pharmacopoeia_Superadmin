@@ -75,7 +75,7 @@ export const createCourse = async (req, res, next) => {
     // Tamper-Evident Audit Logging
     await auditService.log(req, {
       action: 'DIKSHA_COURSE_CREATED',
-      module: 'INTEGRATED',
+      module: 'DIKSHA',
       entity: 'DikshaCourse',
       entityId: course._id,
       status: 'SUCCESS',
@@ -111,7 +111,7 @@ export const updateCourse = async (req, res, next) => {
     // Audit Log
     await auditService.log(req, {
       action: 'DIKSHA_COURSE_UPDATED',
-      module: 'INTEGRATED',
+      module: 'DIKSHA',
       entity: 'DikshaCourse',
       entityId: updated._id,
       status: 'SUCCESS',
@@ -151,7 +151,7 @@ export const deleteCourse = async (req, res, next) => {
     // Audit Log
     await auditService.log(req, {
       action: 'DIKSHA_COURSE_DELETED',
-      module: 'INTEGRATED',
+      module: 'DIKSHA',
       entity: 'DikshaCourse',
       entityId: req.params.id,
       status: 'SUCCESS',
@@ -180,7 +180,7 @@ export const toggleStatus = async (req, res, next) => {
     // Audit Log
     await auditService.log(req, {
       action: 'DIKSHA_COURSE_STATUS_CHANGED',
-      module: 'INTEGRATED',
+      module: 'DIKSHA',
       entity: 'DikshaCourse',
       entityId: updated._id,
       status: 'SUCCESS',
@@ -209,7 +209,7 @@ export const submitForReview = async (req, res, next) => {
 
     await auditService.log(req, {
       action: 'DIKSHA_COURSE_SUBMITTED_FOR_REVIEW',
-      module: 'INTEGRATED',
+      module: 'DIKSHA',
       entity: 'DikshaCourse',
       entityId: course._id,
       status: 'SUCCESS',
@@ -238,7 +238,7 @@ export const reviewCourse = async (req, res, next) => {
 
     await auditService.log(req, {
       action: `DIKSHA_COURSE_REVIEW_${decision}`,
-      module: 'INTEGRATED',
+      module: 'DIKSHA',
       entity: 'DikshaCourse',
       entityId: course._id,
       status: 'SUCCESS',
@@ -267,7 +267,7 @@ export const approveCourse = async (req, res, next) => {
 
     await auditService.log(req, {
       action: `DIKSHA_COURSE_FINAL_${decision}`,
-      module: 'INTEGRATED',
+      module: 'DIKSHA',
       entity: 'DikshaCourse',
       entityId: course._id,
       status: 'SUCCESS',

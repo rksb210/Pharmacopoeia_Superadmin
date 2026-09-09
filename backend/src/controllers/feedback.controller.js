@@ -1,4 +1,5 @@
 import feedbackService from '../services/feedback.service.js';
+import { auditService } from '../services/audit.service.js';
 
 export const getFeedbackStats = async (req, res, next) => {
   try {
@@ -92,6 +93,16 @@ export const assignFeedback = async (req, res) => {
       req.user,
       note
     );
+
+    await auditService.log(req, {
+      action: 'FEEDBACK_ASSIGNED',
+      module: 'FEEDBACK',
+      entity: 'FeedbackTicket',
+      entityId: updated.ticketId || updated._id,
+      status: 'SUCCESS',
+      details: `Assigned feedback ticket #${updated.ticketId || updated._id} to admin ID ${assignedTo || 'Unassigned'}.`,
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Ticket assigned successfully.',
@@ -114,6 +125,17 @@ export const updateFeedbackStatus = async (req, res) => {
       req.user,
       note
     );
+
+    await auditService.log(req, {
+      action: 'FEEDBACK_STATUS_UPDATED',
+      module: 'FEEDBACK',
+      entity: 'FeedbackTicket',
+      entityId: updated.ticketId || updated._id,
+      status: 'SUCCESS',
+      details: `Updated status for ticket #${updated.ticketId || updated._id} to '${status}'. Note: ${note || 'None'}.`,
+      newValues: { status },
+    });
+
     return res.status(200).json({
       success: true,
       message: `Ticket status updated to ${status}.`,
@@ -135,6 +157,16 @@ export const replyToFeedback = async (req, res) => {
       { message, isInternalNote },
       req.user
     );
+
+    await auditService.log(req, {
+      action: isInternalNote ? 'FEEDBACK_INTERNAL_NOTE' : 'FEEDBACK_REPLIED',
+      module: 'FEEDBACK',
+      entity: 'FeedbackTicket',
+      entityId: updated.ticketId || updated._id,
+      status: 'SUCCESS',
+      details: `${isInternalNote ? 'Added internal note on' : 'Dispatched official response to'} ticket #${updated.ticketId || updated._id}.`,
+    });
+
     return res.status(200).json({
       success: true,
       message: isInternalNote ? 'Internal note added.' : 'Response sent to subscriber.',

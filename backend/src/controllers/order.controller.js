@@ -1,4 +1,5 @@
 import orderService from '../services/order.service.js';
+import { auditService } from '../services/audit.service.js';
 
 export const getOrderStats = async (req, res, next) => {
   try {
@@ -73,6 +74,21 @@ export const processRefund = async (req, res) => {
       { refundAmount, reason },
       req.user
     );
+
+    await auditService.log(req, {
+      action: 'ORDER_REFUND_PROCESSED',
+      module: 'ORDERS',
+      entity: 'Order',
+      entityId: refundedOrder.orderNumber || refundedOrder._id,
+      status: 'WARNING',
+      details: `Authorized financial refund of ₹${refundAmount} on Order #${refundedOrder.orderNumber || refundedOrder._id}. Reason: ${reason || 'Customer refund'}.`,
+      newValues: {
+        orderStatus: refundedOrder.orderStatus,
+        paymentStatus: refundedOrder.paymentStatus,
+        refundAmount,
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Refund authorized and processed successfully.',

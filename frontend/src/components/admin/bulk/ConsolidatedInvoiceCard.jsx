@@ -15,6 +15,13 @@ export const ConsolidatedInvoiceCard = ({ invoice, job }) => {
   if (!invoice) return null;
 
   const handlePrint = () => {
+    document.body.classList.add('printing-invoice');
+    const cleanUp = () => {
+      document.body.classList.remove('printing-invoice');
+      window.removeEventListener('afterprint', cleanUp);
+    };
+    window.addEventListener('afterprint', cleanUp);
+    setTimeout(cleanUp, 3000);
     window.print();
   };
 

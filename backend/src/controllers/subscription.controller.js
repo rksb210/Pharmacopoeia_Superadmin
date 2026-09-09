@@ -1,4 +1,5 @@
 import subscriptionService from '../services/subscription.service.js';
+import { auditService } from '../services/audit.service.js';
 
 export const getSubscriptionStats = async (req, res, next) => {
   try {
@@ -28,6 +29,17 @@ export const updateSystemConfig = async (req, res, next) => {
   try {
     const { key, value, description } = req.body;
     const updated = await subscriptionService.updateSystemConfig(key, value, description);
+
+    await auditService.log(req, {
+      action: 'SUBSCRIPTION_RULE_UPDATED',
+      module: 'SUBSCRIPTIONS',
+      entity: 'SystemConfig',
+      entityId: key,
+      status: 'SUCCESS',
+      details: `Subscription system rule '${key}' modified to value '${value}'.`,
+      newValues: { key, value, description },
+    });
+
     return res.status(200).json({
       success: true,
       message: `System rule '${key}' updated successfully.`,
@@ -91,6 +103,22 @@ export const assignSubscription = async (req, res) => {
       req.body,
       req.user
     );
+
+    await auditService.log(req, {
+      action: 'SUBSCRIPTION_PROVISIONED',
+      module: 'SUBSCRIPTIONS',
+      entity: 'Subscription',
+      entityId: newSubscription._id,
+      status: 'SUCCESS',
+      details: `Provisioned manual subscription (${newSubscription.planName}) for user ${newSubscription.userEmail || newSubscription.user}. Valid until: ${new Date(newSubscription.endDate).toLocaleDateString('en-IN')}.`,
+      newValues: {
+        planName: newSubscription.planName,
+        planCode: newSubscription.planCode,
+        status: newSubscription.status,
+        endDate: newSubscription.endDate,
+      },
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Subscription provisioned and activated successfully.',
@@ -111,6 +139,20 @@ export const renewSubscription = async (req, res) => {
       req.body,
       req.user
     );
+
+    await auditService.log(req, {
+      action: 'SUBSCRIPTION_RENEWED',
+      module: 'SUBSCRIPTIONS',
+      entity: 'Subscription',
+      entityId: renewed._id,
+      status: 'SUCCESS',
+      details: `Renewed subscription ID ${renewed._id}. Extended until ${new Date(renewed.endDate).toLocaleDateString('en-IN')}.`,
+      newValues: {
+        endDate: renewed.endDate,
+        status: renewed.status,
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Subscription renewed successfully.',
@@ -131,6 +173,16 @@ export const cancelSubscription = async (req, res) => {
       req.body.reason,
       req.user
     );
+
+    await auditService.log(req, {
+      action: 'SUBSCRIPTION_CANCELLED',
+      module: 'SUBSCRIPTIONS',
+      entity: 'Subscription',
+      entityId: cancelled._id,
+      status: 'WARNING',
+      details: `Cancelled subscription ID ${cancelled._id}. Reason: ${req.body.reason || 'Administrative termination'}.`,
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Subscription cancelled successfully.',
@@ -152,6 +204,17 @@ export const changeSubscriptionStatus = async (req, res) => {
       req.body.reason,
       req.user
     );
+
+    await auditService.log(req, {
+      action: 'SUBSCRIPTION_STATUS_CHANGED',
+      module: 'SUBSCRIPTIONS',
+      entity: 'Subscription',
+      entityId: updated._id,
+      status: 'SUCCESS',
+      details: `Subscription ID ${updated._id} status updated to '${req.body.status}'. Reason: ${req.body.reason || 'N/A'}.`,
+      newValues: { status: req.body.status },
+    });
+
     return res.status(200).json({
       success: true,
       message: `Subscription status updated to '${req.body.status}'.`,

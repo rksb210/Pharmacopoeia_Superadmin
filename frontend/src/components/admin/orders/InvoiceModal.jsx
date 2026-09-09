@@ -21,6 +21,13 @@ export const InvoiceModal = ({
   const total = pricing.totalAmount || 0;
 
   const handlePrint = () => {
+    document.body.classList.add('printing-invoice');
+    const cleanUp = () => {
+      document.body.classList.remove('printing-invoice');
+      window.removeEventListener('afterprint', cleanUp);
+    };
+    window.addEventListener('afterprint', cleanUp);
+    setTimeout(cleanUp, 3000);
     window.print();
   };
 
@@ -36,7 +43,7 @@ export const InvoiceModal = ({
     >
       <div className="space-y-4 text-xs select-none font-sans overflow-hidden">
         {/* Printable Invoice Container */}
-        <div id="printable-invoice" className="p-6 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-6 font-sans text-slate-800">
+        <div id="printable-invoice" className="printable-invoice p-6 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-6 font-sans text-slate-800">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
             <div className="flex items-center gap-3">

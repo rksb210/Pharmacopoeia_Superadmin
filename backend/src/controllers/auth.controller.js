@@ -63,6 +63,16 @@ export const login = async (req, res, next) => {
     }
 
     if (!user) {
+      await auditService.log(req, {
+        action: 'LOGIN_FAILED',
+        module: 'AUTH',
+        entity: 'Auth',
+        entityId: cleanIdentifier,
+        user: { name: 'Unknown User', email: cleanIdentifier, role: 'Anonymous' },
+        status: 'FAILURE',
+        details: `Failed login attempt: Account not found for "${cleanIdentifier}".`,
+        errorMessage: 'Invalid official email address/username or password.',
+      });
       return res.status(401).json({
         success: false,
         message: 'Invalid official email address/username or password.',
@@ -72,6 +82,16 @@ export const login = async (req, res, next) => {
     // Check if account is temporarily locked due to excessive failed attempts
     if (!isSubscriber && user.isLocked && user.isLocked()) {
       const lockMinutesRemaining = Math.ceil((user.lockUntil - Date.now()) / (60 * 1000));
+      await auditService.log(req, {
+        action: 'LOGIN_LOCKED',
+        module: 'AUTH',
+        entity: user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : (user.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser')),
+        entityId: user._id,
+        user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+        status: 'WARNING',
+        details: `Login blocked: Account temporarily locked for ${user.name} (${user.email}).`,
+        errorMessage: `Account is temporarily locked. ${lockMinutesRemaining} minute(s) remaining.`,
+      });
       return res.status(423).json({
         success: false,
         message: `Account is temporarily locked due to multiple failed login attempts. Please try again in ${lockMinutesRemaining} minute(s).`,
@@ -80,6 +100,16 @@ export const login = async (req, res, next) => {
 
     // Check account active status
     if (!user.isActive) {
+      await auditService.log(req, {
+        action: 'LOGIN_DEACTIVATED',
+        module: 'AUTH',
+        entity: isSubscriber ? 'Subscriber' : (user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : 'AdminUser')),
+        entityId: user._id,
+        user: { _id: user._id, name: user.name, email: user.email, role: isSubscriber ? 'subscriber' : user.role },
+        status: 'FAILURE',
+        details: `Login rejected: Inactive account attempt by ${user.name} (${user.email}).`,
+        errorMessage: 'Account has been deactivated.',
+      });
       return res.status(403).json({
         success: false,
         message: 'Your account has been deactivated. Please contact the administrator.',
@@ -97,6 +127,16 @@ export const login = async (req, res, next) => {
         if (user.failedLoginAttempts >= 5) {
           user.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
           await user.save({ validateBeforeSave: false });
+          await auditService.log(req, {
+            action: 'ACCOUNT_LOCKED',
+            module: 'AUTH',
+            entity: user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : 'AdminUser'),
+            entityId: user._id,
+            user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+            status: 'FAILURE',
+            details: `Account temporarily locked for 15 minutes after 5 consecutive failed login attempts (${user.email}).`,
+            errorMessage: 'Too many failed login attempts.',
+          });
           return res.status(423).json({
             success: false,
             message: 'Too many failed login attempts. Account temporarily locked for 15 minutes.',
@@ -105,6 +145,17 @@ export const login = async (req, res, next) => {
 
         await user.save({ validateBeforeSave: false });
       }
+
+      await auditService.log(req, {
+        action: 'LOGIN_FAILED',
+        module: 'AUTH',
+        entity: isSubscriber ? 'Subscriber' : (user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : 'AdminUser')),
+        entityId: user._id,
+        user: { _id: user._id, name: user.name, email: user.email, role: isSubscriber ? 'subscriber' : user.role },
+        status: 'FAILURE',
+        details: `Incorrect password attempt for ${user.name} (${user.email}). Failed attempts: ${user.failedLoginAttempts || 1}.`,
+        errorMessage: 'Invalid official email address/username or password.',
+      });
 
       return res.status(401).json({
         success: false,
@@ -154,11 +205,15 @@ export const login = async (req, res, next) => {
     // Set cookie & send response
     res.cookie('token', token, cookieOptions);
 
+    const targetEntity = isSubscriber
+      ? 'Subscriber'
+      : (user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : (user.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser')));
+
     // Record Audit Log
     await auditService.log(req, {
       action: 'LOGIN_SUCCESS',
       module: 'AUTH',
-      entity: isSubscriber ? 'Subscriber' : 'User',
+      entity: targetEntity,
       entityId: user._id,
       user: {
         _id: user._id,
@@ -167,7 +222,7 @@ export const login = async (req, res, next) => {
         role: role,
       },
       status: 'SUCCESS',
-      details: `User ${user.name} (${user.email}) logged in successfully as ${role}.`,
+      details: `${targetEntity} ${user.name} (${user.email}) logged in successfully as ${role}.`,
     });
 
     return res.status(200).json({
@@ -293,6 +348,21 @@ export const signup = async (req, res, next) => {
 
     res.cookie('token', token, cookieOptions);
 
+    await auditService.log(req, {
+      action: 'SUBSCRIBER_REGISTERED',
+      module: 'AUTH',
+      entity: 'Subscriber',
+      entityId: newSubscriber._id,
+      user: {
+        _id: newSubscriber._id,
+        name: newSubscriber.name,
+        email: newSubscriber.email,
+        role: 'subscriber',
+      },
+      status: 'SUCCESS',
+      details: `New subscriber self-registered: ${newSubscriber.name} (${newSubscriber.email}) with user type ${newSubscriber.userType}.`,
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Account created successfully. Welcome to the NFI Pharmacopoeia!',
@@ -331,6 +401,15 @@ export const changePassword = async (req, res, next) => {
 
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
+      await auditService.log(req, {
+        action: 'PASSWORD_CHANGE_FAILED',
+        module: 'AUTH',
+        entity: user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : 'AdminUser'),
+        entityId: user._id,
+        status: 'FAILURE',
+        details: `Password change failed for ${user.email}: Current password incorrect.`,
+        errorMessage: 'Current password entered is incorrect.',
+      });
       return res.status(400).json({
         success: false,
         message: 'Current password entered is incorrect.',
@@ -347,6 +426,17 @@ export const changePassword = async (req, res, next) => {
 
     user.password = newPassword;
     await user.save();
+
+    const entityType = user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : (user.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser'));
+
+    await auditService.log(req, {
+      action: 'PASSWORD_CHANGED',
+      module: 'AUTH',
+      entity: entityType,
+      entityId: user._id,
+      status: 'SUCCESS',
+      details: `Password successfully updated by ${user.name} (${user.email}).`,
+    });
 
     return res.status(200).json({
       success: true,

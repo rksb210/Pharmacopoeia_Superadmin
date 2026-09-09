@@ -8,14 +8,22 @@ export const auditService = {
    * Helper to capture client IP
    */
   getClientIp: (req) => {
-    if (!req) return '127.0.0.1';
-    return (
+    if (!req) return '127.0.0.1 (Localhost)';
+    let ip = (
       req.headers['x-forwarded-for']?.split(',')[0] ||
       req.connection?.remoteAddress ||
       req.socket?.remoteAddress ||
       req.ip ||
       '127.0.0.1'
-    );
+    ).trim();
+
+    if (ip === '::1' || ip === '::ffff:127.0.0.1' || ip === 'fe80::1' || ip === '127.0.0.1') {
+      return '127.0.0.1 (Localhost)';
+    }
+    if (ip.startsWith('::ffff:')) {
+      ip = ip.replace('::ffff:', '');
+    }
+    return ip;
   },
 
   /**
@@ -79,7 +87,7 @@ export const auditService = {
       {
         action: 'LOGIN_SUCCESS',
         module: 'AUTH',
-        entity: 'User',
+        entity: 'AdminUser',
         entityId: 'USR-ADMIN-001',
         userName: 'NFI Administrator',
         userEmail: 'admin@nfi.gov.in',
@@ -149,7 +157,7 @@ export const auditService = {
       {
         action: 'LOGIN_FAILED',
         module: 'AUTH',
-        entity: 'User',
+        entity: 'Auth',
         entityId: 'UNKNOWN',
         userName: 'Unknown Guest',
         userEmail: 'hacker@malicious-domain.com',

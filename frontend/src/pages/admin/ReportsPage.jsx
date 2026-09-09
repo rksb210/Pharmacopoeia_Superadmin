@@ -194,23 +194,25 @@ export const ReportsPage = () => {
       </PageHeader>
 
       {/* Date Presets & Custom Filter */}
-      <ReportDateRangePicker
-        activePreset={activePreset}
-        onSelectPreset={handlePresetSelect}
-        startDate={startDate}
-        endDate={endDate}
-        onStartDateChange={(val) => {
-          setActivePreset('custom');
-          setStartDate(val);
-        }}
-        onEndDateChange={(val) => {
-          setActivePreset('custom');
-          setEndDate(val);
-        }}
-      />
+      <div className="print:hidden">
+        <ReportDateRangePicker
+          activePreset={activePreset}
+          onSelectPreset={handlePresetSelect}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={(val) => {
+            setActivePreset('custom');
+            setStartDate(val);
+          }}
+          onEndDateChange={(val) => {
+            setActivePreset('custom');
+            setEndDate(val);
+          }}
+        />
+      </div>
 
       {/* 6-Domain Navigation Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 print:hidden">
         {DOMAIN_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeDomain === tab.id;
@@ -232,6 +234,26 @@ export const ReportsPage = () => {
         })}
       </div>
 
+      {/* Print-only Official Header */}
+      <div className="hidden print:block p-4 mb-3 border-b-2 border-slate-900 bg-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#284661] text-white flex items-center justify-center font-bold text-sm">
+              NFI
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900 leading-tight">Indian Pharmacopoeia Commission</h2>
+              <p className="text-[11px] text-slate-500">Ministry of Health &amp; Family Welfare, Govt. of India</p>
+            </div>
+          </div>
+          <div className="text-right text-[11px] text-slate-600">
+            <p className="font-bold text-slate-900">Official Reports &amp; Analytics Ledger</p>
+            <p>Domain: <span className="font-semibold uppercase">{DOMAIN_TABS.find((t) => t.id === activeDomain)?.label || activeDomain}</span></p>
+            <p className="text-[10px] text-slate-400">Printed: {new Date().toLocaleString('en-IN')}</p>
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <AdminLoader text="Computing server-side aggregation pipelines &amp; timeseries charts..." />
       ) : error ? (
@@ -241,7 +263,7 @@ export const ReportsPage = () => {
           onRetry={fetchReportsData}
         />
       ) : (
-        <div className="space-y-4">
+        <div className="printable-report space-y-4">
           {/* ========================================================= */}
           {/* DOMAIN 1: USER REPORTS */}
           {/* ========================================================= */}
@@ -642,7 +664,7 @@ export const ReportsPage = () => {
           {/* ========================================================= */}
           {activeDomain === 'commerce' && domainData && (
             <div className="space-y-4 animate-in fade-in-0 duration-150">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <StatCard
                   title="Gross Revenue Realized"
                   value={`₹${(domainData.totalRevenueINR || 0).toLocaleString('en-IN')}`}
@@ -661,14 +683,14 @@ export const ReportsPage = () => {
                   iconBg="bg-blue-50"
                 />
 
-                <StatCard
+                {/* <StatCard
                   title="Average Order Value"
                   value={`₹${(domainData.averageOrderValueINR || 0).toLocaleString('en-IN')}`}
                   subtitle="Per successful order"
                   icon={CreditCard}
                   iconColor="text-[#E76120]"
                   iconBg="bg-[#FFF5EE]"
-                />
+                /> */}
 
                 <StatCard
                   title="Failed Orders"
