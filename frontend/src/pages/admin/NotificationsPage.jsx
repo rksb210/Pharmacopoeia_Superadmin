@@ -42,6 +42,7 @@ import NotificationPriorityBadge from '../../components/admin/notifications/Noti
 import NotificationPreviewModal from '../../components/admin/notifications/NotificationPreviewModal';
 import CreateEditNotificationModal from '../../components/admin/notifications/CreateEditNotificationModal';
 import NotificationDetailsModal from '../../components/admin/notifications/NotificationDetailsModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Use Cases' },
@@ -171,13 +172,94 @@ export const NotificationsPage = () => {
     }
   };
 
+  const fetchAllNotificationsForExport = async () => {
+    try {
+      const res = await notificationService.getNotifications({
+        page: 1,
+        limit: 5000,
+        status: activeTab,
+        category: categoryFilter,
+        channel: channelFilter,
+        priority: priorityFilter,
+        search: searchQuery,
+      });
+      return res?.notifications || notifications;
+    } catch {
+      return notifications;
+    }
+  };
+
+  const notificationExportColumns = [
+    { header: 'Campaign Title', key: 'title' },
+    { header: 'Use Case Category', key: 'category' },
+    { header: 'Message', key: 'message' },
+    {
+      header: 'Channels',
+      key: 'channels',
+      format: (val) => (Array.isArray(val) ? val.join(', ') : val || 'IN_APP'),
+    },
+    {
+      header: 'Priority',
+      key: 'priority',
+      format: (val) => (val || 'normal').toUpperCase(),
+    },
+    {
+      header: 'Target Audience',
+      key: 'targetAudience',
+      format: (val) =>
+        val?.type === 'ALL'
+          ? 'Universal (All)'
+          : val?.type === 'ROLES'
+          ? `Roles: ${val.roles?.join(', ')}`
+          : val?.type === 'USER_TYPES'
+          ? `Types: ${val.userTypes?.join(', ')}`
+          : 'Custom',
+    },
+    {
+      header: 'Delivered Users',
+      key: 'deliveryStats',
+      format: (val) => val?.deliveredCount ?? 0,
+    },
+    {
+      header: 'Read Users',
+      key: 'deliveryStats',
+      format: (val) => val?.readCount ?? 0,
+    },
+    {
+      header: 'Campaign Status',
+      key: 'status',
+      format: (val) => (val || 'draft').toUpperCase(),
+    },
+    {
+      header: 'Scheduled / Created',
+      key: 'createdAt',
+      format: (val) => (val ? new Date(val).toLocaleDateString('en-GB') : '—'),
+    },
+  ];
+
   return (
     <PageContainer>
       {/* Header */}
       <PageHeader
-        title="Notification &amp; Broadcast Center"
+        title="Notification & Broadcast Center"
         subtitle="Orchestrate multi-channel communications across In-App drawers, HTML email, SMS, and platform-wide top alert banners."
       >
+        <ExportDropdown
+          filename="notifications_campaigns_export"
+          title="Notification & Broadcast Campaigns Directory"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Status Tab', value: activeTab.toUpperCase() },
+            { label: 'Category Filter', value: categoryFilter.toUpperCase() },
+            { label: 'Total Records', value: totalItems || notifications.length },
+          ]}
+          columns={notificationExportColumns}
+          data={notifications}
+          onFetchData={fetchAllNotificationsForExport}
+          onFeedback={showFeedback}
+          permission={{ module: 'ENGAGEMENT', section: 'NOTIFICATIONS', action: 'VIEW' }}
+        />
+
         <Button
           variant="outline"
           size="sm"

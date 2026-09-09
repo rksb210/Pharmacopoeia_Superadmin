@@ -42,6 +42,7 @@ import FeedbackPriorityBadge from '../../components/admin/feedback/FeedbackPrior
 import AssignTicketModal from '../../components/admin/feedback/AssignTicketModal';
 import ReplyFeedbackModal from '../../components/admin/feedback/ReplyFeedbackModal';
 import FeedbackDetailsModal from '../../components/admin/feedback/FeedbackDetailsModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Categories' },
@@ -177,13 +178,78 @@ export const FeedbackPage = () => {
     fetchStats();
   };
 
+  const fetchAllFeedbackForExport = async () => {
+    try {
+      const res = await feedbackService.getFeedbacks({
+        page: 1,
+        limit: 5000,
+        status: activeTab,
+        category: categoryFilter,
+        section: sectionFilter,
+        priority: priorityFilter,
+        search: searchQuery,
+      });
+      return res?.feedback || tickets;
+    } catch {
+      return tickets;
+    }
+  };
+
+  const feedbackExportColumns = [
+    { header: 'Ticket ID', key: 'ticketId' },
+    { header: 'Category', key: 'category' },
+    { header: 'Subject', key: 'subject' },
+    { header: 'Message', key: 'message' },
+    {
+      header: 'Referenced Section',
+      key: 'content',
+      format: (val) => val?.section || 'Monographs',
+    },
+    {
+      header: 'Monograph Title',
+      key: 'content',
+      format: (val) => val?.monographTitle || 'General Feedback',
+    },
+    { header: 'Subscriber Name', key: 'userName' },
+    { header: 'Subscriber Email', key: 'userEmail' },
+    { header: 'Healthcare Category', key: 'userType' },
+    { header: 'Priority', key: 'priority', format: (val) => (val || 'medium').toUpperCase() },
+    {
+      header: 'Assigned Reviewer',
+      key: 'assignedTo',
+      format: (val) => val?.name || 'Unassigned',
+    },
+    { header: 'Status', key: 'status', format: (val) => (val || 'pending').toUpperCase() },
+    {
+      header: 'Submitted Date',
+      key: 'createdAt',
+      format: (val) => (val ? new Date(val).toLocaleDateString('en-GB') : '—'),
+    },
+  ];
+
   return (
     <PageContainer>
       {/* Header */}
       <PageHeader
-        title="Feedback &amp; Content Comments Management"
+        title="Feedback & Content Comments Management"
         subtitle="Review, triage, and resolve clinical corrections, monograph amendment suggestions, and feedback from healthcare professionals."
       >
+        <ExportDropdown
+          filename="feedback_tickets_export"
+          title="Subscriber Feedback & Comments Directory"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Status Filter', value: activeTab.toUpperCase() },
+            { label: 'Category Filter', value: categoryFilter.toUpperCase() },
+            { label: 'Total Records', value: totalItems || tickets.length },
+          ]}
+          columns={feedbackExportColumns}
+          data={tickets}
+          onFetchData={fetchAllFeedbackForExport}
+          onFeedback={showFeedback}
+          permission={{ module: 'ENGAGEMENT', section: 'FEEDBACK', action: 'VIEW' }}
+        />
+
         <Button
           variant="outline"
           size="sm"

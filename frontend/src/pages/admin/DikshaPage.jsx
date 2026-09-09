@@ -50,6 +50,7 @@ import CreateEditCourseModal from '../../components/admin/diksha/CreateEditCours
 import CourseDetailsModal from '../../components/admin/diksha/CourseDetailsModal';
 import CourseEnrollmentsModal from '../../components/admin/diksha/CourseEnrollmentsModal';
 import CourseWorkflowModal from '../../components/admin/diksha/CourseWorkflowModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Categories' },
@@ -198,6 +199,62 @@ export const DikshaPage = () => {
     }
   };
 
+  const fetchAllCoursesForExport = async () => {
+    try {
+      const res = await dikshaService.getCourses({
+        page: 1,
+        limit: 5000,
+        search: searchQuery,
+        category: selectedCategory,
+        status: selectedStatus,
+        pricing: selectedPricing,
+      });
+      return res?.courses || courses;
+    } catch {
+      return courses;
+    }
+  };
+
+  const dikshaExportColumns = [
+    { header: 'Course Code', key: 'code' },
+    { header: 'Course Title', key: 'title' },
+    {
+      header: 'Category',
+      key: 'category',
+      format: (val) => val?.replace(/_/g, ' ') || 'General',
+    },
+    {
+      header: 'Target Audience',
+      key: 'targetAudience',
+      format: (val) => (Array.isArray(val) ? val.join(', ') : val || 'Universal'),
+    },
+    {
+      header: 'Modules / Videos',
+      key: 'videos',
+      format: (val) => `${val?.length || 0} Modules`,
+    },
+    {
+      header: 'Duration (Mins)',
+      key: 'totalDurationMinutes',
+      format: (val) => `${val || 0} mins`,
+    },
+    {
+      header: 'Pricing (INR)',
+      key: 'isFree',
+      format: (val, item) => (val ? 'Free' : `₹${item.priceINR || 0}`),
+    },
+    {
+      header: 'Enrolled Learners',
+      key: 'enrollmentCount',
+      format: (val) => val ?? 0,
+    },
+    {
+      header: 'Status',
+      key: 'status',
+      format: (val) => (val || 'DRAFT').replace(/_/g, ' '),
+    },
+  ];
+
   return (
     <PageContainer>
       {/* Page Header */}
@@ -205,6 +262,21 @@ export const DikshaPage = () => {
         title="DIKSHA Programme · Digital LMS & Certification"
         subtitle="Digital Initiative for Knowledge & Skill Enhancement of Healthcare Associates · IPC Clinical Learning Management System"
       >
+        <ExportDropdown
+          filename="diksha_courses_catalog_export"
+          title="DIKSHA Learning Catalog Directory"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Category Filter', value: selectedCategory.toUpperCase() },
+            { label: 'Status Filter', value: selectedStatus.toUpperCase() },
+            { label: 'Total Records', value: totalItems || courses.length },
+          ]}
+          columns={dikshaExportColumns}
+          data={courses}
+          onFetchData={fetchAllCoursesForExport}
+          permission={{ module: 'INTEGRATED', section: 'DIKSHA', action: 'VIEW' }}
+        />
+
         <Button
           variant="outline"
           size="sm"

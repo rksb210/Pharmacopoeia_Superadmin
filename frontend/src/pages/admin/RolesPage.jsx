@@ -38,6 +38,7 @@ import PermissionGuard from '../../components/admin/common/PermissionGuard';
 import CreateEditRoleModal from '../../components/admin/roles/CreateEditRoleModal';
 import RoleDetailsModal from '../../components/admin/roles/RoleDetailsModal';
 import AssignRoleUsersModal from '../../components/admin/roles/AssignRoleUsersModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 export const RolesPage = () => {
   const { user: currentUser } = useAuth();
@@ -177,13 +178,53 @@ export const RolesPage = () => {
     return matchesSearch && matchesType;
   });
 
+  const roleExportColumns = [
+    { header: 'Role Name', key: 'name' },
+    { header: 'Role Code', key: 'code' },
+    {
+      header: 'Role Type',
+      key: 'isSystemDefault',
+      format: (val) => (val ? 'System Default' : 'Custom Role'),
+    },
+    {
+      header: 'Assigned Staff',
+      key: 'assignedUsersCount',
+      format: (val) => `${val || 0} Staff`,
+    },
+    {
+      header: 'Permissions Scope',
+      key: 'permissionCodes',
+      format: (val, item) => (item.code === 'superadmin' ? 'Global Wildcard (*)' : `${val?.length || 0} Permissions`),
+    },
+    {
+      header: 'Status',
+      key: 'isActive',
+      format: (val) => (val ? 'Active' : 'Inactive'),
+    },
+    { header: 'Description', key: 'description' },
+  ];
+
   return (
     <PageContainer>
       {/* Header */}
       <PageHeader
-        title="Role &amp; Permission Management"
+        title="Role & Permission Management"
         subtitle="Configure RBAC security policies, fine-grained Module/Section matrix actions, and user role assignments."
       >
+        <ExportDropdown
+          filename="roles_matrix_export"
+          title="Roles & Permissions Directory"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Filter Type', value: typeFilter.toUpperCase() },
+            { label: 'Total Records', value: filteredRoles.length },
+          ]}
+          columns={roleExportColumns}
+          data={filteredRoles}
+          onFeedback={showFeedback}
+          permission={{ module: 'USERS', section: 'ROLES', action: 'VIEW' }}
+        />
+
         <Button
           variant="outline"
           size="sm"

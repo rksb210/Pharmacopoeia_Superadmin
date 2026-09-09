@@ -44,6 +44,7 @@ import CouponCard from '../../components/admin/coupons/CouponCard';
 import CreateEditCouponModal from '../../components/admin/coupons/CreateEditCouponModal';
 import CouponDetailsModal from '../../components/admin/coupons/CouponDetailsModal';
 import AssignDirectDiscountModal from '../../components/admin/coupons/AssignDirectDiscountModal';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'OTHERS'];
 
@@ -170,13 +171,88 @@ export const DiscountsPage = () => {
     }
   };
 
+  const fetchAllCouponsForExport = async () => {
+    try {
+      const res = await couponService.getCoupons({
+        page: 1,
+        limit: 5000,
+        search: searchQuery,
+        status: activeTab,
+        discountType: discountTypeFilter,
+        userType: userTypeFilter,
+      });
+      return res?.coupons || coupons;
+    } catch {
+      return coupons;
+    }
+  };
+
+  const couponExportColumns = [
+    { header: 'Coupon Code', key: 'code' },
+    { header: 'Campaign Title', key: 'title' },
+    {
+      header: 'Discount Value',
+      key: 'discountValue',
+      format: (val, item) =>
+        item.discountType === 'percentage'
+          ? `${val}% OFF`
+          : `₹${val?.toLocaleString('en-IN') || 0} OFF`,
+    },
+    {
+      header: 'Eligible User Types',
+      key: 'applicableUserTypes',
+      format: (val) =>
+        Array.isArray(val) && val.includes('ALL')
+          ? 'Universal (All)'
+          : Array.isArray(val)
+          ? val.join(', ')
+          : 'All',
+    },
+    {
+      header: 'Usage Progress',
+      key: 'usageCount',
+      format: (val, item) => `${val || 0} / ${item.usageLimit > 0 ? item.usageLimit : 'Unlimited'}`,
+    },
+    {
+      header: 'Valid From',
+      key: 'startDate',
+      format: (val) => (val ? new Date(val).toLocaleDateString('en-GB') : '—'),
+    },
+    {
+      header: 'Valid Until',
+      key: 'endDate',
+      format: (val) => (val ? new Date(val).toLocaleDateString('en-GB') : '—'),
+    },
+    {
+      header: 'Status',
+      key: 'isActive',
+      format: (val) => (val ? 'Active' : 'Inactive'),
+    },
+  ];
+
   return (
     <PageContainer>
       {/* Header */}
       <PageHeader
-        title="Discounts &amp; Coupon Management"
-        subtitle="Manage promotional discount codes, direct subscriber concessions, percentage/fixed savings, and redemption limits."
+        title="Discounts & Promotions"
+        subtitle="Manage promotional discount codes, direct student/industry concessions, and seasonal sales campaigns."
       >
+        <ExportDropdown
+          filename="coupons_discounts_export"
+          title="Discounts & Promotional Campaigns"
+          metadata={[
+            { label: 'Export Date', value: new Date().toLocaleString() },
+            { label: 'Campaign Tab', value: activeTab.toUpperCase() },
+            { label: 'User Type Filter', value: userTypeFilter.toUpperCase() },
+            { label: 'Total Records', value: totalItems || coupons.length },
+          ]}
+          columns={couponExportColumns}
+          data={coupons}
+          onFetchData={fetchAllCouponsForExport}
+          onFeedback={showFeedback}
+          permission={{ module: 'COMMERCIAL', section: 'COUPONS', action: 'VIEW' }}
+        />
+
         <Button
           variant="outline"
           size="sm"

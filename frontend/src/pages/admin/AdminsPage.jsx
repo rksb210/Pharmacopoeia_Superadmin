@@ -33,6 +33,7 @@ import adminService from '../../services/admin.service';
 import { useAuth } from '../../context/AuthContext';
 import { usePermission } from '../../context/PermissionContext';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 // Modals
 import CreateEditAdminModal from '../../components/admin/admins/CreateEditAdminModal';
@@ -164,6 +165,41 @@ export const AdminsPage = () => {
     fetchAdmins();
   };
 
+  const fetchAllAdminsForExport = async () => {
+    try {
+      const res = await adminService.getAdmins({
+        page: 1,
+        limit: 5000,
+        search: searchQuery,
+        role: roleFilter,
+        status: statusFilter,
+      });
+      return res?.admins || admins;
+    } catch {
+      return admins;
+    }
+  };
+
+  const adminExportColumns = [
+    { header: 'Full Name', key: 'name' },
+    { header: 'Email Address', key: 'email' },
+    { header: 'Username', key: 'username' },
+    { header: 'Role', key: 'role', format: (v) => v?.toUpperCase() },
+    { header: 'Department', key: 'department' },
+    { header: 'Designation', key: 'designation' },
+    { header: 'Phone Number', key: 'phoneNumber' },
+    {
+      header: 'Account Status',
+      key: 'isActive',
+      format: (v) => (v !== false ? 'ACTIVE' : 'INACTIVE'),
+    },
+    {
+      header: 'Created Date',
+      key: 'createdAt',
+      format: (v) => (v ? new Date(v).toLocaleDateString('en-IN') : 'N/A'),
+    },
+  ];
+
   return (
     <PageContainer>
       {/* Page Header */}
@@ -171,6 +207,21 @@ export const AdminsPage = () => {
         title="Administrator Management"
         subtitle="Manage official Indian Pharmacopoeia Commission administrative staff, roles, and fine-grained security policies."
       >
+        <ExportDropdown
+          filename="NFI_Administrators_Ledger"
+          title="Indian Pharmacopoeia Commission - Core Administrators Ledger"
+          subtitle={`Role: ${roleFilter || 'All'} | Status: ${statusFilter || 'All'}`}
+          metadata={[
+            `Total: ${stats.totalAdmins || 0}`,
+            `Active: ${stats.activeAdmins || 0}`,
+            `Inactive: ${stats.inactiveAdmins || 0}`,
+          ]}
+          columns={adminExportColumns}
+          onFetchData={fetchAllAdminsForExport}
+          onFeedback={showFeedback}
+          permission={{ module: 'USERS', section: 'ADMINS', action: 'EXPORT' }}
+        />
+
         <Button
           variant="outline"
           size="sm"
