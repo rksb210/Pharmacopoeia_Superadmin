@@ -1,4 +1,5 @@
 import subscriberService from '../services/subscriber.service.js';
+import { auditService } from '../services/audit.service.js';
 
 export const getUserTypes = async (req, res, next) => {
   try {
@@ -91,6 +92,21 @@ export const getSubscriberById = async (req, res, next) => {
 export const createSubscriber = async (req, res) => {
   try {
     const newSubscriber = await subscriberService.createSubscriber(req.body);
+
+    await auditService.log(req, {
+      action: 'SUBSCRIBER_CREATED',
+      module: 'SUBSCRIBERS',
+      entity: 'Subscriber',
+      entityId: newSubscriber._id,
+      status: 'SUCCESS',
+      details: `Created subscriber account for ${newSubscriber.name} (${newSubscriber.email}). Type: ${newSubscriber.userType}.`,
+      newValues: {
+        name: newSubscriber.name,
+        email: newSubscriber.email,
+        userType: newSubscriber.userType,
+      },
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Subscriber account created successfully.',
@@ -107,6 +123,22 @@ export const createSubscriber = async (req, res) => {
 export const updateSubscriber = async (req, res) => {
   try {
     const updated = await subscriberService.updateSubscriber(req.params.id, req.body);
+
+    await auditService.log(req, {
+      action: 'SUBSCRIBER_UPDATED',
+      module: 'SUBSCRIBERS',
+      entity: 'Subscriber',
+      entityId: updated._id,
+      status: 'SUCCESS',
+      details: `Updated subscriber profile for ${updated.name} (${updated.email}).`,
+      newValues: {
+        name: updated.name,
+        email: updated.email,
+        userType: updated.userType,
+        phoneNumber: updated.phoneNumber,
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Subscriber profile updated successfully.',
@@ -124,6 +156,17 @@ export const toggleSubscriberStatus = async (req, res) => {
   try {
     const { isActive } = req.body;
     const subscriber = await subscriberService.toggleStatus(req.params.id, isActive);
+
+    await auditService.log(req, {
+      action: 'SUBSCRIBER_STATUS_CHANGED',
+      module: 'SUBSCRIBERS',
+      entity: 'Subscriber',
+      entityId: subscriber._id,
+      status: 'SUCCESS',
+      details: `Subscriber ${subscriber.name} (${subscriber.email}) ${isActive ? 'activated' : 'deactivated'}.`,
+      newValues: { isActive },
+    });
+
     return res.status(200).json({
       success: true,
       message: `Subscriber account ${isActive ? 'activated' : 'deactivated'} successfully.`,
@@ -141,6 +184,16 @@ export const resetSubscriberPassword = async (req, res) => {
   try {
     const { newPassword } = req.body;
     const subscriber = await subscriberService.resetPassword(req.params.id, newPassword);
+
+    await auditService.log(req, {
+      action: 'SUBSCRIBER_PASSWORD_RESET',
+      module: 'SUBSCRIBERS',
+      entity: 'Subscriber',
+      entityId: subscriber._id,
+      status: 'SUCCESS',
+      details: `Administrative password reset performed for subscriber ${subscriber.name} (${subscriber.email}).`,
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Subscriber password reset successfully.',
@@ -162,6 +215,16 @@ export const assignTrial = async (req, res) => {
   try {
     const { days = 14 } = req.body;
     const subscriber = await subscriberService.assignTrial(req.params.id, days);
+
+    await auditService.log(req, {
+      action: 'SUBSCRIBER_TRIAL_ASSIGNED',
+      module: 'SUBSCRIBERS',
+      entity: 'Subscriber',
+      entityId: subscriber._id,
+      status: 'SUCCESS',
+      details: `Assigned ${days}-day Free Trial to subscriber ${subscriber.name} (${subscriber.email}).`,
+    });
+
     return res.status(200).json({
       success: true,
       message: `${days}-day Free Trial assigned successfully.`,
@@ -179,6 +242,16 @@ export const assignComplimentary = async (req, res) => {
   try {
     const { planName = 'VIP Institutional Pass', months = 12 } = req.body;
     const subscriber = await subscriberService.assignComplimentary(req.params.id, planName, months);
+
+    await auditService.log(req, {
+      action: 'SUBSCRIBER_COMPLIMENTARY_GRANTED',
+      module: 'SUBSCRIBERS',
+      entity: 'Subscriber',
+      entityId: subscriber._id,
+      status: 'SUCCESS',
+      details: `Granted ${months}-month Complimentary access (${planName}) to ${subscriber.name} (${subscriber.email}).`,
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Complimentary subscription license granted successfully.',
@@ -196,6 +269,16 @@ export const assignDiscount = async (req, res) => {
   try {
     const { discountPercent = 10, notes = '' } = req.body;
     const subscriber = await subscriberService.assignDiscount(req.params.id, discountPercent, notes);
+
+    await auditService.log(req, {
+      action: 'SUBSCRIBER_DISCOUNT_ASSIGNED',
+      module: 'SUBSCRIBERS',
+      entity: 'Subscriber',
+      entityId: subscriber._id,
+      status: 'SUCCESS',
+      details: `Granted ${discountPercent}% discount voucher to ${subscriber.name} (${subscriber.email}). Notes: ${notes || 'None'}.`,
+    });
+
     return res.status(200).json({
       success: true,
       message: `${discountPercent}% discount voucher assigned successfully.`,

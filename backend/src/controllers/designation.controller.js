@@ -1,4 +1,5 @@
 import designationService from '../services/designation.service.js';
+import { auditService } from '../services/audit.service.js';
 
 export const getDesignations = async (req, res, next) => {
   try {
@@ -51,6 +52,17 @@ export const getDesignationStats = async (req, res, next) => {
 export const createDesignation = async (req, res, next) => {
   try {
     const des = await designationService.createDesignation(req.body, req.user);
+
+    await auditService.log(req, {
+      action: 'DESIGNATION_CREATED',
+      module: 'DESIGNATIONS',
+      entity: 'Designation',
+      entityId: des._id,
+      status: 'SUCCESS',
+      details: `Created designation "${des.name}" (${des.code}).`,
+      newValues: { name: des.name, code: des.code, department: des.department },
+    });
+
     return res.status(201).json({ success: true, message: 'Designation created successfully.', designation: des });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
@@ -60,6 +72,17 @@ export const createDesignation = async (req, res, next) => {
 export const updateDesignation = async (req, res, next) => {
   try {
     const des = await designationService.updateDesignation(req.params.id, req.body);
+
+    await auditService.log(req, {
+      action: 'DESIGNATION_UPDATED',
+      module: 'DESIGNATIONS',
+      entity: 'Designation',
+      entityId: des._id,
+      status: 'SUCCESS',
+      details: `Updated designation "${des.name}" (${des.code}).`,
+      newValues: { name: des.name, code: des.code, department: des.department },
+    });
+
     return res.status(200).json({ success: true, message: 'Designation updated successfully.', designation: des });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
@@ -70,6 +93,17 @@ export const toggleDesignationStatus = async (req, res, next) => {
   try {
     const { isActive } = req.body;
     const des = await designationService.toggleDesignationStatus(req.params.id, isActive);
+
+    await auditService.log(req, {
+      action: 'DESIGNATION_STATUS_CHANGED',
+      module: 'DESIGNATIONS',
+      entity: 'Designation',
+      entityId: des._id,
+      status: 'SUCCESS',
+      details: `Designation "${des.name}" ${isActive ? 'activated' : 'deactivated'}.`,
+      newValues: { isActive },
+    });
+
     return res.status(200).json({ success: true, message: `Designation ${isActive ? 'activated' : 'deactivated'} successfully.`, designation: des });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
@@ -79,6 +113,16 @@ export const toggleDesignationStatus = async (req, res, next) => {
 export const deleteDesignation = async (req, res, next) => {
   try {
     const result = await designationService.deleteDesignation(req.params.id);
+
+    await auditService.log(req, {
+      action: 'DESIGNATION_DELETED',
+      module: 'DESIGNATIONS',
+      entity: 'Designation',
+      entityId: req.params.id,
+      status: 'SUCCESS',
+      details: `Deleted designation ID ${req.params.id}.`,
+    });
+
     return res.status(200).json({ success: true, ...result });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });

@@ -1,4 +1,5 @@
 import crmService from '../services/crm.service.js';
+import { auditService } from '../services/audit.service.js';
 
 export const getCRMStats = async (req, res, next) => {
   try {
@@ -61,6 +62,17 @@ export const addCustomerNote = async (req, res) => {
       { note, priority },
       req.user
     );
+
+    await auditService.log(req, {
+      action: 'CRM_NOTE_ADDED',
+      module: 'CRM',
+      entity: 'CRMContact',
+      entityId: req.params.id,
+      status: 'SUCCESS',
+      details: `Added CRM note [${priority || 'NORMAL'}] for customer ID ${req.params.id}: "${note.slice(0, 80)}${note.length > 80 ? '...' : ''}"`,
+      newValues: { priority, note },
+    });
+
     return res.status(201).json({
       success: true,
       message: 'CRM note recorded successfully.',

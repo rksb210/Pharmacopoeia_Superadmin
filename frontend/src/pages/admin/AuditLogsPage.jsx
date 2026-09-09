@@ -50,6 +50,11 @@ const MODULES = [
   { id: 'ORDERS', label: 'Orders & Payments' },
   { id: 'NOTIFICATIONS', label: 'Notifications' },
   { id: 'FEEDBACK', label: 'Feedback & Comments' },
+  { id: 'CRM', label: 'CRM & Marquee Alerts' },
+  { id: 'DIKSHA', label: 'DIKSHA Portal' },
+  { id: 'DEPARTMENTS', label: 'Departments Master' },
+  { id: 'DESIGNATIONS', label: 'Designations Master' },
+  { id: 'BULK_SUBSCRIPTIONS', label: 'Bulk Subscriptions' },
   { id: 'CONTENT', label: 'Monographs & Content' },
   { id: 'SYSTEM', label: 'System & Config' },
 ];

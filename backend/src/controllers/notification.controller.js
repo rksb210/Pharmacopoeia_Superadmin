@@ -1,4 +1,5 @@
 import notificationService from '../services/notification.service.js';
+import { auditService } from '../services/audit.service.js';
 
 export const getNotificationStats = async (req, res, next) => {
   try {
@@ -51,6 +52,22 @@ export const getNotificationById = async (req, res, next) => {
 export const createNotification = async (req, res) => {
   try {
     const newNotif = await notificationService.createNotification(req.body, req.user);
+
+    await auditService.log(req, {
+      action: 'NOTIFICATION_CREATED',
+      module: 'NOTIFICATIONS',
+      entity: 'Notification',
+      entityId: newNotif._id,
+      status: 'SUCCESS',
+      details: `Created notification campaign "${newNotif.title}" (Channels: ${(newNotif.channel || []).join(', ')}).`,
+      newValues: {
+        title: newNotif.title,
+        category: newNotif.category,
+        priority: newNotif.priority,
+        targetUserTypes: newNotif.targetUserTypes,
+      },
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Notification campaign created successfully.',
@@ -67,6 +84,21 @@ export const createNotification = async (req, res) => {
 export const updateNotification = async (req, res) => {
   try {
     const updated = await notificationService.updateNotification(req.params.id, req.body);
+
+    await auditService.log(req, {
+      action: 'NOTIFICATION_UPDATED',
+      module: 'NOTIFICATIONS',
+      entity: 'Notification',
+      entityId: updated._id,
+      status: 'SUCCESS',
+      details: `Updated notification campaign "${updated.title}".`,
+      newValues: {
+        title: updated.title,
+        category: updated.category,
+        priority: updated.priority,
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Notification campaign updated successfully.',
@@ -84,6 +116,17 @@ export const toggleNotificationStatus = async (req, res) => {
   try {
     const { isActive } = req.body;
     const updated = await notificationService.toggleNotificationStatus(req.params.id, isActive);
+
+    await auditService.log(req, {
+      action: 'NOTIFICATION_STATUS_CHANGED',
+      module: 'NOTIFICATIONS',
+      entity: 'Notification',
+      entityId: updated._id,
+      status: 'SUCCESS',
+      details: `Notification campaign "${updated.title}" ${isActive ? 'activated' : 'deactivated'}.`,
+      newValues: { isActive },
+    });
+
     return res.status(200).json({
       success: true,
       message: `Notification ${isActive ? 'activated' : 'deactivated'} successfully.`,
@@ -100,6 +143,16 @@ export const toggleNotificationStatus = async (req, res) => {
 export const dispatchNotification = async (req, res) => {
   try {
     const dispatched = await notificationService.dispatchNotification(req.params.id);
+
+    await auditService.log(req, {
+      action: 'NOTIFICATION_DISPATCHED',
+      module: 'NOTIFICATIONS',
+      entity: 'Notification',
+      entityId: dispatched._id,
+      status: 'SUCCESS',
+      details: `Broadcast notification campaign "${dispatched.title}" dispatched. Total dispatched: ${dispatched.analytics?.sentCount || 0}.`,
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Notification campaign dispatched across selected channels.',

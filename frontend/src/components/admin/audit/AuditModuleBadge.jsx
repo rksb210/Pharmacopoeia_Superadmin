@@ -24,6 +24,17 @@ export const AuditModuleBadge = ({ module }) => {
         return 'bg-sky-50 text-sky-800 border-sky-200';
       case 'FEEDBACK':
         return 'bg-teal-50 text-teal-800 border-teal-200';
+      case 'CRM':
+        return 'bg-amber-100 text-amber-900 border-amber-300';
+      case 'DIKSHA':
+      case 'INTEGRATED':
+        return 'bg-[#FFF5EE] text-[#E76120] border-orange-200';
+      case 'DEPARTMENTS':
+        return 'bg-violet-50 text-violet-800 border-violet-200';
+      case 'DESIGNATIONS':
+        return 'bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200';
+      case 'BULK_SUBSCRIPTIONS':
+        return 'bg-blue-100 text-blue-900 border-blue-300';
       case 'CONTENT':
         return 'bg-cyan-50 text-cyan-800 border-cyan-200';
       case 'SYSTEM':

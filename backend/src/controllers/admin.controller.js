@@ -71,12 +71,13 @@ export const getAdminById = async (req, res, next) => {
 export const createAdmin = async (req, res, next) => {
   try {
     const newAdmin = await adminService.createAdmin(req.body, req.user);
+    const entity = newAdmin.role === 'admin' ? 'Admin' : (newAdmin.role === 'subadmin' ? 'SubAdmin' : (newAdmin.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser'));
 
     // Record Audit Log
     await auditService.log(req, {
       action: 'ADMIN_CREATED',
       module: 'ADMINS',
-      entity: 'User',
+      entity,
       entityId: newAdmin._id,
       status: 'SUCCESS',
       details: `Created new ${newAdmin.role} account for ${newAdmin.name} (${newAdmin.email}).`,
@@ -95,6 +96,14 @@ export const createAdmin = async (req, res, next) => {
       admin: newAdmin,
     });
   } catch (error) {
+    await auditService.log(req, {
+      action: 'ADMIN_CREATION_FAILED',
+      module: 'ADMINS',
+      entity: req.body?.role === 'subadmin' ? 'SubAdmin' : 'Admin',
+      status: 'FAILURE',
+      details: `Failed to create administrator account: ${error.message}`,
+      errorMessage: error.message,
+    });
     return res.status(400).json({
       success: false,
       message: error.message,
@@ -110,15 +119,16 @@ export const createAdmin = async (req, res, next) => {
 export const updateAdmin = async (req, res, next) => {
   try {
     const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body, req.user);
+    const entity = updatedAdmin.role === 'admin' ? 'Admin' : (updatedAdmin.role === 'subadmin' ? 'SubAdmin' : (updatedAdmin.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser'));
 
     // Record Audit Log
     await auditService.log(req, {
       action: 'ADMIN_UPDATED',
       module: 'ADMINS',
-      entity: 'User',
+      entity,
       entityId: updatedAdmin._id,
       status: 'SUCCESS',
-      details: `Updated details for ${updatedAdmin.role} account ${updatedAdmin.name}.`,
+      details: `Updated details for ${updatedAdmin.role} account ${updatedAdmin.name} (${updatedAdmin.email}).`,
       newValues: {
         name: updatedAdmin.name,
         email: updatedAdmin.email,
@@ -150,12 +160,13 @@ export const toggleAdminStatus = async (req, res, next) => {
   try {
     const { isActive } = req.body;
     const admin = await adminService.toggleAdminStatus(req.params.id, isActive, req.user);
+    const entity = admin.role === 'admin' ? 'Admin' : (admin.role === 'subadmin' ? 'SubAdmin' : (admin.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser'));
 
     // Record Audit Log
     await auditService.log(req, {
       action: 'ADMIN_STATUS_CHANGED',
       module: 'ADMINS',
-      entity: 'User',
+      entity,
       entityId: admin._id,
       status: 'SUCCESS',
       details: `Administrator ${admin.name} (${admin.email}) ${isActive ? 'activated' : 'deactivated'}.`,
@@ -184,12 +195,13 @@ export const resetAdminPassword = async (req, res, next) => {
   try {
     const { newPassword } = req.body;
     const admin = await adminService.resetAdminPassword(req.params.id, newPassword, req.user);
+    const entity = admin.role === 'admin' ? 'Admin' : (admin.role === 'subadmin' ? 'SubAdmin' : (admin.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser'));
 
     // Record Audit Log
     await auditService.log(req, {
       action: 'ADMIN_PASSWORD_RESET',
       module: 'ADMINS',
-      entity: 'User',
+      entity,
       entityId: admin._id,
       status: 'SUCCESS',
       details: `Password reset performed for administrator ${admin.name} (${admin.email}).`,
@@ -225,12 +237,13 @@ export const updateAdminPermissions = async (req, res, next) => {
       customPermissions,
       req.user
     );
+    const entity = admin.role === 'admin' ? 'Admin' : (admin.role === 'subadmin' ? 'SubAdmin' : (admin.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser'));
 
     // Record Audit Log
     await auditService.log(req, {
       action: 'ADMIN_PERMISSIONS_UPDATED',
       module: 'ADMINS',
-      entity: 'User',
+      entity,
       entityId: admin._id,
       status: 'SUCCESS',
       details: `Assigned direct custom permissions to ${admin.name} (${admin.email}).`,

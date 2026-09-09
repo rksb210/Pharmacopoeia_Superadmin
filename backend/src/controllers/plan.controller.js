@@ -1,4 +1,5 @@
 import planService from '../services/plan.service.js';
+import { auditService } from '../services/audit.service.js';
 
 export const getPlansStats = async (req, res, next) => {
   try {
@@ -64,6 +65,22 @@ export const getPlanSubscribers = async (req, res, next) => {
 export const createPlan = async (req, res) => {
   try {
     const newPlan = await planService.createPlan(req.body, req.user);
+
+    await auditService.log(req, {
+      action: 'PLAN_CREATED',
+      module: 'PLANS',
+      entity: 'Plan',
+      entityId: newPlan._id,
+      status: 'SUCCESS',
+      details: `Created new subscription plan "${newPlan.name}" (${newPlan.code}) at ₹${newPlan.pricing?.basePriceINR}.`,
+      newValues: {
+        name: newPlan.name,
+        code: newPlan.code,
+        tier: newPlan.tier,
+        pricing: newPlan.pricing,
+      },
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Plan created successfully.',
@@ -80,6 +97,22 @@ export const createPlan = async (req, res) => {
 export const updatePlan = async (req, res) => {
   try {
     const updated = await planService.updatePlan(req.params.id, req.body, req.user);
+
+    await auditService.log(req, {
+      action: 'PLAN_PRICING_UPDATED',
+      module: 'PLANS',
+      entity: 'Plan',
+      entityId: updated._id,
+      status: 'SUCCESS',
+      details: `Updated plan configurations and pricing for "${updated.name}" (${updated.code}).`,
+      newValues: {
+        name: updated.name,
+        code: updated.code,
+        pricing: updated.pricing,
+        features: updated.features,
+      },
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Plan pricing & configurations updated successfully.',
@@ -97,6 +130,17 @@ export const togglePlanStatus = async (req, res) => {
   try {
     const { isActive } = req.body;
     const plan = await planService.togglePlanStatus(req.params.id, isActive, req.user);
+
+    await auditService.log(req, {
+      action: 'PLAN_STATUS_CHANGED',
+      module: 'PLANS',
+      entity: 'Plan',
+      entityId: plan._id,
+      status: 'SUCCESS',
+      details: `Plan "${plan.name}" (${plan.code}) ${isActive ? 'activated' : 'deactivated'}.`,
+      newValues: { isActive },
+    });
+
     return res.status(200).json({
       success: true,
       message: `Plan ${isActive ? 'activated' : 'deactivated'} successfully.`,
