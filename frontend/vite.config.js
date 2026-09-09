@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
   ],
+  server:{host:true},
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
