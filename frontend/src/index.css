@@ -136,8 +136,8 @@
 
 /* ----------------------------------------------------
    Print Optimization & Isolation
-   Ensures only the target invoice or printable card is
-   rendered when printing or generating PDF.
+   Ensures both invoices and reports print cleanly
+   without blank pages or layout cutoff.
    ---------------------------------------------------- */
 @media print {
   body {
@@ -149,42 +149,100 @@
     print-color-adjust: exact !important;
   }
 
-  /* Hide everything on the page by default when printing */
-  body * {
+  /* Prevent cutoff on multi-page printouts */
+  html,
+  body,
+  #root,
+  .h-screen,
+  .w-screen,
+  .overflow-hidden,
+  .overflow-y-auto,
+  main {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    width: 100% !important;
+  }
+
+  /* Always hide app navigation sidebar, header, buttons, and backdrops in print */
+  aside,
+  header,
+  nav,
+  button,
+  .print\:hidden,
+  .no-print,
+  [data-radix-dialog-overlay] {
+    display: none !important;
     visibility: hidden !important;
   }
 
-  /* Reveal only .printable-invoice and its descendants */
-  .printable-invoice,
-  .printable-invoice * {
-    visibility: visible !important;
+  /* ----------------------------------------------------
+     Case 1: When printing an invoice (modal or card)
+     ---------------------------------------------------- */
+  body.printing-invoice aside,
+  body.printing-invoice header,
+  body.printing-invoice main,
+  body:has(.printable-invoice) aside,
+  body:has(.printable-invoice) header,
+  body:has(.printable-invoice) main,
+  body:has(#printable-invoice) aside,
+  body:has(#printable-invoice) header,
+  body:has(#printable-invoice) main {
+    display: none !important;
   }
 
-  /* Position .printable-invoice at the very top-left of the page */
-  .printable-invoice {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+  /* Reset Radix dialog wrappers so invoice prints without clipping or offset */
+  div[role="dialog"]:has(.printable-invoice),
+  div[role="dialog"]:has(#printable-invoice) {
+    position: static !important;
+    transform: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  div[role="dialog"]:has(.printable-invoice) > div,
+  div[role="dialog"]:has(#printable-invoice) > div {
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .printable-invoice,
+  #printable-invoice {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 1.5rem !important;
     border: 1px solid #e2e8f0 !important;
     border-radius: 12px !important;
     box-shadow: none !important;
     background: #ffffff !important;
+    page-break-inside: avoid;
   }
 
-  /* Completely remove print-hidden elements, buttons from print layout */
-  .print\:hidden,
-  .printable-invoice .print\:hidden,
-  button {
-    display: none !important;
-    visibility: hidden !important;
+  /* ----------------------------------------------------
+     Case 2: When printing a page (e.g. Reports Page)
+     ---------------------------------------------------- */
+  .printable-report {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   @page {
     size: A4 portrait;
-    margin: 10mm;
+    margin: 12mm 10mm;
   }
 }
