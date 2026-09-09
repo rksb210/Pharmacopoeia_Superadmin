@@ -642,7 +642,7 @@ export const ReportsPage = () => {
           {/* ========================================================= */}
           {activeDomain === 'commerce' && domainData && (
             <div className="space-y-4 animate-in fade-in-0 duration-150">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <StatCard
                   title="Gross Revenue Realized"
                   value={`₹${(domainData.totalRevenueINR || 0).toLocaleString('en-IN')}`}
@@ -661,14 +661,14 @@ export const ReportsPage = () => {
                   iconBg="bg-blue-50"
                 />
 
-                <StatCard
+                {/* <StatCard
                   title="Average Order Value"
                   value={`₹${(domainData.averageOrderValueINR || 0).toLocaleString('en-IN')}`}
                   subtitle="Per successful order"
                   icon={CreditCard}
                   iconColor="text-[#E76120]"
                   iconBg="bg-[#FFF5EE]"
-                />
+                /> */}
 
                 <StatCard
                   title="Failed Orders"

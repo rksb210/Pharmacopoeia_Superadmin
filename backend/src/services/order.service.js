@@ -8,226 +8,10 @@ import { escapeRegex } from '../middlewares/security.middleware.js';
 
 export const orderService = {
   /**
-   * Seed realistic commercial orders across all transaction states
+   * Seed realistic commercial orders (Disabled to keep orders 100% dynamic)
    */
   seedDefaultOrders: async () => {
-    const existingOrders = await Order.countDocuments();
-    if (existingOrders > 0) return;
-
-    const [subscribers, plans] = await Promise.all([
-      Subscriber.find().limit(5).lean(),
-      Plan.find().limit(5).lean(),
-    ]);
-
-    if (subscribers.length === 0) return;
-
-    const defaultOrders = [
-      {
-        orderNumber: 'ORD-2026-901241',
-        invoiceNumber: 'INV-2026-004121',
-        user: subscribers[0]._id,
-        userName: subscribers[0].name,
-        userEmail: subscribers[0].email,
-        userType: subscribers[0].userType || 'DOCTOR',
-        planName: 'Individual Practitioner Annual Pass',
-        planCode: 'NFI-INDIVIDUAL',
-        tier: 'INDIVIDUAL',
-        pricing: {
-          baseAmount: 3500,
-          discountAmount: 500,
-          couponCode: 'MED-SPECIAL',
-          taxRatePercent: 18,
-          taxAmount: 540,
-          totalAmount: 3540,
-          currency: 'INR',
-        },
-        orderStatus: 'completed',
-        payment: {
-          status: 'paid',
-          gateway: 'Razorpay',
-          gatewayTransactionId: 'pay_Nsf910284Kla',
-          paymentMethod: 'UPI',
-          paidAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-          gatewaySignature: 'hmac_sha256_verified_sig_99120',
-        },
-        clientIp: '103.21.124.55',
-        auditTimeline: [
-          {
-            action: 'Checkout Initiated',
-            performedBy: 'Subscriber',
-            timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-            note: 'Initiated checkout via Razorpay Gateway',
-            previousStatus: null,
-            newStatus: 'processing',
-          },
-          {
-            action: 'Payment Captured & Verified',
-            performedBy: 'Razorpay Webhook (Server)',
-            timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-            note: 'Captured ₹3,540 via UPI transaction pay_Nsf910284Kla',
-            previousStatus: 'processing',
-            newStatus: 'completed',
-          },
-        ],
-      },
-      {
-        orderNumber: 'ORD-2026-881202',
-        invoiceNumber: 'INV-2026-004122',
-        user: subscribers[1]?._id || subscribers[0]._id,
-        userName: subscribers[1]?.name || 'Dr. Kavita Nair',
-        userEmail: subscribers[1]?.email || 'kavita.nair@aiims.edu',
-        userType: 'STUDENT',
-        planName: 'Academic Scholar Formulary Pass',
-        planCode: 'NFI-STUDENT-SPECIAL',
-        tier: 'STUDENT',
-        pricing: {
-          baseAmount: 1200,
-          discountAmount: 200,
-          couponCode: 'CAMPUS-2026',
-          taxRatePercent: 18,
-          taxAmount: 180,
-          totalAmount: 1180,
-          currency: 'INR',
-        },
-        orderStatus: 'completed',
-        payment: {
-          status: 'paid',
-          gateway: 'BillDesk',
-          gatewayTransactionId: 'bd_txn_882019234',
-          paymentMethod: 'Credit_Card',
-          paidAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-          gatewaySignature: 'billdesk_verified_sig_88201',
-        },
-        clientIp: '49.36.18.92',
-        auditTimeline: [
-          {
-            action: 'Checkout Initiated',
-            performedBy: 'Subscriber',
-            timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-            note: 'Initiated checkout via BillDesk Gateway',
-            previousStatus: null,
-            newStatus: 'processing',
-          },
-          {
-            action: 'Payment Captured',
-            performedBy: 'BillDesk Server Webhook',
-            timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-            note: 'Card transaction authorized',
-            previousStatus: 'processing',
-            newStatus: 'completed',
-          },
-        ],
-      },
-      {
-        orderNumber: 'ORD-2026-773403',
-        invoiceNumber: 'INV-2026-004123',
-        user: subscribers[0]._id,
-        userName: subscribers[0].name,
-        userEmail: subscribers[0].email,
-        userType: subscribers[0].userType || 'DOCTOR',
-        planName: 'Clinical Specialist Edition',
-        planCode: 'NFI-CLINICAL-SPECIALIST',
-        tier: 'INDIVIDUAL',
-        pricing: {
-          baseAmount: 6000,
-          discountAmount: 0,
-          couponCode: '',
-          taxRatePercent: 18,
-          taxAmount: 1080,
-          totalAmount: 7080,
-          currency: 'INR',
-        },
-        orderStatus: 'failed',
-        payment: {
-          status: 'failed',
-          gateway: 'Razorpay',
-          gatewayTransactionId: 'pay_failed_9921014a',
-          paymentMethod: 'Debit_Card',
-          failureReason: 'Card issuer 3D-Secure authentication timed out',
-          failureCode: 'GATEWAY_TIMEOUT_3DS',
-        },
-        clientIp: '14.139.60.2',
-        auditTimeline: [
-          {
-            action: 'Checkout Initiated',
-            performedBy: 'Subscriber',
-            timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-            note: 'Order initiated for Clinical Specialist pass',
-            previousStatus: null,
-            newStatus: 'processing',
-          },
-          {
-            action: 'Payment Failed',
-            performedBy: 'Razorpay Gateway',
-            timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-            note: 'Failure: Card issuer 3D-Secure authentication timed out',
-            previousStatus: 'processing',
-            newStatus: 'failed',
-          },
-        ],
-      },
-      {
-        orderNumber: 'ORD-2026-664504',
-        invoiceNumber: 'INV-2026-004124',
-        user: subscribers[0]._id,
-        userName: subscribers[0].name,
-        userEmail: subscribers[0].email,
-        userType: 'INDUSTRY',
-        planName: 'Institutional Campus License (50 Seats)',
-        planCode: 'NFI-INSTITUTIONAL',
-        tier: 'INSTITUTIONAL',
-        pricing: {
-          baseAmount: 45000,
-          discountAmount: 5000,
-          couponCode: 'INST-VIP',
-          taxRatePercent: 18,
-          taxAmount: 7200,
-          totalAmount: 47200,
-          currency: 'INR',
-        },
-        orderStatus: 'refunded',
-        payment: {
-          status: 'refunded',
-          gateway: 'NEFT_RTGS',
-          gatewayTransactionId: 'neft_utr_9920194812',
-          paymentMethod: 'NEFT_RTGS',
-          paidAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-        },
-        refund: {
-          isRefunded: true,
-          refundAmount: 47200,
-          refundReason: 'Accidental duplicate institutional subscription purchase',
-          refundTransactionId: 'ref_neft_utr_00192841',
-          refundedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-        },
-        clientIp: '103.21.124.55',
-        auditTimeline: [
-          {
-            action: 'Bank NEFT Payment Received',
-            performedBy: 'Treasury Officer',
-            timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-            note: 'NEFT verified and pass assigned',
-            previousStatus: null,
-            newStatus: 'completed',
-          },
-          {
-            action: 'Full Refund Processed',
-            performedBy: 'Superadmin',
-            timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-            note: 'Refund of ₹47,200 issued due to duplicate institutional purchase',
-            previousStatus: 'completed',
-            newStatus: 'refunded',
-          },
-        ],
-      },
-    ];
-
-    for (const ord of defaultOrders) {
-      await Order.findOneAndUpdate({ orderNumber: ord.orderNumber }, ord, {
-        upsert: true,
-        new: true,
-      });
-    }
+    return;
   },
 
   /**
@@ -337,7 +121,7 @@ export const orderService = {
     const pageSize = Math.max(1, Math.min(100, parseInt(limit, 10)));
     const skip = (pageNumber - 1) * pageSize;
 
-    let [orders, total] = await Promise.all([
+    const [orders, total] = await Promise.all([
       Order.find(query)
         .sort(sortOptions)
         .skip(skip)
@@ -347,20 +131,6 @@ export const orderService = {
         .lean(),
       Order.countDocuments(query),
     ]);
-
-    if (orders.length === 0 && !search && orderStatus === 'all') {
-      await orderService.seedDefaultOrders();
-      [orders, total] = await Promise.all([
-        Order.find(query)
-          .sort(sortOptions)
-          .skip(skip)
-          .limit(pageSize)
-          .populate('user', 'name email phone registrationNo apaarId gstin')
-          .populate('subscription', 'subscriptionId startDate endDate status')
-          .lean(),
-        Order.countDocuments(query),
-      ]);
-    }
 
     return {
       orders,
