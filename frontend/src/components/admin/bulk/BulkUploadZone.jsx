@@ -109,7 +109,7 @@ export const BulkUploadZone = ({
           <h4 className="font-bold text-[#284661] text-sm">Official Batch Import Template</h4>
           <p className="text-slate-500 text-xs mt-0.5">
             Use the official IPC spreadsheet layout with verified headers for Student, Doctor,
-            Pharmacist, Nurse, and Industry subscriber categories.
+            Pharmacist, Nurse, Industry, and Universities / Colleges subscriber categories.
           </p>
         </div>
 

@@ -38,7 +38,7 @@ const TABS = [
   { id: 'history', label: '6. Version History & Rollback', icon: History },
 ];
 
-const ALL_USER_TYPES = ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'OTHERS'];
+const ALL_USER_TYPES = ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'];
 
 export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('subscription');

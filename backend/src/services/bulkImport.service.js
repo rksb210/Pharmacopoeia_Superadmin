@@ -24,11 +24,11 @@ export const bulkImportService = {
       'Full Name',
       'Email Address',
       'Phone Number',
-      'User Type (STUDENT/DOCTOR/PHARMACIST/NURSE/INDUSTRY/OTHERS)',
+      'User Type (STUDENT/DOCTOR/PHARMACIST/NURSE/INDUSTRY/UNIVERSITIES_COLLEGES/OTHERS)',
       'Plan Code (Optional - e.g. NFI-INDIVIDUAL, NFI-STUDENT-SPECIAL)',
-      'APAAR ID (Required for Student)',
+      'APAAR ID / College Name (Student / University)',
       'Registration No (Required for Doctor/Pharmacist/Nurse)',
-      'Registration State (Required for Doctor/Pharmacist/Nurse)',
+      'Registration State (Required for Doctor/Pharmacist/Nurse/University)',
       'GSTIN (Required for Industry)',
       'PAN (Required for Industry)',
       'Designation (For Others)',
@@ -57,6 +57,19 @@ export const bulkImportService = {
         'APAAR-2026-9841',
         '',
         '',
+        '',
+        '',
+        '',
+      ],
+      [
+        'Prof. Harish Chandra',
+        'principal@delhiuniv.ac.in',
+        '+919855667788',
+        'UNIVERSITIES_COLLEGES',
+        'NFI-INSTITUTIONAL',
+        'Faculty of Pharmacy, Delhi University',
+        '',
+        'Delhi',
         '',
         '',
         '',
@@ -205,7 +218,7 @@ export const bulkImportService = {
       }
 
       // 4. User Type Check
-      const validUserTypes = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'OTHERS'];
+      const validUserTypes = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES', 'OTHERS'];
       if (!validUserTypes.includes(userType)) {
         errors.push(`Invalid User Type '${userType}'. Allowed: ${validUserTypes.join(', ')}`);
       }
@@ -282,6 +295,19 @@ export const bulkImportService = {
           dynamicFields.pan = upperPan;
         }
         if (state) {
+          dynamicFields.state = state;
+          dynamicFields.registrationState = state;
+        }
+      } else if (userType === 'UNIVERSITIES_COLLEGES' || userType === 'UNIVERSITIES / COLLEGES') {
+        const uniName = String(row[5] || institutionName || '').trim();
+        if (!uniName) {
+          errors.push('University / College Name is mandatory for Universities / Colleges');
+        } else {
+          dynamicFields.universityCollegeName = uniName;
+        }
+        if (!state) {
+          errors.push('State is mandatory for Universities / Colleges');
+        } else {
           dynamicFields.state = state;
           dynamicFields.registrationState = state;
         }

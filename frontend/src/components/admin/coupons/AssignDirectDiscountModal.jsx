@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Pill,
   Building2,
+  School,
   User,
   CheckCircle2,
   RefreshCw,
@@ -27,6 +28,7 @@ const USER_TYPE_TABS = [
   { id: 'PHARMACIST', label: 'Pharmacists', icon: Pill },
   { id: 'NURSE', label: 'Nurses', icon: Stethoscope },
   { id: 'INDUSTRY', label: 'Industry', icon: Building2 },
+  { id: 'UNIVERSITIES_COLLEGES', label: 'Universities / Colleges', icon: School },
   { id: 'OTHERS', label: 'Others', icon: User },
 ];
 
@@ -44,6 +46,11 @@ export const AssignDirectDiscountModal = ({
   const [industries, setIndustries] = useState([]);
   const [selectedIndustryCompany, setSelectedIndustryCompany] = useState(null);
   const [loadingIndustries, setLoadingIndustries] = useState(false);
+
+  // University / College Specific Grouping State
+  const [universities, setUniversities] = useState([]);
+  const [selectedUniversity, setSelectedUniversity] = useState(null);
+  const [loadingUniversities, setLoadingUniversities] = useState(false);
 
   // Pagination & Lazy loading
   const [page, setPage] = useState(1);
@@ -67,6 +74,7 @@ export const AssignDirectDiscountModal = ({
       setSelectedUsers([]);
       setUserSearch('');
       setSelectedIndustryCompany(null);
+      setSelectedUniversity(null);
       setError('');
     }
   }, [isOpen]);
@@ -86,6 +94,21 @@ export const AssignDirectDiscountModal = ({
     }
   }, []);
 
+  // Fetch distinct universities / colleges
+  const fetchUniversities = useCallback(async (searchVal = '') => {
+    setLoadingUniversities(true);
+    try {
+      const res = await subscriberService.getUniversities({ search: searchVal });
+      if (res && res.universities) {
+        setUniversities(res.universities);
+      }
+    } catch (err) {
+      console.warn('Failed to load universities:', err.message);
+    } finally {
+      setLoadingUniversities(false);
+    }
+  }, []);
+
   // Lazy-load subscribers for the active tab (or specific industry company)
   const fetchSubscribers = useCallback(async (tab, searchVal, company = null, pageNum = 1, isAppend = false) => {
     if (pageNum === 1) {
@@ -102,7 +125,7 @@ export const AssignDirectDiscountModal = ({
         limit: 15,
       };
 
-      if (tab === 'INDUSTRY' && company) {
+      if ((tab === 'INDUSTRY' || tab === 'UNIVERSITIES_COLLEGES') && company) {
         params.companyName = company;
       }
 
@@ -125,7 +148,7 @@ export const AssignDirectDiscountModal = ({
     }
   }, []);
 
-  // Fetch when tab, search, or industry company changes (Debounced)
+  // Fetch when tab, search, industry company, or university changes (Debounced)
   useEffect(() => {
     if (!isOpen) return;
     setPage(1);
@@ -133,20 +156,34 @@ export const AssignDirectDiscountModal = ({
     const timer = setTimeout(() => {
       if (activeCohortTab === 'INDUSTRY' && !selectedIndustryCompany) {
         fetchIndustries(userSearch);
+      } else if (activeCohortTab === 'UNIVERSITIES_COLLEGES' && !selectedUniversity) {
+        fetchUniversities(userSearch);
       } else {
-        fetchSubscribers(activeCohortTab, userSearch, selectedIndustryCompany, 1, false);
+        const entityFilter =
+          activeCohortTab === 'INDUSTRY'
+            ? selectedIndustryCompany
+            : activeCohortTab === 'UNIVERSITIES_COLLEGES'
+            ? selectedUniversity
+            : null;
+        fetchSubscribers(activeCohortTab, userSearch, entityFilter, 1, false);
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [activeCohortTab, userSearch, selectedIndustryCompany, isOpen, fetchSubscribers, fetchIndustries]);
+  }, [activeCohortTab, userSearch, selectedIndustryCompany, selectedUniversity, isOpen, fetchSubscribers, fetchIndustries, fetchUniversities]);
 
   // Load More Handler for Lazy-Loading
   const handleLoadMore = () => {
     if (page < totalPages && !loadingMore) {
       const nextPage = page + 1;
       setPage(nextPage);
-      fetchSubscribers(activeCohortTab, userSearch, selectedIndustryCompany, nextPage, true);
+      const entityFilter =
+        activeCohortTab === 'INDUSTRY'
+          ? selectedIndustryCompany
+          : activeCohortTab === 'UNIVERSITIES_COLLEGES'
+          ? selectedUniversity
+          : null;
+      fetchSubscribers(activeCohortTab, userSearch, entityFilter, nextPage, true);
     }
   };
 
@@ -301,7 +338,9 @@ export const AssignDirectDiscountModal = ({
             {USER_TYPE_TABS.map((tab) => {
               const TabIcon = tab.icon;
               const isActive = activeCohortTab === tab.id;
-              const selectedCountInTab = selectedUsers.filter((u) => u.userType === tab.id).length;
+              const selectedCountInTab = selectedUsers.filter(
+                (u) => u.userType === tab.id || (tab.id === 'UNIVERSITIES_COLLEGES' && u.userType === 'UNIVERSITIES / COLLEGES')
+              ).length;
               return (
                 <button
                   key={tab.id}
@@ -309,6 +348,7 @@ export const AssignDirectDiscountModal = ({
                   onClick={() => {
                     setActiveCohortTab(tab.id);
                     setSelectedIndustryCompany(null);
+                    setSelectedUniversity(null);
                     setUserSearch('');
                   }}
                   className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
@@ -350,6 +390,27 @@ export const AssignDirectDiscountModal = ({
             </div>
           )}
 
+          {/* University Header Breadcrumb when drilled into a specific university */}
+          {activeCohortTab === 'UNIVERSITIES_COLLEGES' && selectedUniversity && (
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200/80 px-3 py-2 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedUniversity(null);
+                  setUserSearch('');
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#284661] hover:text-[#E76120] cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Universities / Colleges</span>
+              </button>
+              <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 truncate">
+                <School className="w-3.5 h-3.5 text-[#284661] shrink-0" />
+                <span className="truncate">{selectedUniversity}</span>
+              </div>
+            </div>
+          )}
+
           {/* Toolbar: Search bar + Select All in Tab */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -361,6 +422,10 @@ export const AssignDirectDiscountModal = ({
                     ? 'Search company / industry by name...'
                     : activeCohortTab === 'INDUSTRY'
                     ? `Search employees in ${selectedIndustryCompany}...`
+                    : activeCohortTab === 'UNIVERSITIES_COLLEGES' && !selectedUniversity
+                    ? 'Search university / college by name...'
+                    : activeCohortTab === 'UNIVERSITIES_COLLEGES'
+                    ? `Search members in ${selectedUniversity}...`
                     : `Search ${activeCohortTab.toLowerCase()} by name, email, registration...`
                 }
                 value={userSearch}
@@ -369,25 +434,28 @@ export const AssignDirectDiscountModal = ({
               />
             </div>
 
-            {(activeCohortTab !== 'INDUSTRY' || selectedIndustryCompany) && subscribers.length > 0 && (
-              <button
-                type="button"
-                onClick={handleToggleSelectAllInTab}
-                className={`h-9 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                  areAllLoadedSelected
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={areAllLoadedSelected}
-                  onChange={handleToggleSelectAllInTab}
-                  className="w-3.5 h-3.5 rounded text-[#E76120] focus:ring-[#E76120] cursor-pointer"
-                />
-                <span>Select All ({subscribers.length})</span>
-              </button>
-            )}
+            {((activeCohortTab !== 'INDUSTRY' && activeCohortTab !== 'UNIVERSITIES_COLLEGES') ||
+              (activeCohortTab === 'INDUSTRY' && selectedIndustryCompany) ||
+              (activeCohortTab === 'UNIVERSITIES_COLLEGES' && selectedUniversity)) &&
+              subscribers.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleToggleSelectAllInTab}
+                  className={`h-9 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                    areAllLoadedSelected
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={areAllLoadedSelected}
+                    onChange={handleToggleSelectAllInTab}
+                    className="w-3.5 h-3.5 rounded text-[#E76120] focus:ring-[#E76120] cursor-pointer"
+                  />
+                  <span>Select All ({subscribers.length})</span>
+                </button>
+              )}
           </div>
 
           {/* List Container */}
@@ -450,18 +518,87 @@ export const AssignDirectDiscountModal = ({
                   );
                 })
               )
+            ) : activeCohortTab === 'UNIVERSITIES_COLLEGES' && !selectedUniversity ? (
+              loadingUniversities ? (
+                <div className="p-4 text-slate-400 text-center flex items-center justify-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#284661]" />
+                  <span>Loading university directory...</span>
+                </div>
+              ) : universities.length === 0 ? (
+                <p className="p-4 text-slate-400 text-center">
+                  No universities / colleges found matching your search.
+                </p>
+              ) : (
+                universities.map((univ) => {
+                  const univUsersSelected = selectedUsers.filter(
+                    (u) =>
+                      (u.userType === 'UNIVERSITIES_COLLEGES' || u.userType === 'UNIVERSITIES / COLLEGES') &&
+                      u.dynamicFields?.universityCollegeName === univ.universityCollegeName
+                  ).length;
+
+                  return (
+                    <div
+                      key={univ._id || univ.universityCollegeName}
+                      onClick={() => {
+                        setSelectedUniversity(univ.universityCollegeName);
+                        setUserSearch('');
+                      }}
+                      className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-blue-50/60 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#284661]/10 text-[#284661] flex items-center justify-center shrink-0">
+                          <School className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-900 truncate block text-xs">
+                              {univ.universityCollegeName}
+                            </span>
+                            {univUsersSelected > 0 && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800">
+                                {univUsersSelected} selected
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 truncate block">
+                            {univ.state ? `State: ${univ.state}` : 'Affiliated Higher Education Institution'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-bold rounded-lg text-[10px] flex items-center gap-1">
+                          <Users className="w-3 h-3 text-[#284661]" />
+                          <span>{univ.subscribersCount} {univ.subscribersCount === 1 ? 'Member' : 'Members'}</span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  );
+                })
+              )
             ) : (
-              /* 2. Subscribers List (Doctors, Students, or Selected Company) */
+              /* 2. Subscribers List (Doctors, Students, or Selected Company / University) */
               loadingUsers ? (
                 <div className="p-4 text-slate-400 text-center flex items-center justify-center gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin text-[#284661]" />
                   <span>
-                    Loading {activeCohortTab === 'INDUSTRY' ? 'company subscribers' : `${activeCohortTab.toLowerCase()}s`}...
+                    Loading{' '}
+                    {activeCohortTab === 'INDUSTRY'
+                      ? 'company subscribers'
+                      : activeCohortTab === 'UNIVERSITIES_COLLEGES'
+                      ? 'university members'
+                      : `${activeCohortTab.toLowerCase()}s`}...
                   </span>
                 </div>
               ) : subscribers.length === 0 ? (
                 <p className="p-4 text-slate-400 text-center">
-                  No {activeCohortTab === 'INDUSTRY' ? 'subscribers found in this company' : `${activeCohortTab.toLowerCase()}s found`}.
+                  No{' '}
+                  {activeCohortTab === 'INDUSTRY'
+                    ? 'subscribers found in this company'
+                    : activeCohortTab === 'UNIVERSITIES_COLLEGES'
+                    ? 'subscribers found in this university / college'
+                    : `${activeCohortTab.toLowerCase()}s found`}.
                 </p>
               ) : (
                 <>
@@ -498,12 +635,14 @@ export const AssignDirectDiscountModal = ({
                               {sub.email} {sub.phoneNumber ? `· ${sub.phoneNumber}` : ''}
                             </p>
                             {/* Dynamic category credential */}
-                            {(dFields.registrationNo || dFields.apaarId || dFields.companyName) && (
+                            {(dFields.registrationNo || dFields.apaarId || dFields.companyName || dFields.universityCollegeName) && (
                               <span className="text-[10px] text-slate-500 font-medium truncate block">
                                 {dFields.registrationNo ? `Reg: ${dFields.registrationNo}` : ''}
                                 {dFields.stateCouncil ? ` (${dFields.stateCouncil})` : ''}
                                 {dFields.apaarId ? `APAAR: ${dFields.apaarId}` : ''}
                                 {dFields.companyName ? `Org: ${dFields.companyName}` : ''}
+                                {dFields.universityCollegeName ? `Institution: ${dFields.universityCollegeName}` : ''}
+                                {dFields.state ? ` (${dFields.state})` : ''}
                               </span>
                             )}
                           </div>

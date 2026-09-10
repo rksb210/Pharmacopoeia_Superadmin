@@ -113,7 +113,7 @@ const DikshaCourseSchema = new mongoose.Schema(
     },
     targetAudience: {
       type: [String],
-      default: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'OTHERS'],
+      default: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'],
     },
     status: {
       type: String,

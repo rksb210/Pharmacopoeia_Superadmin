@@ -339,6 +339,7 @@ export const ReportsPage = () => {
                       { label: 'Students (Academic)', count: domainData.typeDistribution?.STUDENT || 0, color: 'bg-indigo-600' },
                       { label: 'Nurses', count: domainData.typeDistribution?.NURSE || 0, color: 'bg-teal-600' },
                       { label: 'Industry & Corporate', count: domainData.typeDistribution?.INDUSTRY || 0, color: 'bg-amber-600' },
+                      { label: 'Universities / Colleges', count: domainData.typeDistribution?.UNIVERSITIES_COLLEGES || 0, color: 'bg-purple-600' },
                       { label: 'Others', count: domainData.typeDistribution?.OTHERS || 0, color: 'bg-slate-600' },
                     ]}
                     unit="users"

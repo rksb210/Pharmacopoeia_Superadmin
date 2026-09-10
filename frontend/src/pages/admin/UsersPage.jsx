@@ -86,7 +86,26 @@ export const UsersPage = () => {
         subscriberService.getStats(),
       ]);
 
-      if (typesRes && typesRes.types) setUserTypes(typesRes.types);
+      if (typesRes && typesRes.types) {
+        const order = [
+          'STUDENT',
+          'DOCTOR',
+          'PHARMACIST',
+          'NURSE',
+          'INDUSTRY',
+          'UNIVERSITIES_COLLEGES',
+          'OTHERS',
+        ];
+        const sorted = [...typesRes.types].sort((a, b) => {
+          const idxA = order.indexOf(a.code);
+          const idxB = order.indexOf(b.code);
+          if (idxA === -1 && idxB === -1) return (a.name || '').localeCompare(b.name || '');
+          if (idxA === -1) return 1;
+          if (idxB === -1) return -1;
+          return idxA - idxB;
+        });
+        setUserTypes(sorted);
+      }
       if (statsRes && statsRes.stats) setStats(statsRes.stats);
     } catch (err) {
       console.warn('Failed to load subscriber metadata:', err.message);
@@ -224,6 +243,11 @@ export const UsersPage = () => {
       const parts = [company, taxId, stateVal ? `(${stateVal})` : ''].filter(Boolean);
       return parts.join(' · ') || 'Industry Entity';
     }
+    if (sub.userType === 'UNIVERSITIES_COLLEGES' || sub.userType === 'UNIVERSITIES / COLLEGES') {
+      const uni = dFields.universityCollegeName || '';
+      const parts = [uni, stateVal ? `State: ${stateVal}` : ''].filter(Boolean);
+      return parts.join(' · ') || 'University / College Entity';
+    }
     return dFields.designation
       ? `${dFields.designation}${stateVal ? ` (${stateVal})` : ''}`
       : (stateVal ? `State: ${stateVal}` : 'General Public');
@@ -254,9 +278,9 @@ export const UsersPage = () => {
     { header: 'Contact No', key: 'phoneNumber' },
     { header: 'User Category', key: 'userType', format: (v) => v?.toUpperCase() },
     {
-      header: 'License / Reg No',
+      header: 'License / Reg No / Institution',
       key: 'dynamicFields',
-      format: (v) => v?.registrationNo || v?.apaarId || v?.gstin || 'N/A',
+      format: (v) => v?.registrationNo || v?.apaarId || v?.gstin || v?.universityCollegeName || 'N/A',
     },
     {
       header: 'State / Council',

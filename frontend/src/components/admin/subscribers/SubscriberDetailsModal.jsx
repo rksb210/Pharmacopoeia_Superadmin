@@ -119,7 +119,11 @@ export const SubscriberDetailsModal = ({
                   .map(([key, val]) => (
                     <div key={key} className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                       <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">
-                        {key === 'registrationState' ? 'Registration State' : key.replace(/([A-Z])/g, ' $1')}
+                        {key === 'registrationState'
+                          ? 'Registration State'
+                          : key === 'universityCollegeName'
+                          ? 'University / College Name'
+                          : key.replace(/([A-Z])/g, ' $1')}
                       </span>
                       <span className="font-bold text-slate-900 break-all">{val || 'N/A'}</span>
                     </div>

@@ -73,6 +73,7 @@ export const SubscriptionsPage = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'active' | 'expiring_soon' | 'trial' | 'complimentary' | 'discounted' | 'cancelled'
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [userTypeFilter, setUserTypeFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
@@ -120,6 +121,7 @@ export const SubscriptionsPage = () => {
         search: searchQuery,
         type: computedType,
         status: computedStatus,
+        userType: userTypeFilter !== 'all' ? userTypeFilter : undefined,
         dateFrom,
         dateTo,
       });
@@ -134,7 +136,7 @@ export const SubscriptionsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, activeTab, searchQuery, typeFilter, dateFrom, dateTo]);
+  }, [currentPage, activeTab, searchQuery, typeFilter, userTypeFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchStats();
@@ -162,6 +164,7 @@ export const SubscriptionsPage = () => {
         search: searchQuery,
         type: computedType,
         status: computedStatus,
+        userType: userTypeFilter !== 'all' ? userTypeFilter : undefined,
         dateFrom,
         dateTo,
       });
@@ -187,6 +190,11 @@ export const SubscriptionsPage = () => {
       header: 'Phone Number',
       key: 'user',
       format: (val) => val?.phoneNumber || 'N/A',
+    },
+    {
+      header: 'User Category',
+      key: 'user',
+      format: (val) => (val?.userType === 'UNIVERSITIES_COLLEGES' ? 'UNIVERSITIES / COLLEGES' : (val?.userType || 'N/A').toUpperCase()),
     },
     { header: 'Plan Name', key: 'planName', format: (val) => val || 'NFI Universal Access Pass' },
     { header: 'Tier', key: 'tier', format: (val) => val || 'Individual' },
@@ -263,6 +271,7 @@ export const SubscriptionsPage = () => {
             { label: 'Export Date', value: new Date().toLocaleString() },
             { label: 'Tab Filter', value: activeTab.toUpperCase() },
             { label: 'Type Filter', value: typeFilter.toUpperCase() },
+            { label: 'User Category', value: userTypeFilter.toUpperCase() },
             { label: 'Total Records', value: totalItems || subscriptions.length },
           ]}
           columns={subscriptionExportColumns}
@@ -398,7 +407,7 @@ export const SubscriptionsPage = () => {
         </div>
 
         {/* Search & Date Range Toolbar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {/* Search Box */}
           <div className="relative lg:col-span-2">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -412,6 +421,27 @@ export const SubscriptionsPage = () => {
               placeholder="Search by Subscriber Name, Email, ID (SUB-...), or Invoice..."
               className="w-full h-9 pl-8 pr-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120]"
             />
+          </div>
+
+          {/* User Category Filter */}
+          <div className="relative">
+            <select
+              value={userTypeFilter}
+              onChange={(e) => {
+                setUserTypeFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
+            >
+              <option value="all">All Categories</option>
+              <option value="DOCTOR">Doctors</option>
+              <option value="STUDENT">Students</option>
+              <option value="PHARMACIST">Pharmacists</option>
+              <option value="NURSE">Nurses</option>
+              <option value="INDUSTRY">Industry</option>
+              <option value="UNIVERSITIES_COLLEGES">Universities / Colleges</option>
+              <option value="OTHERS">Others</option>
+            </select>
           </div>
 
           {/* Date From */}
@@ -503,7 +533,9 @@ export const SubscriptionsPage = () => {
                           {sub.user?.name || 'N/A'}
                         </span>
                         <Badge variant="outline" className="text-[8px] uppercase font-bold px-1 py-0">
-                          {sub.user?.userType || 'User'}
+                          {sub.user?.userType === 'UNIVERSITIES_COLLEGES' || sub.user?.userType === 'UNIVERSITIES / COLLEGES'
+                            ? 'Univ / College'
+                            : sub.user?.userType || 'User'}
                         </Badge>
                       </div>
                       <span className="text-[11px] text-slate-400 truncate block max-w-[170px]">

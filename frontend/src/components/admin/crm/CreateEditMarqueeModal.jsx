@@ -26,6 +26,7 @@ const USER_TYPES = [
   { id: 'PHARMACIST', label: 'Pharmacists' },
   { id: 'NURSE', label: 'Nurses' },
   { id: 'INDUSTRY', label: 'Industry & Corporate' },
+  { id: 'UNIVERSITIES_COLLEGES', label: 'Universities / Colleges' },
   { id: 'OTHERS', label: 'Others' },
 ];
 

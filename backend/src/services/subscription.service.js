@@ -138,12 +138,25 @@ export const subscriptionService = {
     search = '',
     type = 'all',
     status = 'all',
+    userType = 'all',
     dateFrom = '',
     dateTo = '',
     sortBy = 'createdAt',
     sortOrder = 'desc',
   }) => {
     const query = {};
+
+    // User Type Filter
+    let userTypeSubscriberIds = null;
+    if (userType && userType !== 'all') {
+      const uTypeNorm = userType.toUpperCase().trim();
+      const userTypeQuery = (uTypeNorm === 'UNIVERSITIES_COLLEGES' || uTypeNorm === 'UNIVERSITIES / COLLEGES')
+        ? { userType: { $in: ['UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES'] } }
+        : { userType: uTypeNorm };
+      const matchedSubs = await Subscriber.find(userTypeQuery).select('_id');
+      userTypeSubscriberIds = matchedSubs.map((s) => s._id.toString());
+      query.user = { $in: matchedSubs.map((s) => s._id) };
+    }
 
     // Type Filter
     if (type && type !== 'all') {
@@ -177,12 +190,22 @@ export const subscriptionService = {
     if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
 
-      // First find matching subscriber IDs if search matches name/email
+      // First find matching subscriber IDs if search matches name/email/entity
       const matchedSubscribers = await Subscriber.find({
-        $or: [{ name: searchRegex }, { email: searchRegex }, { username: searchRegex }],
+        $or: [
+          { name: searchRegex },
+          { email: searchRegex },
+          { username: searchRegex },
+          { 'dynamicFields.companyName': searchRegex },
+          { 'dynamicFields.universityCollegeName': searchRegex },
+        ],
       }).select('_id');
 
-      const subscriberIds = matchedSubscribers.map((s) => s._id);
+      let subscriberIds = matchedSubscribers.map((s) => s._id);
+
+      if (userTypeSubscriberIds !== null) {
+        subscriberIds = subscriberIds.filter((id) => userTypeSubscriberIds.includes(id.toString()));
+      }
 
       query.$or = [
         { subscriptionId: searchRegex },

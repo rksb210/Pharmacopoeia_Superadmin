@@ -121,6 +121,27 @@ export const subscriberService = {
         ],
       },
       {
+        name: 'Universities / Colleges',
+        code: 'UNIVERSITIES_COLLEGES',
+        description: 'Universities, medical, pharmacy, nursing, and higher education academic institutions.',
+        fields: [
+          {
+            fieldKey: 'universityCollegeName',
+            label: 'University / College Name',
+            type: 'text',
+            required: true,
+            placeholder: 'e.g. Delhi University / AIIMS New Delhi',
+          },
+          {
+            fieldKey: 'state',
+            label: 'State',
+            type: 'select',
+            required: true,
+            placeholder: 'Select State',
+          },
+        ],
+      },
+      {
         name: 'Others',
         code: 'OTHERS',
         description: 'General researchers, policymakers, and public stakeholders.',
@@ -152,11 +173,32 @@ export const subscriberService = {
    * Get all active User Types
    */
   getUserTypes: async () => {
-    let types = await UserType.find({ isActive: true }).sort({ createdAt: 1 });
-    if (types.length === 0) {
+    let types = await UserType.find({ isActive: true }).lean();
+    const hasUniversity = types.some((t) => t.code === 'UNIVERSITIES_COLLEGES');
+    if (types.length === 0 || !hasUniversity) {
       await subscriberService.seedUserTypes();
-      types = await UserType.find({ isActive: true }).sort({ createdAt: 1 });
+      types = await UserType.find({ isActive: true }).lean();
     }
+
+    const sortOrder = [
+      'STUDENT',
+      'DOCTOR',
+      'PHARMACIST',
+      'NURSE',
+      'INDUSTRY',
+      'UNIVERSITIES_COLLEGES',
+      'OTHERS',
+    ];
+
+    types.sort((a, b) => {
+      const idxA = sortOrder.indexOf(a.code);
+      const idxB = sortOrder.indexOf(b.code);
+      if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+
     return types;
   },
 
@@ -187,12 +229,34 @@ export const subscriberService = {
   },
 
   /**
-   * Get distinct Industry Companies with employee counts
+   * Get distinct Industry Companies or Universities / Colleges with member counts
    */
-  getIndustriesGrouped: async ({ search = '' } = {}) => {
-    const match = { userType: 'INDUSTRY' };
+  getIndustriesGrouped: async (options = {}, maybeSearch = '') => {
+    let search = '';
+    let userType = 'INDUSTRY';
+
+    if (typeof options === 'string') {
+      if (options === 'UNIVERSITIES_COLLEGES' || options === 'UNIVERSITIES / COLLEGES' || options === 'INDUSTRY') {
+        userType = options;
+        search = typeof maybeSearch === 'string' ? maybeSearch : '';
+      } else {
+        search = options;
+        userType = typeof maybeSearch === 'string' ? maybeSearch : 'INDUSTRY';
+      }
+    } else if (typeof options === 'object' && options !== null) {
+      search = typeof options.search === 'string' ? options.search : '';
+      userType = typeof options.userType === 'string' ? options.userType : 'INDUSTRY';
+    }
+
+    const isUni = userType === 'UNIVERSITIES_COLLEGES' || userType === 'UNIVERSITIES / COLLEGES';
+    const match = isUni
+      ? { userType: { $in: ['UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES'] } }
+      : { userType: 'INDUSTRY' };
+
+    const nameField = isUni ? '$dynamicFields.universityCollegeName' : '$dynamicFields.companyName';
+
     if (search && search.trim()) {
-      match['dynamicFields.companyName'] = {
+      match[isUni ? 'dynamicFields.universityCollegeName' : 'dynamicFields.companyName'] = {
         $regex: escapeRegex(search.trim()),
         $options: 'i',
       };
@@ -202,14 +266,17 @@ export const subscriberService = {
       { $match: match },
       {
         $group: {
-          _id: { $ifNull: ['$dynamicFields.companyName', 'Unnamed Industry'] },
-          companyName: { $first: { $ifNull: ['$dynamicFields.companyName', 'Unnamed Industry'] } },
+          _id: { $ifNull: [nameField, isUni ? 'Unnamed University / College' : 'Unnamed Industry'] },
+          name: { $first: { $ifNull: [nameField, isUni ? 'Unnamed University / College' : 'Unnamed Industry'] } },
+          companyName: { $first: { $ifNull: [nameField, isUni ? 'Unnamed University / College' : 'Unnamed Industry'] } },
+          universityCollegeName: { $first: { $ifNull: [nameField, isUni ? 'Unnamed University / College' : 'Unnamed Industry'] } },
+          state: { $first: '$dynamicFields.state' },
           gstin: { $first: '$dynamicFields.gstin' },
           pan: { $first: '$dynamicFields.pan' },
           subscribersCount: { $sum: 1 },
         },
       },
-      { $sort: { companyName: 1 } },
+      { $sort: { name: 1 } },
     ]);
 
     return industries;
@@ -242,17 +309,28 @@ export const subscriberService = {
         { email: searchRegex },
         { username: searchRegex },
         { phoneNumber: searchRegex },
+        { 'dynamicFields.companyName': searchRegex },
+        { 'dynamicFields.universityCollegeName': searchRegex },
       ];
     }
 
     // User Type filter
     if (userType && userType !== 'all') {
-      query.userType = userType.toUpperCase().trim();
+      const uTypeNorm = userType.toUpperCase().trim();
+      if (uTypeNorm === 'UNIVERSITIES_COLLEGES' || uTypeNorm === 'UNIVERSITIES / COLLEGES') {
+        query.userType = { $in: ['UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES'] };
+      } else {
+        query.userType = uTypeNorm;
+      }
     }
 
-    // Filter by Company Name (for Industry subscribers)
+    // Filter by Company Name / University Name
     if (companyName && companyName.trim()) {
-      query['dynamicFields.companyName'] = new RegExp(`^${escapeRegex(companyName.trim())}$`, 'i');
+      const safeEntity = escapeRegex(companyName.trim());
+      query.$or = [
+        { 'dynamicFields.companyName': new RegExp(`^${safeEntity}$`, 'i') },
+        { 'dynamicFields.universityCollegeName': new RegExp(`^${safeEntity}$`, 'i') },
+      ];
     }
 
     // Subscription Status filter
@@ -404,7 +482,8 @@ export const subscriberService = {
       }
     }
 
-    const userTypeDoc = await UserType.findOne({ code: uType });
+    const normalizedType = (uType === 'UNIVERSITIES / COLLEGES') ? 'UNIVERSITIES_COLLEGES' : uType;
+    const userTypeDoc = await UserType.findOne({ code: { $in: [normalizedType, uType] } });
 
     const newSubscriber = await Subscriber.create({
       name: name.trim(),
@@ -412,7 +491,7 @@ export const subscriberService = {
       username: cleanUsername,
       phoneNumber: cleanPhone,
       password,
-      userType: uType,
+      userType: normalizedType,
       userTypeRef: userTypeDoc ? userTypeDoc._id : null,
       dynamicFields,
       notes: notes.trim(),
@@ -435,7 +514,15 @@ export const subscriberService = {
       throw new Error('Subscriber account not found');
     }
 
-    const { name, email, username, phoneNumber, dynamicFields, notes } = data;
+    const { name, email, username, phoneNumber, userType, dynamicFields, notes } = data;
+
+    if (userType) {
+      const uType = userType.toUpperCase().trim();
+      const normalizedType = (uType === 'UNIVERSITIES / COLLEGES') ? 'UNIVERSITIES_COLLEGES' : uType;
+      subscriber.userType = normalizedType;
+      const userTypeDoc = await UserType.findOne({ code: { $in: [normalizedType, uType] } });
+      subscriber.userTypeRef = userTypeDoc ? userTypeDoc._id : null;
+    }
 
     if (name) subscriber.name = name.trim();
     if (notes !== undefined) subscriber.notes = notes.trim();

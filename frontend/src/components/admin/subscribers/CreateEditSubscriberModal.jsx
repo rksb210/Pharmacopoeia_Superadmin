@@ -64,6 +64,17 @@ export const CreateEditSubscriberModal = ({
     if (apiError) setApiError('');
   };
 
+  const handleUserTypeChange = (e) => {
+    const newType = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      userType: newType,
+      dynamicFields: {}, // clean slate to avoid stale values
+    }));
+    setErrors({});
+    if (apiError) setApiError('');
+  };
+
   const handleNameChange = (e) => {
     const cleanName = e.target.value.replace(/[^a-zA-Z\s.]/g, '');
     setFormData((prev) => ({ ...prev, name: cleanName }));
@@ -178,6 +189,14 @@ export const CreateEditSubscriberModal = ({
         }
       }
     }
+    if (uType === 'UNIVERSITIES_COLLEGES' || uType === 'UNIVERSITIES / COLLEGES') {
+      if (!dFields.universityCollegeName?.trim()) {
+        newErrors.universityCollegeName = 'University / College Name is required';
+      }
+      if (!dFields.state?.trim()) {
+        newErrors.state = 'State is required';
+      }
+    }
     if (uType === 'OTHERS' && !dFields.designation?.trim()) {
       newErrors.designation = 'Designation is required';
     }
@@ -195,16 +214,26 @@ export const CreateEditSubscriberModal = ({
 
     try {
       const digits = formData.phoneNumber ? formData.phoneNumber.replace(/\D/g, '').slice(-10) : '';
+      const uTypeUpper = formData.userType.toUpperCase();
+      let cleanedFields = { ...formData.dynamicFields };
+
+      if (uTypeUpper === 'UNIVERSITIES_COLLEGES' || uTypeUpper === 'UNIVERSITIES / COLLEGES') {
+        cleanedFields = {
+          universityCollegeName: (formData.dynamicFields?.universityCollegeName || '').trim(),
+          state: (formData.dynamicFields?.state || '').trim(),
+        };
+      } else if (uTypeUpper === 'INDUSTRY') {
+        cleanedFields = {
+          companyName: (formData.dynamicFields?.companyName || '').trim(),
+          ...(formData.dynamicFields?.gstin && { gstin: formData.dynamicFields.gstin.trim().toUpperCase() }),
+          ...(formData.dynamicFields?.pan && { pan: formData.dynamicFields.pan.trim().toUpperCase() }),
+        };
+      }
+
       const payload = {
         ...formData,
         phoneNumber: digits ? `+91 ${digits}` : '',
-        dynamicFields: {
-          ...formData.dynamicFields,
-          ...(formData.userType.toUpperCase() === 'INDUSTRY' && {
-            gstin: (formData.dynamicFields?.gstin || '').trim().toUpperCase(),
-            pan: (formData.dynamicFields?.pan || '').trim().toUpperCase(),
-          }),
-        },
+        dynamicFields: cleanedFields,
       };
 
       if (onSuccess) {
@@ -318,8 +347,7 @@ export const CreateEditSubscriberModal = ({
             <select
               name="userType"
               value={formData.userType}
-              onChange={handleChange}
-              disabled={isEditMode}
+              onChange={handleUserTypeChange}
               className="w-full h-11 px-3 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 bg-white outline-none focus:border-[#E76120] focus:ring-2 focus:ring-[#E76120]/15 cursor-pointer"
             >
               {userTypes.map((t) => (

@@ -51,6 +51,7 @@ const AUDIENCE_TYPES = [
   'STUDENT',
   'NURSE',
   'INDUSTRY',
+  'UNIVERSITIES_COLLEGES',
   'OTHERS',
 ];
 
@@ -75,7 +76,7 @@ export const CreateEditCourseModal = ({
     description: '',
     thumbnailUrl: '',
     category: 'NFI_ORIENTATION',
-    targetAudience: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'OTHERS'],
+    targetAudience: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'],
     status: 'DRAFT',
     pricing: {
       isPaid: false,
@@ -630,7 +631,7 @@ export const CreateEditCourseModal = ({
                           : 'bg-slate-50 border-slate-200 text-slate-400'
                       }`}
                     >
-                      <span>{type}</span>
+                      <span>{type === 'UNIVERSITIES_COLLEGES' ? 'Universities / Colleges' : type}</span>
                       {isSelected && <Check className="w-3.5 h-3.5 text-[#284661]" />}
                     </button>
                   );

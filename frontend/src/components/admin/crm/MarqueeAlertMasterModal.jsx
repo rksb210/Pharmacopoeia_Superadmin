@@ -203,6 +203,7 @@ export const MarqueeAlertMasterModal = ({
               <option value="PHARMACIST">Pharmacists Only</option>
               <option value="NURSE">Nurses Only</option>
               <option value="INDUSTRY">Industry Only</option>
+              <option value="UNIVERSITIES_COLLEGES">Universities / Colleges Only</option>
               <option value="OTHERS">Others Only</option>
             </select>
           </div>
