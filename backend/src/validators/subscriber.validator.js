@@ -78,6 +78,13 @@ export const validateCreateSubscriber = (req, res, next) => {
         }
       }
     }
+  } else if (uType === 'UNIVERSITIES_COLLEGES' || uType === 'UNIVERSITIES / COLLEGES') {
+    if (!dynamicFields.universityCollegeName || !dynamicFields.universityCollegeName.trim()) {
+      errors.push('University / College Name is required');
+    }
+    if (!dynamicFields.state || !dynamicFields.state.trim()) {
+      errors.push('State is required');
+    }
   } else if (uType === 'OTHERS') {
     if (!dynamicFields.designation || !dynamicFields.designation.trim()) {
       errors.push('Designation / Role is required');
@@ -132,6 +139,14 @@ export const validateUpdateSubscriber = (req, res, next) => {
     }
     if (pan !== undefined && pan.trim() && !panRegex.test(pan.trim().toUpperCase())) {
       errors.push('Invalid Corporate PAN format. Must be exactly 10 characters (e.g. AAAAA9999A)');
+    }
+
+    const { universityCollegeName, state } = req.body.dynamicFields;
+    if (universityCollegeName !== undefined && !String(universityCollegeName).trim()) {
+      errors.push('University / College Name cannot be empty');
+    }
+    if (state !== undefined && !String(state).trim()) {
+      errors.push('State cannot be empty');
     }
   }
 

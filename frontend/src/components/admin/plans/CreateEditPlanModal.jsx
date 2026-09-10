@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 const TIERS = ['Individual', 'Institutional', 'Student', 'Doctor Professional', 'Corporate', 'General'];
-const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'OTHERS'];
+const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'];
 
 export const CreateEditPlanModal = ({
   isOpen,
@@ -498,7 +498,7 @@ export const CreateEditPlanModal = ({
                         : 'bg-white border-slate-200 text-slate-600'
                     }`}
                   >
-                    <span>{ut}</span>
+                    <span>{ut === 'UNIVERSITIES_COLLEGES' ? 'UNIVERSITIES / COLLEGES' : ut}</span>
                     {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
                   </button>
                 );

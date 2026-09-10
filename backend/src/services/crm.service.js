@@ -56,7 +56,12 @@ export const crmService = {
       if (isExpiring) return 'EXPIRING_SOON';
 
       if (latestSub.type === 'trial') return 'PROMOTIONAL_TRIAL';
-      if (latestSub.tier === 'INSTITUTIONAL' || subscriber.userType === 'INDUSTRY') {
+      if (
+        latestSub.tier === 'INSTITUTIONAL' ||
+        subscriber.userType === 'INDUSTRY' ||
+        subscriber.userType === 'UNIVERSITIES_COLLEGES' ||
+        subscriber.userType === 'UNIVERSITIES / COLLEGES'
+      ) {
         return 'INSTITUTIONAL_VIP';
       }
       if (subscriber.userType === 'STUDENT') return 'SCHOLAR';
@@ -100,11 +105,18 @@ export const crmService = {
         { 'dynamicFields.regNo': searchRegex },
         { 'dynamicFields.gstin': searchRegex },
         { 'dynamicFields.pan': searchRegex },
+        { 'dynamicFields.companyName': searchRegex },
+        { 'dynamicFields.universityCollegeName': searchRegex },
       ];
     }
 
     if (userType && userType !== 'all') {
-      query.userType = userType;
+      const uTypeNorm = userType.toUpperCase().trim();
+      if (uTypeNorm === 'UNIVERSITIES_COLLEGES' || uTypeNorm === 'UNIVERSITIES / COLLEGES') {
+        query.userType = { $in: ['UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES'] };
+      } else {
+        query.userType = uTypeNorm;
+      }
     }
 
     if (status && status !== 'all') {

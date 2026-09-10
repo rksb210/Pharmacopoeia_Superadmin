@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { usePermission } from '../../../context/PermissionContext';
 
-const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'OTHERS'];
+const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'];
 
 export const CreateEditCouponModal = ({
   isOpen,
@@ -494,7 +494,7 @@ export const CreateEditCouponModal = ({
                           : 'bg-white border-slate-200 text-slate-600'
                       }`}
                     >
-                      <span>{ut}</span>
+                      <span>{ut === 'UNIVERSITIES_COLLEGES' ? 'UNIVERSITIES / COLLEGES' : ut}</span>
                       {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
                     </button>
                   );

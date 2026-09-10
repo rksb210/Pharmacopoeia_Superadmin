@@ -27,11 +27,28 @@ export const getSubscriberStats = async (req, res, next) => {
 
 export const getIndustries = async (req, res, next) => {
   try {
-    const { search } = req.query;
-    const industries = await subscriberService.getIndustriesGrouped({ search });
+    const { search, userType } = req.query;
+    const industries = await subscriberService.getIndustriesGrouped({ search, userType });
     return res.status(200).json({
       success: true,
       industries,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUniversities = async (req, res, next) => {
+  try {
+    const { search } = req.query;
+    const universities = await subscriberService.getIndustriesGrouped({
+      search,
+      userType: 'UNIVERSITIES_COLLEGES',
+    });
+    return res.status(200).json({
+      success: true,
+      universities,
+      industries: universities,
     });
   } catch (error) {
     next(error);

@@ -137,11 +137,13 @@ export const reportService = {
       STUDENT: 0,
       NURSE: 0,
       INDUSTRY: 0,
+      UNIVERSITIES_COLLEGES: 0,
       OTHERS: 0,
     };
     userTypeBreakdown.forEach((item) => {
-      if (item._id && typeDistribution[item._id] !== undefined) {
-        typeDistribution[item._id] = item.count;
+      if (item._id) {
+        const key = (item._id === 'UNIVERSITIES / COLLEGES') ? 'UNIVERSITIES_COLLEGES' : item._id;
+        typeDistribution[key] = (typeDistribution[key] || 0) + item.count;
       }
     });
 

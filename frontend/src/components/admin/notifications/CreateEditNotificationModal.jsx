@@ -34,7 +34,7 @@ const CHANNELS = [
 ];
 
 const ROLES = ['superadmin', 'admin', 'subadmin', 'maker', 'reviewer', 'approver'];
-const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'OTHERS'];
+const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'];
 
 export const CreateEditNotificationModal = ({
   isOpen,
@@ -413,7 +413,7 @@ export const CreateEditNotificationModal = ({
                             : 'bg-white border border-slate-200 text-slate-600'
                         }`}
                       >
-                        {ut}
+                        {ut === 'UNIVERSITIES_COLLEGES' ? 'Universities / Colleges' : ut}
                       </button>
                     );
                   })}

@@ -17,6 +17,10 @@ export const subscriberService = {
     return api.get('/subscribers/industries', { params });
   },
 
+  getUniversities: async (params = {}) => {
+    return api.get('/subscribers/universities', { params });
+  },
+
   getSubscriberById: async (id) => {
     return api.get(`/subscribers/${id}`);
   },

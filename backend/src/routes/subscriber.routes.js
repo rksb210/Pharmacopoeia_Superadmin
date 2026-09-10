@@ -3,6 +3,7 @@ import {
   getUserTypes,
   getSubscriberStats,
   getIndustries,
+  getUniversities,
   getSubscribers,
   getSubscriberById,
   createSubscriber,
@@ -33,6 +34,9 @@ router.get('/stats', requirePermission('USERS', 'USERS', 'VIEW'), getSubscriberS
 
 // Distinct Industry Directory
 router.get('/industries', requirePermission('USERS', 'USERS', 'VIEW'), getIndustries);
+
+// Distinct Universities / Colleges Directory
+router.get('/universities', requirePermission('USERS', 'USERS', 'VIEW'), getUniversities);
 
 // Directory Listing & Details
 router.get('/', requirePermission('USERS', 'USERS', 'VIEW'), getSubscribers);

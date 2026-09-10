@@ -104,6 +104,7 @@ export const Customer360Modal = ({
   const gstin = c.gstin || dFields.gstin || '';
   const pan = c.pan || dFields.pan || '';
   const designation = c.designation || dFields.designation || '';
+  const universityCollegeName = c.universityCollegeName || dFields.universityCollegeName || '';
 
   return (
     <AdminModal
@@ -123,7 +124,7 @@ export const Customer360Modal = ({
               <span className="font-bold text-slate-900 text-sm">{c.name}</span>
               <CRMSegmentBadge segment={c.segment} />
               <Badge variant="outline" className="text-[9px] uppercase font-bold">
-                {c.userType || 'Subscriber'}
+                {c.userType === 'UNIVERSITIES_COLLEGES' || c.userType === 'UNIVERSITIES / COLLEGES' ? 'UNIVERSITIES / COLLEGES' : c.userType || 'Subscriber'}
               </Badge>
             </div>
             <p className="text-slate-500 text-xs mt-0.5 truncate">
@@ -249,6 +250,21 @@ export const Customer360Modal = ({
                     <div>
                       <span className="text-slate-400 block">PAN</span>
                       <span className="font-bold text-slate-900">{pan || 'N/A'}</span>
+                    </div>
+                    {regState && (
+                      <div>
+                        <span className="text-slate-400 block">State</span>
+                        <span className="font-bold text-slate-900">{regState}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {(c.userType === 'UNIVERSITIES_COLLEGES' || c.userType === 'UNIVERSITIES / COLLEGES') && (
+                  <>
+                    <div className="sm:col-span-2">
+                      <span className="text-slate-400 block">University / College Name</span>
+                      <span className="font-bold text-slate-900">{universityCollegeName || 'N/A'}</span>
                     </div>
                     {regState && (
                       <div>

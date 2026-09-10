@@ -176,7 +176,7 @@ export const BulkPreviewTable = ({
                   {/* User Type */}
                   <TableCell>
                     <Badge variant="outline" className="text-[9px] uppercase font-bold">
-                      {rec.userType}
+                      {rec.userType === 'UNIVERSITIES_COLLEGES' ? 'UNIVERSITIES / COLLEGES' : rec.userType}
                     </Badge>
                   </TableCell>
 
@@ -194,6 +194,11 @@ export const BulkPreviewTable = ({
                       {rec.userType === 'INDUSTRY' && (
                         <span>
                           GST: {rec.dynamicFields?.gstin || '—'} | PAN: {rec.dynamicFields?.pan || '—'}
+                        </span>
+                      )}
+                      {(rec.userType === 'UNIVERSITIES_COLLEGES' || rec.userType === 'UNIVERSITIES / COLLEGES') && (
+                        <span>
+                          {rec.dynamicFields?.universityCollegeName || 'University / College'} ({rec.dynamicFields?.state || 'State N/A'})
                         </span>
                       )}
                       {rec.userType === 'OTHERS' && (

@@ -51,6 +51,7 @@ const USER_TYPES = [
   { id: 'STUDENT', label: 'Student' },
   { id: 'NURSE', label: 'Nurse' },
   { id: 'INDUSTRY', label: 'Industry & Corporate' },
+  { id: 'UNIVERSITIES_COLLEGES', label: 'Universities / Colleges' },
   { id: 'OTHERS', label: 'Others' },
 ];
 
@@ -384,7 +385,7 @@ export const CRMPage = () => {
                         {c.name}
                       </span>
                       <span className="text-[10px] text-slate-400 block truncate">
-                        {c.email} · <strong className="text-slate-600">{c.userType}</strong>
+                        {c.email} · <strong className="text-slate-600">{c.userType === 'UNIVERSITIES_COLLEGES' ? 'UNIVERSITIES / COLLEGES' : c.userType}</strong>
                       </span>
                     </div>
                   </TableCell>
