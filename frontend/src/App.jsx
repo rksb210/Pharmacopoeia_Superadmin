@@ -17,6 +17,7 @@ import SubscriptionsPage from './pages/admin/SubscriptionsPage';
 import PlansPage from './pages/admin/PlansPage';
 import DiscountsPage from './pages/admin/DiscountsPage';
 import BulkSubscriptionsPage from './pages/admin/BulkSubscriptionsPage';
+import InstitutionalSubscriptionsPage from './pages/admin/InstitutionalSubscriptionsPage';
 import NotificationsPage from './pages/admin/NotificationsPage';
 import FeedbackPage from './pages/admin/FeedbackPage';
 import CRMPage from './pages/admin/CRMPage';
@@ -187,6 +188,14 @@ function AppRoutes() {
           element={
             <PermissionGuard module="USERS" section="ROLES" action="VIEW" pageLevel>
               <RolesPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="institutional-subscriptions"
+          element={
+            <PermissionGuard module="USERS" section="INSTITUTIONAL_SUBSCRIPTIONS" action="VIEW" pageLevel>
+              <InstitutionalSubscriptionsPage />
             </PermissionGuard>
           }
         />

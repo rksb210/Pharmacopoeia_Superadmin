@@ -175,6 +175,24 @@ const subscriberSchema = new mongoose.Schema(
       default: '',
     },
     crmNotes: [crmNoteSchema],
+    // Institutional Cohort Linkage
+    batchReference: {
+      type: String,
+      trim: true,
+      index: true,
+      default: null,
+    },
+    parentInstitutionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscriber',
+      index: true,
+      default: null,
+    },
+    institutionName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   {
     timestamps: true,

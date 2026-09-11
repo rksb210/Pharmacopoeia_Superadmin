@@ -19,6 +19,7 @@ const ROUTE_NAME_MAP = {
   discounts: 'Discounts',
   coupons: 'Coupons',
   'bulk-subscription': 'Bulk Subscription',
+  'institutional-subscriptions': 'Institutional Subscriptions',
   crm: 'CRM',
   feedback: 'Feedback',
   notifications: 'Notifications',

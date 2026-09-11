@@ -38,9 +38,24 @@ const bulkRecordSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    roleOrCategory: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    rollOrEmployeeId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     status: {
       type: String,
-      enum: ['valid', 'invalid', 'imported', 'failed'],
+      enum: ['valid', 'invalid', 'imported', 'failed', 'ENROLLED', 'INVALID', 'FAILED'],
       default: 'valid',
     },
     errors: [
@@ -53,7 +68,16 @@ const bulkRecordSchema = new mongoose.Schema(
       ref: 'Subscriber',
       default: null,
     },
+    createdSubscriberId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscriber',
+      default: null,
+    },
     subscriptionId: {
+      type: String,
+      default: '',
+    },
+    remarks: {
       type: String,
       default: '',
     },
@@ -185,6 +209,46 @@ const bulkImportSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
+    },
+    // Cohort & Institutional reference fields
+    batchReference: {
+      type: String,
+      trim: true,
+      index: true,
+      default: '',
+    },
+    institutionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscriber',
+      default: null,
+      index: true,
+    },
+    userType: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      default: 'UNIVERSITIES_COLLEGES',
+    },
+    coordinator: {
+      name: { type: String, default: '' },
+      email: { type: String, default: '' },
+      phone: { type: String, default: '' },
+    },
+    validRows: {
+      type: Number,
+      default: 0,
+    },
+    failedRows: {
+      type: Number,
+      default: 0,
+    },
+    invoice: {
+      invoiceNumber: { type: String, default: '' },
+      invoiceDate: { type: Date, default: null },
+      subtotal: { type: Number, default: 0 },
+      taxAmount: { type: Number, default: 0 },
+      totalAmount: { type: Number, default: 0 },
+      status: { type: String, default: 'PAID' },
     },
     startedAt: {
       type: Date,

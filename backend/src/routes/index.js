@@ -20,6 +20,7 @@ import marqueeAlertRoutes from './marqueeAlert.routes.js';
 import departmentRoutes from './department.routes.js';
 import designationRoutes from './designation.routes.js';
 import dikshaRoutes from './diksha.routes.js';
+import institutionalSubscriptionRoutes from './institutionalSubscription.routes.js';
 
 const router = Router();
 
@@ -61,6 +62,9 @@ router.use('/coupons', couponRoutes);
 
 // Bulk Subscriptions Management routes
 router.use('/bulk-subscriptions', bulkImportRoutes);
+
+// Institutional & Bulk Cohort Subscriptions Monitoring
+router.use('/institutional-subscriptions', institutionalSubscriptionRoutes);
 
 // Notification Campaigns & Messaging routes
 router.use('/notifications', notificationRoutes);

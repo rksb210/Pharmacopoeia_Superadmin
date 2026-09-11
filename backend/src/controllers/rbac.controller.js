@@ -438,6 +438,7 @@ export const seedRBAC = async (req, res, next) => {
     const matrix = [
       { module: 'OVERVIEW', section: 'DASHBOARD', actions: ['VIEW', 'EXPORT'] },
       { module: 'USERS', section: 'USERS', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE', 'EXPORT'] },
+      { module: 'USERS', section: 'INSTITUTIONAL_SUBSCRIPTIONS', actions: ['VIEW', 'EDIT', 'EXPORT'] },
       { module: 'USERS', section: 'ADMINS', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE', 'EXPORT'] },
       { module: 'USERS', section: 'SUBADMINS', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE', 'EXPORT'] },
       { module: 'USERS', section: 'ROLES', actions: ['VIEW', 'ADD', 'EDIT', 'DELETE'] },
