@@ -76,6 +76,14 @@ export const ADMIN_NAV_SECTIONS = [
         roles: ['superadmin'],
       },
       {
+        id: 'institutional-subscriptions',
+        title: 'Institutional Subscriptions',
+        path: '/admin/institutional-subscriptions',
+        icon: Building2,
+        permission: { module: 'USERS', section: 'INSTITUTIONAL_SUBSCRIPTIONS', action: 'VIEW' },
+        roles: ['superadmin', 'admin'],
+      },
+      {
         id: 'departments',
         title: 'Departments',
         path: '/admin/departments',

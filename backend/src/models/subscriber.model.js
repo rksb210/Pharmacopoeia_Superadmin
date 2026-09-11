@@ -120,7 +120,9 @@ const subscriberSchema = new mongoose.Schema(
     subscription: {
       status: {
         type: String,
-        enum: ['none', 'trial', 'active', 'expired', 'complimentary'],
+        lowercase: true,
+        trim: true,
+        enum: ['none', 'trial', 'active', 'expired', 'complimentary', 'revoked', 'inactive', 'pending'],
         default: 'none',
       },
       planName: {
@@ -175,6 +177,24 @@ const subscriberSchema = new mongoose.Schema(
       default: '',
     },
     crmNotes: [crmNoteSchema],
+    // Institutional Cohort Linkage
+    batchReference: {
+      type: String,
+      trim: true,
+      index: true,
+      default: null,
+    },
+    parentInstitutionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subscriber',
+      index: true,
+      default: null,
+    },
+    institutionName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   {
     timestamps: true,
