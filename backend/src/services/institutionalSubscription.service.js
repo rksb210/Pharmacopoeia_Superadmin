@@ -457,6 +457,12 @@ export const institutionalSubscriptionService = {
     }
 
     subscriber.isActive = !subscriber.isActive;
+
+    // Ensure legacy or user-portal capitalized subscription status does not fail Mongoose validation
+    if (subscriber.subscription && subscriber.subscription.status) {
+      subscriber.subscription.status = subscriber.subscription.status.toLowerCase();
+    }
+
     await subscriber.save();
 
     return {

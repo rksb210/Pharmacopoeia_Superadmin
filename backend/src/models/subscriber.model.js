@@ -120,7 +120,9 @@ const subscriberSchema = new mongoose.Schema(
     subscription: {
       status: {
         type: String,
-        enum: ['none', 'trial', 'active', 'expired', 'complimentary'],
+        lowercase: true,
+        trim: true,
+        enum: ['none', 'trial', 'active', 'expired', 'complimentary', 'revoked', 'inactive', 'pending'],
         default: 'none',
       },
       planName: {
