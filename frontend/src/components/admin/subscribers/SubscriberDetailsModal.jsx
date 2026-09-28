@@ -30,7 +30,7 @@ export const SubscriberDetailsModal = ({
       case 'expired':
         return <Badge variant="destructive" className="text-[10px] font-bold">Expired</Badge>;
       default:
-        return <Badge variant="outline" className="text-[10px] font-bold">No Subscription</Badge>;
+        return <Badge variant="outline" className="text-[10px] font-bold text-slate-500 bg-slate-50">Basic Access</Badge>;
     }
   };
 

@@ -129,7 +129,7 @@ export const AssignSubscriptionModal = ({
             <h4 className="font-bold text-slate-900">Assign Subscription Concession / Discount Rate</h4>
             {(!subscriber.subscription || subscriber.subscription.status === 'none') && (
               <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-800 font-medium">
-                Note: Subscriber is currently on Free Tier. Concession rate will be applied when enrolling in a commercial paid formulary pass.
+                Note: Subscriber is currently on Basic Access. Concession rate will be applied when enrolling in a commercial paid formulary pass.
               </div>
             )}
             <div className="flex flex-col gap-1.5">
