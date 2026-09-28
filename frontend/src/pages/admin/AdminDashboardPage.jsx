@@ -97,7 +97,7 @@ export const AdminDashboardPage = () => {
       {/* Header with Role Banner */}
       <PageHeader
         title={`Welcome back, ${displayName}`}
-        subtitle="Official Indian Pharmacopoeia Commission Portal · ADMIN OPERATIONAL DESK"
+        subtitle="Indian Pharmacopoeia Commission Portal · ADMIN OPERATIONAL DESK"
       >
         <div className="flex items-center gap-2 flex-wrap">
           <Button
@@ -259,13 +259,13 @@ export const AdminDashboardPage = () => {
           <StatCard
             title="Bulk Batch Imports"
             value={data?.stats?.totalBulkJobs || 0}
-            subtitle="Institutional roster uploads"
+            subtitle={`${data?.stats?.totalBulkBatches || 0} batches uploaded`}
             icon={Building2}
             iconColor="text-[#284661]"
             iconBg="bg-blue-50"
           />
           <StatCard
-            title="Commercial Revenue"
+            title="Total Sales"
             value={`₹${(data?.stats?.totalRevenueINR || 0).toLocaleString('en-IN')}`}
             subtitle="Gross realized earnings"
             icon={TrendingUp}
@@ -299,7 +299,7 @@ export const AdminDashboardPage = () => {
           <StatCard
             title="Staff & Admin Accounts"
             value={data?.stats?.totalStaffUsers || 0}
-            subtitle={`${data?.stats?.activeAdmins || 0} active managers`}
+            subtitle={`${data?.stats?.activeStaffUsers ?? data?.stats?.activeAdmins ?? 0} active staff accounts`}
             icon={Shield}
             iconColor="text-slate-700"
             iconBg="bg-slate-100"
@@ -308,11 +308,11 @@ export const AdminDashboardPage = () => {
       )}
 
       {/* Main Responsive Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 min-w-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 min-w-0 items-stretch">
         {/* Left 2 Columns: Chart & Workflow Queues */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-5 min-w-0">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5 min-w-0 flex flex-col justify-between">
           <ChartCard
-            title="Subscriber Registrations & Revenue Velocity"
+            title="Subscriber Registrations & Revenue "
             subtitle={data?.trendData?.fiscalYearLabel || 'Financial Year Performance (April – March)'}
             trendData={data?.trendData}
           />
@@ -341,45 +341,30 @@ export const AdminDashboardPage = () => {
                 ? roleMetrics.reviewQueue || []
                 : roleType === 'approver'
                 ? roleMetrics.approvalQueue || []
-                : [
-                    {
-                      id: 'MON-982',
-                      title: 'Paracetamol & Tramadol Fixed-Dose Tablet IP',
-                      author: 'Dr. Vikram Malhotra',
-                      submittedAt: 'Today, 10:30 AM',
-                      priority: 'High',
-                    },
-                    {
-                      id: 'MON-981',
-                      title: 'Remdesivir Injectable Solution (100mg)',
-                      author: 'Dr. Kavita Nair',
-                      submittedAt: 'Yesterday',
-                      priority: 'Normal',
-                    },
-                    {
-                      id: 'MON-976',
-                      title: 'Insulin Glargine Recombinant Solution',
-                      verifiedBy: 'Dr. Rajesh Verma (Reviewer)',
-                      submittedAt: '2 days ago',
-                      priority: 'Normal',
-                    },
-                  ]
+                : data?.pendingApprovals || roleMetrics.approvalQueue || []
             }
             roleType={roleType}
           />
-
-          {(roleType === 'superadmin' || roleType === 'admin') && (
-            <RecentOrders orders={data?.recentOrders || []} />
-          )}
         </div>
 
-        {/* Right 1 Column: Notifications & Audit Timeline */}
-        <div className="space-y-4 sm:space-y-5 min-w-0">
-          <NotificationWidget notifications={data?.notifications || []} />
-
-          <ActivityList activities={data?.recentActivities || []} />
+        {/* Right 1 Column: Advisories & Notifications (Equal in height to Chart + Approvals) */}
+        <div className="min-w-0 flex flex-col">
+          <NotificationWidget
+            notifications={data?.notifications || []}
+            className="h-full flex-1 flex flex-col"
+          />
         </div>
       </div>
+
+      {/* Recent Audit Activities: Placed where Recent Subscription Orders was */}
+      <div className="min-w-0">
+        <ActivityList activities={data?.recentActivities || []} isGrid={true} />
+      </div>
+
+      {/* Recent Subscription Orders - Commented out for now as requested */}
+      {/* {(roleType === 'superadmin' || roleType === 'admin') && (
+        <RecentOrders orders={data?.recentOrders || []} />
+      )} */}
     </PageContainer>
   );
 };

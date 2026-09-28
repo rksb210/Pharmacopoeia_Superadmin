@@ -57,11 +57,12 @@ export const getDashboardOverview = async (req, res, next) => {
     // 1. Parallel Database Aggregations
     const [
       totalStaffUsers,
-      activeAdmins,
+      activeStaffUsers,
       totalSubscribers,
       activeSubscriptions,
       trialSubscriptions,
-      totalBulkJobs,
+      distinctBulkImporters,
+      totalBulkBatches,
       totalOrders,
       completedOrders,
       failedOrders,
@@ -77,13 +78,11 @@ export const getDashboardOverview = async (req, res, next) => {
       fyRegistrationAgg,
     ] = await Promise.all([
       User.countDocuments(),
-      User.countDocuments({
-        role: { $in: ['superadmin', 'admin', 'subadmin'] },
-        isActive: true,
-      }),
+      User.countDocuments({ isActive: true }),
       Subscriber.countDocuments(),
       Subscription.countDocuments({ status: 'active' }),
       Subscription.countDocuments({ type: 'trial' }),
+      BulkImport.distinct('importedBy'),
       BulkImport.countDocuments(),
       Order.countDocuments(),
       Order.countDocuments({ orderStatus: 'completed' }),
@@ -142,6 +141,14 @@ export const getDashboardOverview = async (req, res, next) => {
     const totalRevenueINR = revenueAgg[0]?.total || 0;
     const resolutionRatePercent =
       totalTickets > 0 ? Math.round((completedTickets / totalTickets) * 100) : 100;
+
+    // Calculate unique persons/managers who performed bulk creations
+    const validBulkCreators = (distinctBulkImporters || []).filter(Boolean);
+    const hasUnassignedBatch = (distinctBulkImporters || []).some((u) => !u);
+    const totalBulkCreators = totalBulkBatches > 0
+      ? Math.max(1, validBulkCreators.length + (hasUnassignedBatch && validBulkCreators.length === 0 ? 1 : 0))
+      : 0;
+    const totalBulkJobs = totalBulkCreators;
 
     // 3. Build 12-Month Financial Year Trend Maps
     const revenueMap = new Map();
@@ -224,6 +231,7 @@ export const getDashboardOverview = async (req, res, next) => {
         activeSubscriptions,
         trialSubscriptions,
         totalBulkJobs,
+        totalBulkBatches,
         totalOrders,
         completedOrders,
         failedOrders,
@@ -234,12 +242,14 @@ export const getDashboardOverview = async (req, res, next) => {
         completedTickets,
         resolutionRatePercent,
         totalStaffUsers,
-        activeAdmins,
+        activeAdmins: activeStaffUsers,
+        activeStaffUsers,
       },
       recentActivities,
       recentOrders,
       notifications,
       trendData,
+      pendingApprovals: [],
     });
   } catch (error) {
     next(error);

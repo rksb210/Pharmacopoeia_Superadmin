@@ -17,7 +17,10 @@ export const ApprovalList = ({
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-bold text-slate-900 text-sm">{title}</h3>
-            <Badge variant="nfiYellow" className="text-[9px] px-1.5 py-0 font-bold uppercase">
+            <Badge
+              variant={items.length > 0 ? 'nfiYellow' : 'outline'}
+              className={`text-[9px] px-1.5 py-0 font-bold uppercase ${items.length === 0 ? 'text-slate-400 border-slate-200' : ''}`}
+            >
               {items.length} Pending
             </Badge>
           </div>
@@ -38,7 +41,7 @@ export const ApprovalList = ({
         {items.length === 0 ? (
           <div className="p-6 sm:p-8 text-center bg-slate-50 border border-slate-100 rounded-xl text-slate-400">
             <GitPullRequest className="w-6 h-6 mx-auto mb-1.5 text-slate-300" />
-            <p className="text-xs font-semibold">Workflow inbox is clear! No pending items.</p>
+            <p className="text-xs font-semibold">Workflow inbox is clear! No pending monograph approvals at this time.</p>
           </div>
         ) : (
           items.map((item, idx) => (

@@ -208,7 +208,7 @@ function AppRoutes() {
               <AdminModulePlaceholderPage
                 moduleId="content"
                 title="Content & Monographs"
-                description="Official Indian Pharmacopoeia drug monographs, dosage guidelines, and advisories."
+                description="Indian Pharmacopoeia drug monographs, dosage guidelines, and advisories."
               />
             </PermissionGuard>
           }

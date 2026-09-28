@@ -2,7 +2,7 @@ import React from 'react';
 import { Bell, AlertTriangle, Info, CheckCircle2, ArrowRight } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
-export const NotificationWidget = ({ notifications = [] }) => {
+export const NotificationWidget = ({ notifications = [], className = '' }) => {
   const getIcon = (severity) => {
     switch (severity) {
       case 'warning':
@@ -26,7 +26,7 @@ export const NotificationWidget = ({ notifications = [] }) => {
   };
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3 sm:space-y-4 select-none font-sans overflow-hidden min-w-0">
+    <div className={`bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3 sm:space-y-4 select-none font-sans overflow-hidden min-w-0 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between gap-2 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
@@ -43,7 +43,7 @@ export const NotificationWidget = ({ notifications = [] }) => {
       </div>
 
       {/* Notifications List */}
-      <div className="space-y-2.5 min-w-0">
+      <div className="space-y-2.5 min-w-0 flex-1 overflow-y-auto scrollbar-thin">
         {notifications.length === 0 ? (
           <p className="text-xs text-slate-400 text-center py-4">No active broadcasts.</p>
         ) : (

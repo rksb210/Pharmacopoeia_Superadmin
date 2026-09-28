@@ -707,7 +707,7 @@ export const ReportsPage = () => {
               <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden text-xs">
                 <div className="p-4 border-b border-slate-100">
                   <span className="font-bold text-slate-900 block">
-                    Plan-wise Commercial Revenue Distribution
+                    Plan-wise Total Sales Distribution
                   </span>
                 </div>
 

@@ -3,7 +3,7 @@ import { Clock, Shield, FileText, CreditCard, ArrowRight } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 import { NavLink } from 'react-router-dom';
 
-export const ActivityList = ({ activities = [] }) => {
+export const ActivityList = ({ activities = [], className = '', isGrid = false }) => {
   const getActivityIcon = (type) => {
     switch (type) {
       case 'content':
@@ -18,7 +18,7 @@ export const ActivityList = ({ activities = [] }) => {
   };
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3 sm:space-y-4 select-none font-sans overflow-hidden min-w-0">
+    <div className={`bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3 sm:space-y-4 select-none font-sans overflow-hidden min-w-0 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between gap-2 min-w-0">
         <div className="min-w-0">
@@ -35,7 +35,7 @@ export const ActivityList = ({ activities = [] }) => {
       </div>
 
       {/* Activity Timeline */}
-      <div className="space-y-2.5 min-w-0">
+      <div className={`min-w-0 ${isGrid ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5' : 'space-y-2.5'}`}>
         {activities.length === 0 ? (
           <p className="text-xs text-slate-400 text-center py-6">No recent activities logged.</p>
         ) : (
