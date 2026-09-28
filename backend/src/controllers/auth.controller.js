@@ -4,6 +4,8 @@ import Subscriber from '../models/subscriber.model.js';
 import UserType from '../models/userType.model.js';
 import { generateToken } from '../utils/jwt.js';
 import { auditService } from '../services/audit.service.js';
+import { decryptPassword, getPublicKey as getRsaPublicKey } from '../utils/cryptoAuth.js';
+import { maskPhone } from '../utils/piiMask.js';
 
 /**
  * Extract client IP address from request
@@ -38,6 +40,7 @@ export const login = async (req, res, next) => {
   try {
     const { identifier, password, rememberMe } = req.body;
     const cleanIdentifier = (identifier || '').toLowerCase().trim();
+    const rawPassword = decryptPassword(password);
 
     // 1. Search Admin/Staff Users by Email OR Username
     let user = await User.findOne({
@@ -117,7 +120,7 @@ export const login = async (req, res, next) => {
     }
 
     // Verify password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await user.comparePassword(rawPassword);
     if (!isMatch) {
       if (!isSubscriber) {
         // Increment failed attempts for security
@@ -255,6 +258,7 @@ export const login = async (req, res, next) => {
 export const signup = async (req, res, next) => {
   try {
     const { name, email, username, password, phoneNumber, userType, dynamicFields } = req.body;
+    const rawPassword = decryptPassword(password);
 
     const cleanEmail = email.toLowerCase().trim();
     const cleanUsername = username.toLowerCase().trim();
@@ -319,7 +323,7 @@ export const signup = async (req, res, next) => {
       email: cleanEmail,
       username: cleanUsername,
       phoneNumber: (phoneNumber || '').trim(),
-      password,
+      password: rawPassword,
       userType: cleanUserType,
       userTypeRef: userTypeDoc._id,
       dynamicFields: dynamicFields || {},
@@ -372,7 +376,7 @@ export const signup = async (req, res, next) => {
         name: newSubscriber.name,
         email: newSubscriber.email,
         username: newSubscriber.username,
-        phoneNumber: newSubscriber.phoneNumber,
+        phoneNumber: maskPhone(newSubscriber.phoneNumber),
         role: 'subscriber',
         userType: newSubscriber.userType,
       },
@@ -573,7 +577,7 @@ export const getMe = async (req, res, next) => {
         subscription: isSubscriber ? user.subscription : undefined,
         department: user.department,
         designation: user.designation,
-        phoneNumber: user.phoneNumber,
+        phoneNumber: maskPhone(user.phoneNumber),
         lastLogin: user.lastLogin,
         lastLoginIP: user.lastLoginIP,
         lastLoginDevice: user.lastLoginDevice,
@@ -651,6 +655,23 @@ export const seedSuperAdmin = async (req, res, next) => {
       success: true,
       message: 'Default Superadmin user initialized successfully.',
       user: newAdmin,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get RSA Public Key for client-side password encryption
+ * @route   GET /api/auth/public-key
+ * @access  Public
+ */
+export const getPublicKey = async (req, res, next) => {
+  try {
+    const key = getRsaPublicKey();
+    res.json({
+      success: true,
+      publicKey: key,
     });
   } catch (error) {
     next(error);

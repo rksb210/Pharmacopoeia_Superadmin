@@ -8,6 +8,7 @@ import {
   changePassword,
   forgotPassword,
   resetPassword,
+  getPublicKey,
 } from '../controllers/auth.controller.js';
 import {
   validateLogin,
@@ -22,6 +23,7 @@ import { authLimiter } from '../middlewares/security.middleware.js';
 const router = Router();
 
 // Public Authentication Routes (Rate Limited)
+router.get('/public-key', getPublicKey);
 router.post('/login', authLimiter, validateLogin, login);
 router.post('/signup', authLimiter, validateSignup, signup);
 router.post('/logout', logout);

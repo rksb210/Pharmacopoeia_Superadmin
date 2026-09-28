@@ -21,6 +21,7 @@ import departmentRoutes from './department.routes.js';
 import designationRoutes from './designation.routes.js';
 import dikshaRoutes from './diksha.routes.js';
 import institutionalSubscriptionRoutes from './institutionalSubscription.routes.js';
+import contentRoutes from './content.routes.js';
 
 const router = Router();
 
@@ -96,5 +97,8 @@ router.use('/designations', designationRoutes);
 
 // DIKSHA (Digital Initiative for Knowledge & Skill Enhancement) LMS routes
 router.use('/diksha', dikshaRoutes);
+
+// Content & Formulary (Chapters, Sub-Chapters, Medicines & Tables)
+router.use('/content', contentRoutes);
 
 export default router;
