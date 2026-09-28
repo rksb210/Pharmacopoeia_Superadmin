@@ -2,10 +2,20 @@ import crypto from 'crypto';
 import User from '../models/user.model.js';
 import Subscriber from '../models/subscriber.model.js';
 import UserType from '../models/userType.model.js';
+import SignupSession from '../models/signupSession.model.js';
+import { verificationService } from '../services/verification.service.js';
+import {
+  USER_TYPES,
+  ALLOWED_USER_TYPES,
+  normalizeUserType,
+  isPrivilegedRole,
+  VERIFICATION_STATUSES,
+} from '../constants/userTypes.js';
 import { generateToken } from '../utils/jwt.js';
 import { auditService } from '../services/audit.service.js';
 import { decryptPassword, getPublicKey as getRsaPublicKey } from '../utils/cryptoAuth.js';
 import { maskPhone } from '../utils/piiMask.js';
+import { sanitizeDynamicFields } from '../utils/sanitize.js';
 
 /**
  * Extract client IP address from request
@@ -251,18 +261,256 @@ export const login = async (req, res, next) => {
 };
 
 /**
+ * @desc    Initiate signup session: validates category and executes authoritative credential verification
+ * @route   POST /api/auth/signup/initiate
+ * @access  Public
+ */
+export const initiateSignup = async (req, res, next) => {
+  try {
+    const { userType, dynamicFields = {} } = req.body;
+    const normalizedType = normalizeUserType(userType);
+
+    if (!normalizedType) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid account category '${userType}'. Allowed categories: ${ALLOWED_USER_TYPES.join(', ')}`,
+      });
+    }
+
+    const clientIP = getClientIP(req);
+    let isVerified = false;
+    let verificationStatus = VERIFICATION_STATUSES.UNVERIFIED;
+    let verificationDetails = {};
+
+    // For privileged healthcare professional roles, require authoritative verification against NMC/PCI/INC
+    if (isPrivilegedRole(normalizedType)) {
+      const vResult = await verificationService.verifyCredentials(normalizedType, dynamicFields);
+      if (!vResult.verified) {
+        await auditService.log(req, {
+          action: 'CREDENTIAL_VERIFICATION_FAILED',
+          module: 'AUTH',
+          entity: 'CredentialVerification',
+          entityId: vResult.registrationNo || 'UNKNOWN',
+          status: 'FAILURE',
+          details: `Authoritative credential verification rejected for role '${normalizedType}': ${vResult.remarks}. Remote IP: ${clientIP}.`,
+          errorMessage: vResult.remarks,
+        });
+
+        return res.status(400).json({
+          success: false,
+          message: vResult.remarks,
+          verificationStatus: vResult.status,
+        });
+      }
+
+      isVerified = true;
+      verificationStatus = VERIFICATION_STATUSES.VERIFIED;
+      verificationDetails = {
+        authoritativeSource: vResult.authoritativeSource,
+        registrationNo: vResult.registrationNo,
+        council: vResult.council,
+        verifiedAt: vResult.verifiedAt,
+        verifiedBy: vResult.verifiedBy,
+        remarks: vResult.remarks,
+      };
+
+      await auditService.log(req, {
+        action: 'CREDENTIAL_VERIFICATION_SUCCESS',
+        module: 'AUTH',
+        entity: 'CredentialVerification',
+        entityId: vResult.registrationNo,
+        status: 'SUCCESS',
+        details: `Credentials verified for ${normalizedType} via ${vResult.authoritativeSource}. Council: ${vResult.council}. Reg No: ${vResult.registrationNo}.`,
+      });
+    } else if (normalizedType === 'STUDENT') {
+      // Authoritative verification against APAAR/ABC Edu-Account registry
+      const vResult = await verificationService.verifyCredentials('STUDENT', dynamicFields);
+      if (!vResult.verified) {
+        await auditService.log(req, {
+          action: 'APAAR_VERIFICATION_FAILED',
+          module: 'AUTH',
+          entity: 'CredentialVerification',
+          entityId: dynamicFields.apaarId || 'UNKNOWN',
+          status: 'FAILURE',
+          details: `APAAR verification failed: ${vResult.remarks}. Remote IP: ${clientIP}.`,
+          errorMessage: vResult.remarks,
+        });
+
+        return res.status(400).json({
+          success: false,
+          message: vResult.remarks,
+          verificationStatus: vResult.status,
+        });
+      }
+
+      isVerified = true;
+      verificationStatus = VERIFICATION_STATUSES.VERIFIED;
+      verificationDetails = {
+        authoritativeSource: vResult.authoritativeSource,
+        registrationNo: vResult.registrationNo,
+        council: vResult.council,
+        verifiedAt: vResult.verifiedAt,
+        verifiedBy: vResult.verifiedBy,
+        remarks: vResult.remarks,
+      };
+
+      await auditService.log(req, {
+        action: 'APAAR_VERIFICATION_SUCCESS',
+        module: 'AUTH',
+        entity: 'CredentialVerification',
+        entityId: vResult.registrationNo,
+        status: 'SUCCESS',
+        details: `APAAR ID '${vResult.registrationNo}' successfully verified with ${vResult.authoritativeSource}.`,
+      });
+    }
+
+    const cleanFields = sanitizeDynamicFields(dynamicFields);
+
+    // Create server-side signup session (valid for 30 minutes)
+    const session = await SignupSession.create({
+      userType: normalizedType,
+      dynamicFields: cleanFields,
+      verificationStatus,
+      isVerified,
+      verificationDetails,
+      ipAddress: clientIP,
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+    });
+
+    // Set HTTP-only cookie for session token
+    res.cookie('signup_session', session.sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 60 * 1000,
+    });
+
+    await auditService.log(req, {
+      action: 'SIGNUP_SESSION_INITIATED',
+      module: 'AUTH',
+      entity: 'SignupSession',
+      entityId: session.sessionToken,
+      status: 'SUCCESS',
+      details: `Signup session created for account category '${normalizedType}'. Verification Status: ${verificationStatus}.`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: isVerified
+        ? `Credentials successfully verified with ${verificationDetails.council}. Registration session active.`
+        : 'Registration session initiated.',
+      signupSessionToken: session.sessionToken,
+      userType: session.userType,
+      verificationStatus: session.verificationStatus,
+      isVerified: session.isVerified,
+      verificationDetails: session.isVerified ? session.verificationDetails : undefined,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * @desc    Public signup for subscribers (end users)
  * @route   POST /api/auth/signup
  * @access  Public
  */
 export const signup = async (req, res, next) => {
   try {
-    const { name, email, username, password, phoneNumber, userType, dynamicFields } = req.body;
+    const { name, email, username, password, phoneNumber, dynamicFields } = req.body;
     const rawPassword = decryptPassword(password);
 
     const cleanEmail = email.toLowerCase().trim();
     const cleanUsername = username.toLowerCase().trim();
-    const cleanUserType = userType.toUpperCase().trim();
+    const clientIP = getClientIP(req);
+
+    // Resolve server-side signup session token
+    const tokenFromHeader = req.headers['x-signup-session'];
+    const tokenFromCookie = req.cookies?.signup_session;
+    const sessionToken = req.signupSessionToken || req.body.signupSessionToken || tokenFromHeader || tokenFromCookie;
+
+    let effectiveUserType = null;
+    let effectiveDynamicFields = dynamicFields || {};
+    let effectiveIsVerified = false;
+    let effectiveVerificationStatus = VERIFICATION_STATUSES.UNVERIFIED;
+    let effectiveVerificationDetails = {};
+    let session = null;
+
+    if (sessionToken) {
+      session = await SignupSession.findOne({
+        sessionToken,
+        isUsed: false,
+        expiresAt: { $gt: new Date() },
+      });
+
+      if (!session) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or expired signup session. Please initiate registration again.',
+        });
+      }
+
+      // SECURITY AUDIT & DEFENSE: Detect parameter tampering if client sent userType in payload
+      if (req.body.userType !== undefined) {
+        const bodyTypeNormalized = normalizeUserType(req.body.userType);
+        if (bodyTypeNormalized && bodyTypeNormalized !== session.userType) {
+          await auditService.log(req, {
+            action: 'SECURITY_ALERT_PARAMETER_TAMPERING',
+            module: 'AUTH',
+            entity: 'SignupSession',
+            entityId: session.sessionToken,
+            status: 'WARNING',
+            details: `Privilege escalation parameter tampering detected: Request body specified 'userType': '${req.body.userType}' but server session is bound to '${session.userType}'. Attempt blocked. Remote IP: ${clientIP}.`,
+            errorMessage: 'Security violation: Parameter tampering detected on userType.',
+          });
+
+          return res.status(403).json({
+            success: false,
+            message: 'Security violation: Account category cannot be modified during signup. Parameter tampering detected.',
+          });
+        }
+      }
+
+      // Strictly derive role and verification status from the server session
+      effectiveUserType = session.userType;
+      effectiveDynamicFields = sanitizeDynamicFields(session.dynamicFields || dynamicFields || {});
+      effectiveIsVerified = Boolean(session.isVerified);
+      effectiveVerificationStatus = session.verificationStatus || VERIFICATION_STATUSES.UNVERIFIED;
+      effectiveVerificationDetails = session.verificationDetails || {};
+    } else {
+      // Direct signup without session token: Strictly forbid privileged roles!
+      const requestedType = normalizeUserType(req.body.userType);
+
+      if (!requestedType) {
+        return res.status(400).json({
+          success: false,
+          message: 'Signup session token or a valid account category is required.',
+        });
+      }
+
+      if (isPrivilegedRole(requestedType)) {
+        await auditService.log(req, {
+          action: 'SECURITY_ALERT_PRIVILEGE_BYPASS',
+          module: 'AUTH',
+          entity: 'Subscriber',
+          entityId: cleanEmail,
+          status: 'WARNING',
+          details: `Direct signup rejected for privileged role '${requestedType}' without authoritative verification session. Remote IP: ${clientIP}.`,
+          errorMessage: 'Privileged healthcare professional roles cannot be self-assigned without verification.',
+        });
+
+        return res.status(403).json({
+          success: false,
+          message: `Privileged healthcare professional role '${requestedType}' cannot be self-assigned without authoritative council verification. Please initiate registration session via /api/auth/signup/initiate.`,
+        });
+      }
+
+      effectiveUserType = requestedType;
+      effectiveDynamicFields = sanitizeDynamicFields(dynamicFields || {});
+      effectiveIsVerified = false;
+      effectiveVerificationStatus = VERIFICATION_STATUSES.UNVERIFIED;
+      effectiveVerificationDetails = {};
+    }
 
     // Ensure credentials are not already used by a User or Subscriber (login searches both)
     const existingUser = await User.findOne({
@@ -310,7 +558,7 @@ export const signup = async (req, res, next) => {
       }
     }
 
-    const userTypeDoc = await UserType.findOne({ code: cleanUserType });
+    const userTypeDoc = await UserType.findOne({ code: effectiveUserType });
     if (!userTypeDoc) {
       return res.status(400).json({
         success: false,
@@ -324,9 +572,12 @@ export const signup = async (req, res, next) => {
       username: cleanUsername,
       phoneNumber: (phoneNumber || '').trim(),
       password: rawPassword,
-      userType: cleanUserType,
+      userType: effectiveUserType,
       userTypeRef: userTypeDoc._id,
-      dynamicFields: dynamicFields || {},
+      dynamicFields: effectiveDynamicFields,
+      isVerified: effectiveIsVerified,
+      verificationStatus: effectiveVerificationStatus,
+      verificationDetails: effectiveVerificationDetails,
       notes: '',
       subscription: {
         status: 'none',
@@ -334,6 +585,14 @@ export const signup = async (req, res, next) => {
       },
       isActive: true,
     });
+
+    // Mark session as used if applicable
+    if (session) {
+      session.isUsed = true;
+      session.usedAt = new Date();
+      await session.save();
+      res.clearCookie('signup_session');
+    }
 
     const token = generateToken({
       id: newSubscriber._id,
@@ -364,7 +623,15 @@ export const signup = async (req, res, next) => {
         role: 'subscriber',
       },
       status: 'SUCCESS',
-      details: `New subscriber self-registered: ${newSubscriber.name} (${newSubscriber.email}) with user type ${newSubscriber.userType}.`,
+      details: `New subscriber registered: ${newSubscriber.name} (${newSubscriber.email}) with user type ${newSubscriber.userType}. Verification: ${newSubscriber.verificationStatus} (isVerified: ${newSubscriber.isVerified}).`,
+      newValues: {
+        name: newSubscriber.name,
+        email: newSubscriber.email,
+        userType: newSubscriber.userType,
+        isVerified: newSubscriber.isVerified,
+        verificationStatus: newSubscriber.verificationStatus,
+        authoritativeSource: newSubscriber.verificationDetails?.authoritativeSource,
+      },
     });
 
     return res.status(201).json({
@@ -379,6 +646,8 @@ export const signup = async (req, res, next) => {
         phoneNumber: maskPhone(newSubscriber.phoneNumber),
         role: 'subscriber',
         userType: newSubscriber.userType,
+        isVerified: newSubscriber.isVerified,
+        verificationStatus: newSubscriber.verificationStatus,
       },
     });
   } catch (error) {

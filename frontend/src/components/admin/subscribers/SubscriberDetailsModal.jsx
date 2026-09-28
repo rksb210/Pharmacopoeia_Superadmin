@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AdminModal from '../common/AdminModal';
 import { Badge } from '../../ui/badge';
-import { Mail, Phone, Calendar, Clock, CreditCard, CheckCircle2, AlertCircle, ShoppingBag, ShieldCheck } from 'lucide-react';
+import { Mail, Phone, Calendar, Clock, CreditCard, CheckCircle2, AlertCircle, ShoppingBag, ShieldCheck, ShieldAlert } from 'lucide-react';
 
 export const SubscriberDetailsModal = ({
   isOpen,
@@ -104,10 +104,34 @@ export const SubscriberDetailsModal = ({
           <div className="space-y-3.5">
             {/* Dynamic Credentials Card */}
             <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-2xs space-y-3">
-              <div className="flex items-center gap-1.5 text-slate-800 font-bold">
-                <ShieldCheck className="w-4 h-4 text-[#E76120]" />
-                <span>Verified Dynamic Credentials ({subscriber.userType})</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-slate-800 font-bold">
+                  {subscriber.isVerified ? (
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <ShieldAlert className="w-4 h-4 text-amber-500" />
+                  )}
+                  <span>
+                    {subscriber.isVerified ? 'Verified' : 'Unverified / Pending'} Dynamic Credentials ({subscriber.userType})
+                  </span>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  subscriber.isVerified
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>
+                  {subscriber.isVerified ? 'Verified Professional' : (subscriber.verificationStatus || 'Unverified')}
+                </span>
               </div>
+              {subscriber.verificationDetails?.authoritativeSource && (
+                <p className="text-[11px] text-slate-500">
+                  Authoritative Registry:{' '}
+                  <span className="font-semibold text-slate-700">
+                    {subscriber.verificationDetails.authoritativeSource}
+                  </span>
+                  {subscriber.verificationDetails.council ? ` (${subscriber.verificationDetails.council})` : ''}
+                </p>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {Object.entries(dynamicFields)

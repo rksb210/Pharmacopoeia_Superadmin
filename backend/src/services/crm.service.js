@@ -244,14 +244,17 @@ export const crmService = {
     // Build Unified Chronological Multi-System Timeline
     const timelineEvents = [];
 
-    // Account Creation Event
+    // Account Creation & Verification Event
+    const isActuallyVerified = subscriber.isVerified === true && subscriber.verificationStatus === 'VERIFIED';
     timelineEvents.push({
       system: 'IDENTITY',
-      action: 'Account Registered & Verified',
+      action: isActuallyVerified ? 'Account Registered & Verified' : 'Account Registered (Verification Pending)',
       timestamp: subscriber.createdAt,
-      details: `Registered as ${subscriber.userType} verified profile.`,
-      icon: 'user-check',
-      badge: subscriber.userType,
+      details: isActuallyVerified
+        ? `Registered as verified ${subscriber.userType} profile (Verified via ${subscriber.verificationDetails?.authoritativeSource || 'Council Registry'}).`
+        : `Registered as ${subscriber.userType} profile. Credential verification status: ${subscriber.verificationStatus || 'UNVERIFIED'}.`,
+      icon: isActuallyVerified ? 'user-check' : 'user-x',
+      badge: isActuallyVerified ? `${subscriber.userType} (VERIFIED)` : `${subscriber.userType} (PENDING)`,
     });
 
     // Subscription & Order Events

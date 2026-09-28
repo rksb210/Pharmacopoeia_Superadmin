@@ -7,6 +7,7 @@ import Subscriber from '../models/subscriber.model.js';
 import Subscription from '../models/subscription.model.js';
 import Plan from '../models/plan.model.js';
 import SystemConfig from '../models/systemConfig.model.js';
+import { validateApaarId } from '../utils/sanitize.js';
 
 const findJobSafely = (id) => {
   if (!id) return null;
@@ -226,17 +227,17 @@ export const bulkImportService = {
       // 5. Dynamic Fields & Uniqueness Check
       const dynamicFields = {};
       if (userType === 'STUDENT') {
-        if (!apaarId) {
-          errors.push('APAAR ID / Edu-ID is required for Student accounts');
+        const { isValid, cleanApaar, error } = validateApaarId(apaarId);
+        if (!isValid) {
+          errors.push(error || 'Invalid APAAR ID format. Must be exactly 12 digits');
         } else {
-          const cleanApaar = apaarId.toUpperCase().trim();
           if (seenApaarIdsInFile.has(cleanApaar)) {
             errors.push(`Duplicate APAAR ID in this upload file (${apaarId})`);
           } else if (registeredApaarIds.has(cleanApaar)) {
             errors.push(`APAAR ID '${apaarId}' is already registered in the platform`);
           }
           seenApaarIdsInFile.add(cleanApaar);
-          dynamicFields.apaarId = apaarId;
+          dynamicFields.apaarId = cleanApaar;
         }
         if (state) {
           dynamicFields.state = state;

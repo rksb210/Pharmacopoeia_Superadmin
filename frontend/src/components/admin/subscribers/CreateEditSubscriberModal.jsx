@@ -156,8 +156,16 @@ export const CreateEditSubscriberModal = ({
     const uType = formData.userType.toUpperCase();
     const dFields = formData.dynamicFields || {};
 
-    if (uType === 'STUDENT' && !dFields.apaarId?.trim()) {
-      newErrors.apaarId = 'APAAR ID is required';
+    if (uType === 'STUDENT') {
+      const rawApaar = dFields.apaarId?.trim() || '';
+      const cleanApaar = rawApaar.replace(/[-\s]/g, '');
+      if (!rawApaar) {
+        newErrors.apaarId = 'APAAR ID is required';
+      } else if (/[<>&"'/`\\]/.test(rawApaar)) {
+        newErrors.apaarId = 'APAAR ID cannot contain HTML tags or special characters';
+      } else if (!/^\d{12}$/.test(cleanApaar)) {
+        newErrors.apaarId = 'APAAR ID must be exactly 12 digits (e.g. 1234-5678-9012 or 123456789012)';
+      }
     }
     if ((uType === 'DOCTOR' || uType === 'PHARMACIST' || uType === 'NURSE')) {
       if (!dFields.registrationNo?.trim()) newErrors.registrationNo = 'Registration number is required';

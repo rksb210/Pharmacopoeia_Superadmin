@@ -1,6 +1,16 @@
 import Subscriber from '../models/subscriber.model.js';
 import UserType from '../models/userType.model.js';
 import { escapeRegex } from '../middlewares/security.middleware.js';
+import { verificationService } from './verification.service.js';
+import {
+  USER_TYPES,
+  ALLOWED_USER_TYPES,
+  PRIVILEGED_USER_TYPES,
+  normalizeUserType,
+  isPrivilegedRole,
+  VERIFICATION_STATUSES,
+} from '../constants/userTypes.js';
+import { validateApaarId, sanitizeDynamicFields } from '../utils/sanitize.js';
 
 export const subscriberService = {
   /**
@@ -437,11 +447,26 @@ export const subscriberService = {
       }
     }
 
-    // Dynamic credentials uniqueness checks
-    const regNo = (dynamicFields?.registrationNo || dynamicFields?.regNo || '').trim().toUpperCase();
-    const apaarId = (dynamicFields?.apaarId || '').trim().toUpperCase();
-    const gstin = (dynamicFields?.gstin || '').trim().toUpperCase();
-    const pan = (dynamicFields?.pan || '').trim().toUpperCase();
+    const normalizedType = normalizeUserType(uType) || uType;
+    if (!ALLOWED_USER_TYPES.includes(normalizedType)) {
+      throw new Error(`Invalid user type '${userType}'. Allowed categories: ${ALLOWED_USER_TYPES.join(', ')}`);
+    }
+
+    // Dynamic credentials sanitization and validation
+    let cleanDynamicFields = sanitizeDynamicFields(dynamicFields || {});
+    const regNo = (cleanDynamicFields?.registrationNo || cleanDynamicFields?.regNo || '').trim().toUpperCase();
+    let apaarId = (cleanDynamicFields?.apaarId || '').trim();
+    const gstin = (cleanDynamicFields?.gstin || '').trim().toUpperCase();
+    const pan = (cleanDynamicFields?.pan || '').trim().toUpperCase();
+
+    if (normalizedType === 'STUDENT' || apaarId) {
+      const { isValid, cleanApaar, error } = validateApaarId(apaarId);
+      if (!isValid) {
+        throw new Error(error || 'Invalid APAAR ID format. Must be a 12-digit numeric identifier.');
+      }
+      apaarId = cleanApaar;
+      cleanDynamicFields.apaarId = cleanApaar;
+    }
 
     if (regNo) {
       const duplicateReg = await Subscriber.findOne({
@@ -456,8 +481,12 @@ export const subscriberService = {
     }
 
     if (apaarId) {
+      const apaarDigits = apaarId.replace(/[-\s]/g, '');
       const duplicateApaar = await Subscriber.findOne({
-        'dynamicFields.apaarId': { $regex: new RegExp(`^${escapeRegex(apaarId)}$`, 'i') },
+        $or: [
+          { 'dynamicFields.apaarId': { $regex: new RegExp(`^${escapeRegex(apaarId)}$`, 'i') } },
+          { 'dynamicFields.apaarId': { $regex: new RegExp(`^${escapeRegex(apaarDigits)}$`, 'i') } },
+        ],
       });
       if (duplicateApaar) {
         throw new Error(`APAAR ID '${apaarId}' is already registered with another student account.`);
@@ -482,8 +511,35 @@ export const subscriberService = {
       }
     }
 
-    const normalizedType = (uType === 'UNIVERSITIES / COLLEGES') ? 'UNIVERSITIES_COLLEGES' : uType;
-    const userTypeDoc = await UserType.findOne({ code: { $in: [normalizedType, uType] } });
+    const userTypeDoc = await UserType.findOne({ code: normalizedType });
+
+    let isVerified = Boolean(data.isVerified);
+    let verificationStatus = data.verificationStatus || VERIFICATION_STATUSES.UNVERIFIED;
+    let verificationDetails = data.verificationDetails || {};
+
+    if (isPrivilegedRole(normalizedType) || normalizedType === 'STUDENT') {
+      if (isVerified) {
+        const vResult = await verificationService.verifyCredentials(normalizedType, cleanDynamicFields);
+        if (!vResult.verified) {
+          isVerified = false;
+          verificationStatus = VERIFICATION_STATUSES.PENDING;
+          verificationDetails = { remarks: vResult.remarks };
+        } else {
+          isVerified = true;
+          verificationStatus = VERIFICATION_STATUSES.VERIFIED;
+          verificationDetails = {
+            authoritativeSource: vResult.authoritativeSource,
+            registrationNo: vResult.registrationNo,
+            council: vResult.council,
+            verifiedAt: vResult.verifiedAt,
+            verifiedBy: data.verifiedBy || 'ADMIN_CREATION',
+            remarks: vResult.remarks,
+          };
+        }
+      } else {
+        verificationStatus = VERIFICATION_STATUSES.PENDING;
+      }
+    }
 
     const newSubscriber = await Subscriber.create({
       name: name.trim(),
@@ -493,7 +549,10 @@ export const subscriberService = {
       password,
       userType: normalizedType,
       userTypeRef: userTypeDoc ? userTypeDoc._id : null,
-      dynamicFields,
+      dynamicFields: cleanDynamicFields,
+      isVerified,
+      verificationStatus,
+      verificationDetails,
       notes: notes.trim(),
       subscription: {
         status: 'none',
@@ -506,7 +565,7 @@ export const subscriberService = {
   },
 
   /**
-   * Update Subscriber profile and credentials
+   * Update Subscriber profile and credentials with re-verification workflow
    */
   updateSubscriber: async (id, data) => {
     const subscriber = await Subscriber.findById(id);
@@ -515,13 +574,20 @@ export const subscriberService = {
     }
 
     const { name, email, username, phoneNumber, userType, dynamicFields, notes } = data;
+    const previousUserType = subscriber.userType;
+    let roleChanged = false;
 
     if (userType) {
-      const uType = userType.toUpperCase().trim();
-      const normalizedType = (uType === 'UNIVERSITIES / COLLEGES') ? 'UNIVERSITIES_COLLEGES' : uType;
-      subscriber.userType = normalizedType;
-      const userTypeDoc = await UserType.findOne({ code: { $in: [normalizedType, uType] } });
-      subscriber.userTypeRef = userTypeDoc ? userTypeDoc._id : null;
+      const normalizedType = normalizeUserType(userType);
+      if (!normalizedType) {
+        throw new Error(`Invalid user type '${userType}'. Allowed categories: ${ALLOWED_USER_TYPES.join(', ')}`);
+      }
+      if (normalizedType !== previousUserType) {
+        roleChanged = true;
+        subscriber.userType = normalizedType;
+        const userTypeDoc = await UserType.findOne({ code: normalizedType });
+        subscriber.userTypeRef = userTypeDoc ? userTypeDoc._id : null;
+      }
     }
 
     if (name) subscriber.name = name.trim();
@@ -553,10 +619,21 @@ export const subscriberService = {
     }
 
     if (dynamicFields) {
-      const regNo = (dynamicFields.registrationNo || dynamicFields.regNo || '').trim().toUpperCase();
-      const apaarId = (dynamicFields.apaarId || '').trim().toUpperCase();
-      const gstin = (dynamicFields.gstin || '').trim().toUpperCase();
-      const pan = (dynamicFields.pan || '').trim().toUpperCase();
+      let cleanDynamicFields = sanitizeDynamicFields(dynamicFields);
+      const regNo = (cleanDynamicFields.registrationNo || cleanDynamicFields.regNo || '').trim().toUpperCase();
+      let apaarId = (cleanDynamicFields.apaarId || '').trim();
+      const gstin = (cleanDynamicFields.gstin || '').trim().toUpperCase();
+      const pan = (cleanDynamicFields.pan || '').trim().toUpperCase();
+
+      const currentType = (userType ? normalizeUserType(userType) : subscriber.userType) || subscriber.userType;
+      if (currentType === 'STUDENT' || apaarId) {
+        const { isValid, cleanApaar, error } = validateApaarId(apaarId);
+        if (!isValid) {
+          throw new Error(error || 'Invalid APAAR ID format. Must be a 12-digit numeric identifier.');
+        }
+        apaarId = cleanApaar;
+        cleanDynamicFields.apaarId = cleanApaar;
+      }
 
       if (regNo) {
         const duplicateReg = await Subscriber.findOne({
@@ -572,9 +649,13 @@ export const subscriberService = {
       }
 
       if (apaarId) {
+        const apaarDigits = apaarId.replace(/[-\s]/g, '');
         const duplicateApaar = await Subscriber.findOne({
           _id: { $ne: subscriber._id },
-          'dynamicFields.apaarId': { $regex: new RegExp(`^${escapeRegex(apaarId)}$`, 'i') },
+          $or: [
+            { 'dynamicFields.apaarId': { $regex: new RegExp(`^${escapeRegex(apaarId)}$`, 'i') } },
+            { 'dynamicFields.apaarId': { $regex: new RegExp(`^${escapeRegex(apaarDigits)}$`, 'i') } },
+          ],
         });
         if (duplicateApaar) {
           throw new Error(`APAAR ID '${apaarId}' is already registered with another student account.`);
@@ -601,7 +682,102 @@ export const subscriberService = {
         }
       }
 
-      subscriber.dynamicFields = dynamicFields;
+      subscriber.dynamicFields = cleanDynamicFields;
+    }
+
+    // Role Change & Re-Verification Workflow
+    if (roleChanged || (dynamicFields && (isPrivilegedRole(subscriber.userType) || subscriber.userType === 'STUDENT'))) {
+      if (isPrivilegedRole(subscriber.userType) || subscriber.userType === 'STUDENT') {
+        const vResult = await verificationService.verifyCredentials(
+          subscriber.userType,
+          subscriber.dynamicFields
+        );
+        if (vResult.verified) {
+          subscriber.isVerified = true;
+          subscriber.verificationStatus = VERIFICATION_STATUSES.VERIFIED;
+          subscriber.verificationDetails = {
+            authoritativeSource: vResult.authoritativeSource,
+            registrationNo: vResult.registrationNo,
+            council: vResult.council,
+            verifiedAt: vResult.verifiedAt,
+            verifiedBy: data.verifiedBy || 'REVERIFY_WORKFLOW',
+            remarks: vResult.remarks,
+          };
+        } else {
+          subscriber.isVerified = false;
+          subscriber.verificationStatus = VERIFICATION_STATUSES.PENDING;
+          subscriber.verificationDetails = {
+            authoritativeSource: null,
+            registrationNo: (subscriber.dynamicFields?.registrationNo || subscriber.dynamicFields?.apaarId || '').trim(),
+            council: (subscriber.dynamicFields?.stateCouncil || '').trim(),
+            verifiedAt: null,
+            verifiedBy: null,
+            remarks: vResult.remarks || 'Re-verification pending.',
+          };
+        }
+      } else {
+        subscriber.isVerified = false;
+        subscriber.verificationStatus = VERIFICATION_STATUSES.UNVERIFIED;
+        subscriber.verificationDetails = {};
+      }
+    }
+
+    await subscriber.save();
+    return subscriber;
+  },
+
+  /**
+   * Dedicated Authoritative Re-Verification for a Subscriber
+   */
+  reverifySubscriber: async (id, credentials = null, verifiedBy = 'MANUAL_REVERIFICATION') => {
+    const subscriber = await Subscriber.findById(id);
+    if (!subscriber) {
+      throw new Error('Subscriber account not found');
+    }
+
+    if (!isPrivilegedRole(subscriber.userType) && subscriber.userType !== 'STUDENT') {
+      throw new Error(`Re-verification is only applicable to privileged roles (${PRIVILEGED_USER_TYPES.join(', ')}, STUDENT).`);
+    }
+
+    if (credentials && typeof credentials === 'object') {
+      const sanitizedCreds = sanitizeDynamicFields(credentials);
+      if (subscriber.userType === 'STUDENT' && sanitizedCreds.apaarId) {
+        const { isValid, cleanApaar, error } = validateApaarId(sanitizedCreds.apaarId);
+        if (!isValid) {
+          throw new Error(error || 'Invalid APAAR ID format. Must be a 12-digit numeric identifier.');
+        }
+        sanitizedCreds.apaarId = cleanApaar;
+      }
+      subscriber.dynamicFields = { ...subscriber.dynamicFields, ...sanitizedCreds };
+    }
+
+    const vResult = await verificationService.verifyCredentials(
+      subscriber.userType,
+      subscriber.dynamicFields
+    );
+
+    if (vResult.verified) {
+      subscriber.isVerified = true;
+      subscriber.verificationStatus = VERIFICATION_STATUSES.VERIFIED;
+      subscriber.verificationDetails = {
+        authoritativeSource: vResult.authoritativeSource,
+        registrationNo: vResult.registrationNo,
+        council: vResult.council,
+        verifiedAt: vResult.verifiedAt,
+        verifiedBy,
+        remarks: vResult.remarks,
+      };
+    } else {
+      subscriber.isVerified = false;
+      subscriber.verificationStatus = VERIFICATION_STATUSES.REJECTED;
+      subscriber.verificationDetails = {
+        authoritativeSource: vResult.authoritativeSource,
+        registrationNo: vResult.registrationNo,
+        council: vResult.council,
+        verifiedAt: null,
+        verifiedBy,
+        remarks: vResult.remarks,
+      };
     }
 
     await subscriber.save();
