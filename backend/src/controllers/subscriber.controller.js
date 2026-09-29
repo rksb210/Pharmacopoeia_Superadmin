@@ -173,7 +173,59 @@ export const createSubscriber = async (req, res) => {
 
 export const updateSubscriber = async (req, res) => {
   try {
-    const updated = await subscriberService.updateSubscriber(req.params.id, req.body);
+    const currentSubscriber = await subscriberService.getSubscriberById(req.params.id);
+    const prevUserType = currentSubscriber.userType;
+    const prevIsVerified = currentSubscriber.isVerified;
+    const prevVerificationStatus = currentSubscriber.verificationStatus;
+
+    const updated = await subscriberService.updateSubscriber(req.params.id, {
+      ...req.body,
+      verifiedBy: req.user ? `${req.user.name} (${req.user.email})` : 'ADMIN_CONSOLE',
+    });
+
+    const roleChanged = prevUserType !== updated.userType;
+    const verificationChanged = prevIsVerified !== updated.isVerified || prevVerificationStatus !== updated.verificationStatus;
+
+    if (roleChanged) {
+      await auditService.log(req, {
+        action: 'SUBSCRIBER_ROLE_CHANGED',
+        module: 'SUBSCRIBERS',
+        entity: 'Subscriber',
+        entityId: updated._id,
+        status: 'SUCCESS',
+        details: `Subscriber role changed for ${updated.name} from '${prevUserType}' to '${updated.userType}'. Verification status reset to '${updated.verificationStatus}'.`,
+        previousValues: {
+          userType: prevUserType,
+          isVerified: prevIsVerified,
+          verificationStatus: prevVerificationStatus,
+        },
+        newValues: {
+          userType: updated.userType,
+          isVerified: updated.isVerified,
+          verificationStatus: updated.verificationStatus,
+        },
+      });
+    }
+
+    if (verificationChanged && !roleChanged) {
+      await auditService.log(req, {
+        action: 'SUBSCRIBER_VERIFICATION_STATUS_CHANGED',
+        module: 'SUBSCRIBERS',
+        entity: 'Subscriber',
+        entityId: updated._id,
+        status: updated.isVerified ? 'SUCCESS' : 'WARNING',
+        details: `Subscriber verification status changed for ${updated.name} from '${prevVerificationStatus}' to '${updated.verificationStatus}'.`,
+        previousValues: {
+          isVerified: prevIsVerified,
+          verificationStatus: prevVerificationStatus,
+        },
+        newValues: {
+          isVerified: updated.isVerified,
+          verificationStatus: updated.verificationStatus,
+          authoritativeSource: updated.verificationDetails?.authoritativeSource,
+        },
+      });
+    }
 
     await auditService.log(req, {
       action: 'SUBSCRIBER_UPDATED',
@@ -181,11 +233,13 @@ export const updateSubscriber = async (req, res) => {
       entity: 'Subscriber',
       entityId: updated._id,
       status: 'SUCCESS',
-      details: `Updated subscriber profile for ${updated.name} (${updated.email}).`,
+      details: `Updated subscriber profile for ${updated.name} (${updated.email}). Role: ${updated.userType}, Verified: ${updated.isVerified}.`,
       newValues: {
         name: updated.name,
         email: updated.email,
         userType: updated.userType,
+        isVerified: updated.isVerified,
+        verificationStatus: updated.verificationStatus,
         phoneNumber: updated.phoneNumber,
       },
     });
@@ -193,6 +247,41 @@ export const updateSubscriber = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Subscriber profile updated successfully.',
+      subscriber: updated,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const reverifySubscriberCredentials = async (req, res) => {
+  try {
+    const { dynamicFields } = req.body;
+    const verifiedBy = req.user ? `${req.user.name} (${req.user.email})` : 'ADMIN_API';
+    const updated = await subscriberService.reverifySubscriber(req.params.id, dynamicFields, verifiedBy);
+
+    await auditService.log(req, {
+      action: 'SUBSCRIBER_VERIFICATION_STATUS_CHANGED',
+      module: 'SUBSCRIBERS',
+      entity: 'Subscriber',
+      entityId: updated._id,
+      status: updated.isVerified ? 'SUCCESS' : 'WARNING',
+      details: `Authoritative re-verification executed for ${updated.name} (${updated.email}). Status: ${updated.verificationStatus} (isVerified: ${updated.isVerified}). Source: ${updated.verificationDetails?.authoritativeSource || 'N/A'}.`,
+      newValues: {
+        verificationStatus: updated.verificationStatus,
+        isVerified: updated.isVerified,
+        verificationDetails: updated.verificationDetails,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: updated.isVerified
+        ? `Credentials successfully verified with ${updated.verificationDetails?.council || 'Medical Council'}.`
+        : `Verification check: ${updated.verificationDetails?.remarks || 'Credentials could not be verified.'}`,
       subscriber: updated,
     });
   } catch (error) {

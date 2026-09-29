@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AdminModal from '../common/AdminModal';
 import { Badge } from '../../ui/badge';
-import { Mail, Phone, Calendar, Clock, CreditCard, CheckCircle2, AlertCircle, ShoppingBag, ShieldCheck } from 'lucide-react';
+import { Mail, Phone, Calendar, Clock, CreditCard, CheckCircle2, AlertCircle, ShoppingBag, ShieldCheck, ShieldAlert } from 'lucide-react';
 
 export const SubscriberDetailsModal = ({
   isOpen,
@@ -114,6 +114,15 @@ export const SubscriberDetailsModal = ({
                   )
                 </span>
               </div>
+              {subscriber.verificationDetails?.authoritativeSource && (
+                <p className="text-[11px] text-slate-500">
+                  Authoritative Registry:{' '}
+                  <span className="font-semibold text-slate-700">
+                    {subscriber.verificationDetails.authoritativeSource}
+                  </span>
+                  {subscriber.verificationDetails.council ? ` (${subscriber.verificationDetails.council})` : ''}
+                </p>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {Object.entries(dynamicFields)

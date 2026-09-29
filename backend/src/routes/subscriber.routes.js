@@ -10,6 +10,7 @@ import {
   getSubscriberById,
   createSubscriber,
   updateSubscriber,
+  reverifySubscriberCredentials,
   toggleSubscriberStatus,
   resetSubscriberPassword,
   assignTrial,
@@ -53,6 +54,7 @@ router.get('/:id', requirePermission('USERS', 'USERS', 'VIEW'), getSubscriberByI
 // Create / Edit
 router.post('/', requirePermission('USERS', 'USERS', 'ADD'), validateCreateSubscriber, createSubscriber);
 router.put('/:id', requirePermission('USERS', 'USERS', 'EDIT'), validateUpdateSubscriber, updateSubscriber);
+router.post('/:id/reverify', requirePermission('USERS', 'USERS', 'EDIT'), reverifySubscriberCredentials);
 
 // Status & Password
 router.patch('/:id/status', requirePermission('USERS', 'USERS', 'EDIT'), toggleSubscriberStatus);

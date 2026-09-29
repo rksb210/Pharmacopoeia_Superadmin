@@ -217,7 +217,18 @@ export const Customer360Modal = ({
 
             {/* Dynamic Healthcare Credentials Card */}
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
-              <span className="font-bold text-slate-800 block">Verified Category Credentials</span>
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-800 block">
+                  {c.isVerified ? 'Verified Category Credentials' : 'Category Credentials (Verification Pending)'}
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  c.isVerified
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>
+                  {c.isVerified ? 'Verified' : (c.verificationStatus || 'Unverified')}
+                </span>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px] bg-white p-3 rounded-xl border border-slate-100">
                 {c.userType === 'STUDENT' && (
                   <>

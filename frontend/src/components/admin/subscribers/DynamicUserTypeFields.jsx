@@ -100,8 +100,12 @@ export const DynamicUserTypeFields = ({
             name="apaarId"
             label="APAAR ID (Edu-Account)"
             placeholder="e.g. 1234-5678-9012"
+            maxLength={14}
             value={dynamicFields.apaarId || ''}
-            onChange={(e) => handleChange('apaarId', e.target.value)}
+            onChange={(e) => {
+              const filtered = e.target.value.replace(/[^0-9-]/g, '').slice(0, 14);
+              handleChange('apaarId', filtered);
+            }}
             error={errors.apaarId}
             required
           />

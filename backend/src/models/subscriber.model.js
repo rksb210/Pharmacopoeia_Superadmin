@@ -116,6 +116,49 @@ const subscriberSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    // Authoritative Credential Verification (NMC, PCI, INC, State Councils)
+    verificationStatus: {
+      type: String,
+      enum: ['UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED'],
+      default: 'UNVERIFIED',
+      uppercase: true,
+      trim: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationDetails: {
+      authoritativeSource: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      registrationNo: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      council: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      verifiedAt: {
+        type: Date,
+        default: null,
+      },
+      verifiedBy: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      remarks: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+    },
     // Subscription Lifecycle
     subscription: {
       status: {

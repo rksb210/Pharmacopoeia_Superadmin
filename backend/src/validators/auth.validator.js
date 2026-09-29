@@ -132,11 +132,100 @@ export const validateRegister = (req, res, next) => {
   next();
 };
 
+import {
+  ALLOWED_USER_TYPES,
+  normalizeUserType,
+  isPrivilegedRole,
+} from '../constants/userTypes.js';
+import { validateApaarId } from '../utils/sanitize.js';
+
 /**
- * Validate public subscriber signup request body
+ * Validate initiate signup request body (Step 1: Category selection & Credential verification)
+ */
+export const validateInitiateSignup = (req, res, next) => {
+  const { userType, dynamicFields = {} } = req.body;
+  const errors = [];
+
+  if (!userType || typeof userType !== 'string' || !userType.trim()) {
+    errors.push('Account category (userType) is required');
+  }
+
+  const normalizedUserType = normalizeUserType(userType);
+  if (!normalizedUserType) {
+    errors.push(
+      `Invalid account category '${userType}'. Allowed categories: ${ALLOWED_USER_TYPES.join(', ')}`
+    );
+  }
+
+  if (dynamicFields !== undefined && (typeof dynamicFields !== 'object' || Array.isArray(dynamicFields))) {
+    errors.push('dynamicFields must be an object');
+  }
+
+  // Role-specific credential validation
+  if (normalizedUserType) {
+    if (isPrivilegedRole(normalizedUserType)) {
+      const regNo = (dynamicFields.registrationNo || dynamicFields.regNo || '').trim();
+      const council = (dynamicFields.stateCouncil || dynamicFields.registrationState || dynamicFields.council || '').trim();
+
+      if (!regNo) {
+        errors.push(`Registration Number is mandatory for ${normalizedUserType}`);
+      } else if (regNo.length < 4 || regNo.length > 30) {
+        errors.push('Registration Number must be between 4 and 30 characters');
+      }
+
+      if (!council) {
+        errors.push(`State Council / Licensing Authority is mandatory for ${normalizedUserType}`);
+      }
+    } else if (normalizedUserType === 'STUDENT') {
+      const { isValid, cleanApaar, error } = validateApaarId(dynamicFields.apaarId);
+      if (!isValid) {
+        errors.push(error);
+      } else {
+        dynamicFields.apaarId = cleanApaar;
+      }
+    } else if (normalizedUserType === 'INDUSTRY') {
+      const companyName = (dynamicFields.companyName || '').trim();
+      const gstin = (dynamicFields.gstin || '').trim();
+      const pan = (dynamicFields.pan || '').trim();
+      if (!companyName) {
+        errors.push('Company / Organization Name is required for Industry');
+      }
+      if (!gstin && !pan) {
+        errors.push('Either Company GSTIN or Corporate PAN is required for Industry');
+      }
+    } else if (normalizedUserType === 'UNIVERSITIES_COLLEGES') {
+      const uniName = (dynamicFields.universityCollegeName || '').trim();
+      const state = (dynamicFields.state || '').trim();
+      if (!uniName) {
+        errors.push('University / College Name is required');
+      }
+      if (!state) {
+        errors.push('State is required for Universities / Colleges');
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors,
+    });
+  }
+
+  req.body.userType = normalizedUserType;
+  next();
+};
+
+/**
+ * Validate public subscriber signup request body (Step 2: Account creation)
  */
 export const validateSignup = (req, res, next) => {
-  const { name, email, username, password, phoneNumber, userType, dynamicFields } = req.body;
+  const { name, email, username, password, phoneNumber, userType, dynamicFields, signupSessionToken } = req.body;
+  const tokenFromHeader = req.headers?.['x-signup-session'];
+  const tokenFromCookie = req.cookies?.signup_session;
+  const sessionToken = signupSessionToken || tokenFromHeader || tokenFromCookie;
+
   const errors = [];
 
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -167,8 +256,26 @@ export const validateSignup = (req, res, next) => {
     errors.push('Password must be at least 6 characters long');
   }
 
-  if (!userType || typeof userType !== 'string' || !userType.trim()) {
-    errors.push('User type is required');
+  // Validate server-side enum whitelist if userType is provided in body
+  if (userType) {
+    const normalized = normalizeUserType(userType);
+    if (!normalized) {
+      errors.push(
+        `Invalid account category '${userType}'. Allowed categories: ${ALLOWED_USER_TYPES.join(', ')}`
+      );
+    } else {
+      // Disallow directly requesting a privileged role without a signup session token
+      if (isPrivilegedRole(normalized) && !sessionToken) {
+        errors.push(
+          `Self-registration for privileged role '${normalized}' requires authoritative council verification via /api/auth/signup/initiate`
+        );
+      }
+    }
+  }
+
+  // If no session token and no userType at all
+  if (!sessionToken && (!userType || !userType.trim())) {
+    errors.push('Signup session token or valid account category is required');
   }
 
   if (phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim()) {
@@ -178,8 +285,17 @@ export const validateSignup = (req, res, next) => {
     }
   }
 
-  if (dynamicFields !== undefined && (typeof dynamicFields !== 'object' || Array.isArray(dynamicFields))) {
-    errors.push('Dynamic fields must be an object');
+  if (dynamicFields !== undefined) {
+    if (typeof dynamicFields !== 'object' || Array.isArray(dynamicFields)) {
+      errors.push('Dynamic fields must be an object');
+    } else if (dynamicFields.apaarId !== undefined && dynamicFields.apaarId !== null && String(dynamicFields.apaarId).trim()) {
+      const { isValid, cleanApaar, error } = validateApaarId(String(dynamicFields.apaarId));
+      if (!isValid) {
+        errors.push(error);
+      } else {
+        dynamicFields.apaarId = cleanApaar;
+      }
+    }
   }
 
   if (errors.length > 0) {
@@ -188,6 +304,11 @@ export const validateSignup = (req, res, next) => {
       message: 'Validation failed',
       errors,
     });
+  }
+
+  // Attach resolved session token to request for controller
+  if (sessionToken) {
+    req.signupSessionToken = String(sessionToken).trim();
   }
 
   next();

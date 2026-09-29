@@ -1,3 +1,5 @@
+import { validateApaarId } from '../utils/sanitize.js';
+
 /**
  * Validation rules for Subscriber & User Management
  */
@@ -43,8 +45,11 @@ export const validateCreateSubscriber = (req, res, next) => {
 
   // Dynamic Type-Specific Validations
   if (uType === 'STUDENT') {
-    if (!dynamicFields.apaarId || !dynamicFields.apaarId.trim()) {
-      errors.push('APAAR ID is required for Students');
+    const { isValid, cleanApaar, error } = validateApaarId(dynamicFields.apaarId);
+    if (!isValid) {
+      errors.push(error);
+    } else {
+      dynamicFields.apaarId = cleanApaar;
     }
   } else if (uType === 'DOCTOR' || uType === 'PHARMACIST' || uType === 'NURSE') {
     if (!dynamicFields.registrationNo || !dynamicFields.registrationNo.trim()) {
@@ -144,7 +149,17 @@ export const validateUpdateSubscriber = (req, res, next) => {
   }
 
   if (req.body.dynamicFields && typeof req.body.dynamicFields === 'object') {
-    const { gstin, pan } = req.body.dynamicFields;
+    const { apaarId, gstin, pan } = req.body.dynamicFields;
+
+    if (apaarId !== undefined && apaarId !== null && String(apaarId).trim()) {
+      const { isValid, cleanApaar, error } = validateApaarId(String(apaarId));
+      if (!isValid) {
+        errors.push(error);
+      } else {
+        req.body.dynamicFields.apaarId = cleanApaar;
+      }
+    }
+
     const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 
