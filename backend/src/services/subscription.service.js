@@ -321,9 +321,21 @@ export const subscriptionService = {
       finalAmount = 0;
       paymentStatus = 'waived';
     } else if (type === 'complimentary') {
-      const months = parseInt(customMonths, 10) || 12;
-      endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + months);
+      if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
+        endDate = new Date(planDoc.fixedDate);
+      } else if (planDoc && planDoc.validityType === 'duration_years') {
+        endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + (planDoc.durationValue || 1));
+      } else if (planDoc && planDoc.validityType === 'duration_months') {
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + (planDoc.durationValue || 12));
+      } else if (customMonths) {
+        const months = parseInt(customMonths, 10) || 12;
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + months);
+      } else {
+        endDate = await subscriptionService.getConfiguredFixedExpiry();
+      }
       finalAmount = 0;
       paymentStatus = 'waived';
     } else if (type === 'discounted') {

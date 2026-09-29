@@ -67,7 +67,7 @@ export const AssignSubscriptionModal = ({
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
-  const [subType, setSubType] = useState('paid'); // 'paid' | 'trial' | 'discounted'
+  const [subType, setSubType] = useState('paid'); // 'paid' | 'trial' | 'complimentary' | 'discounted'
   const [discountPercent, setDiscountPercent] = useState(20);
   const [trialDays, setTrialDays] = useState(14);
   const [paymentMethod, setPaymentMethod] = useState('UPI / BharatPay');
@@ -262,7 +262,9 @@ export const AssignSubscriptionModal = ({
   const calculatedDiscount =
     subType === 'discounted' ? Math.round((baseAmount * validDiscount) / 100) : 0;
   const finalPrice =
-    subType === 'trial' ? 0 : Math.max(0, baseAmount - calculatedDiscount);
+    subType === 'trial' || subType === 'complimentary'
+      ? 0
+      : Math.max(0, baseAmount - calculatedDiscount);
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -288,8 +290,8 @@ export const AssignSubscriptionModal = ({
         tier: selectedPlan.tier,
         amount: baseAmount,
         discountPercent: subType === 'discounted' ? validDiscount : 0,
-        paymentMethod,
-        transactionRef,
+        paymentMethod: subType === 'trial' || subType === 'complimentary' ? 'Admin Grant' : paymentMethod,
+        transactionRef: subType === 'trial' || subType === 'complimentary' ? 'COMPLIMENTARY-VIP' : transactionRef,
         notes,
         customDays: trialDays,
       });
@@ -305,7 +307,7 @@ export const AssignSubscriptionModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Provision &amp; Assign Subscription"
+      title="Offline Subscription Purchase"
       description="Issue official digital formulary access with automatic dynamic fixed expiry enforcement."
       confirmLabel={
         selectedUsers.length > 1
@@ -706,7 +708,7 @@ export const AssignSubscriptionModal = ({
         {/* 2. Subscription Type Selection */}
         <div className="space-y-1.5">
           <label className="font-bold text-slate-800 text-xs block">Subscription Category</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               type="button"
               onClick={() => setSubType('paid')}
@@ -731,6 +733,19 @@ export const AssignSubscriptionModal = ({
             >
               <Clock className="w-4 h-4" />
               <span>Free Trial</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSubType('complimentary')}
+              className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 font-bold transition-all cursor-pointer ${
+                subType === 'complimentary'
+                  ? 'bg-purple-50 border-purple-600 text-purple-700 shadow-2xs'
+                  : 'bg-white border-slate-200 text-slate-600'
+              }`}
+            >
+              <Gift className="w-4 h-4" />
+              <span>Complimentary</span>
             </button>
 
             <button
@@ -809,6 +824,25 @@ export const AssignSubscriptionModal = ({
               <option value={365}>365 Days (1 Year Full Access Pass)</option>
               <option value={730}>730 Days (2 Years Institutional Grant)</option>
             </select>
+          </div>
+        )}
+
+        {subType === 'complimentary' && (
+          <div className="p-3 bg-purple-50/70 border border-purple-200 rounded-xl flex items-center gap-2 text-purple-900">
+            <Gift className="w-4 h-4 text-purple-600 shrink-0" />
+            <span>
+              <strong>100% Free Complimentary Access:</strong> Subscriber will receive full digital formulary access for{' '}
+              <strong>{selectedPlan?.name || 'Selected Tier'}</strong> completely free of charge, valid until{' '}
+              <strong>
+                {selectedPlan?.fixedDate
+                  ? new Date(selectedPlan.fixedDate).toLocaleDateString('en-GB', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })
+                  : '31 December 2031'}
+              </strong>.
+            </span>
           </div>
         )}
 
