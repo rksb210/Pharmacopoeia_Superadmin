@@ -230,7 +230,7 @@ export const AdminDashboardPage = () => {
           <StatCard
             title="Published Monographs"
             value="1,794"
-            subtitle="Active 9th Edition Formulary"
+            subtitle="Active 7th Edition Formulary"
             icon={FileText}
             iconColor="text-sky-600"
             iconBg="bg-sky-50"

@@ -49,7 +49,7 @@ const subscriptionSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      // e.g. "NFI 9th Edition Formulary - Individual Annual Pass"
+      // e.g. "NFI 7th Edition Formulary - Individual Annual Pass"
     },
     planCode: {
       type: String,
@@ -59,7 +59,7 @@ const subscriptionSchema = new mongoose.Schema(
     },
     tier: {
       type: String,
-      enum: ['Individual', 'Institutional', 'Student', 'Doctor Professional', 'Corporate'],
+      enum: ['Individual', 'Institutional', 'Student', 'Doctor Professional', 'Corporate', 'General'],
       default: 'Individual',
     },
     type: {

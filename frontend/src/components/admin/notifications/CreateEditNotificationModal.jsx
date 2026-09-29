@@ -260,7 +260,7 @@ export const CreateEditNotificationModal = ({
             <InputField
               id="title"
               label="Notification Headline / Subject"
-              placeholder="e.g. Release of NFI 9th Edition Monograph Addendum 2026"
+              placeholder="e.g. Release of NFI 7th Edition Monograph Addendum 2026"
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
               error={errors.title}

@@ -173,7 +173,7 @@ const systemConfigSchema = new mongoose.Schema(
       },
       announcementBanner: {
         type: String,
-        default: 'National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.',
+        default: 'National Formulary of India (NFI) 7th Edition 2026 digital monographs are now active.',
       },
       announcementActive: {
         type: Boolean,

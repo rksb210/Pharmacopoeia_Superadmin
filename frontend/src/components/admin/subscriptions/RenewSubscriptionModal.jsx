@@ -9,7 +9,7 @@ export const RenewSubscriptionModal = ({
   subscription,
   onRenewSuccess,
 }) => {
-  const [renewMonths, setRenewMonths] = useState(12);
+  const [renewDays, setRenewDays] = useState(14);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -24,7 +24,8 @@ export const RenewSubscriptionModal = ({
 
     try {
       await onRenewSuccess(subscription._id, {
-        renewMonths,
+        renewDays,
+        renewMonths: Math.round(renewDays / 30),
         notes,
       });
       onClose();
@@ -81,14 +82,20 @@ export const RenewSubscriptionModal = ({
           <div className="flex flex-col gap-1">
             <label className="font-semibold text-slate-700">Extension Period</label>
             <select
-              value={renewMonths}
-              onChange={(e) => setRenewMonths(e.target.value)}
+              value={renewDays}
+              onChange={(e) => setRenewDays(Number(e.target.value))}
               className="h-9 px-3 bg-white border border-slate-200 rounded-xl font-bold text-xs"
             >
-              <option value={3}>3 Months Extension</option>
-              <option value={6}>6 Months Extension</option>
-              <option value={12}>12 Months (1 Year Extension)</option>
-              <option value={24}>24 Months Extension</option>
+              <option value={7}>7 Days</option>
+              <option value={14}>14 Days</option>
+              <option value={30}>30 Days</option>
+              <option value={90}>90 Days</option>
+              <option value={180}>180 Days</option>
+              <option value={365}>1 Year</option>
+              <option value={730}>2 Year</option>
+              <option value={1095}>3 Year</option>
+              <option value={1460}>4 Year</option>
+              <option value={1825}>5 Year</option>
             </select>
           </div>
         )}

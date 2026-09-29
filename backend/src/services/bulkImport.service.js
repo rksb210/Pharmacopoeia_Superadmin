@@ -130,7 +130,7 @@ export const bulkImportService = {
 
     // Resolve Default Plan details
     const selectedPlan = await Plan.findOne({ code: defaultPlanCode.toUpperCase().trim() });
-    const planName = selectedPlan?.name || 'NFI 9th Edition Formulary';
+    const planName = selectedPlan?.name || 'NFI 7th Edition Formulary';
     const tier = selectedPlan?.tier || 'Institutional';
 
     // In-file duplicate trackers

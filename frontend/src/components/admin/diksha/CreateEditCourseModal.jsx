@@ -928,7 +928,7 @@ export const CreateEditCourseModal = ({
                           type="text"
                           value={mat.title || ''}
                           onChange={(e) => handleMaterialChange(idx, 'title', e.target.value)}
-                          placeholder="Document Title (e.g. NFI 9th Edition Handbook)..."
+                          placeholder="Document Title (e.g. NFI 7th Edition Handbook)..."
                           className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#E76120]"
                         />
                       </div>

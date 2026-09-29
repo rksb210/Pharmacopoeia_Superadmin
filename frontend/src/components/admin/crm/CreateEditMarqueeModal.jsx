@@ -317,7 +317,7 @@ export const CreateEditMarqueeModal = ({
           <InputField
             id="linkUrl"
             label="Action Link (Optional URL)"
-            placeholder="e.g. /monographs/9th-edition"
+            placeholder="e.g. /monographs/7th-edition"
             value={formData.linkUrl}
             onChange={(e) => handleChange('linkUrl', e.target.value)}
           />

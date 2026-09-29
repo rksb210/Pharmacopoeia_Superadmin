@@ -175,7 +175,7 @@ export const auditService = {
         action: 'MONOGRAPH_PUBLISHED',
         module: 'CONTENT',
         entity: 'Monograph',
-        entityId: 'MONO-METFORMIN-9TH',
+        entityId: 'MONO-METFORMIN-7TH',
         userName: 'Dr. S. K. Gupta',
         userEmail: 'sk.gupta@ipc.gov.in',
         userRole: 'Editor',

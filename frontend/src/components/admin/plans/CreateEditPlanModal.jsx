@@ -71,7 +71,7 @@ export const CreateEditPlanModal = ({
     fixedDate: '2031-12-31T23:59:59.999Z',
     durationValue: 365,
     applicableUserTypes: ['ALL'],
-    features: ['Full Digital Monograph Formulary Database (9th Edition)'],
+    features: ['Full Digital Monograph Formulary Database (7th Edition)'],
     trialEligibility: { isAllowed: true, trialDays: 14 },
     complimentaryEligibility: { isAllowed: true, defaultMonths: 12 },
     discountRules: { isDiscountAllowed: true, maxDiscountPercent: 50, defaultDiscountPercent: 0 },
@@ -134,7 +134,7 @@ export const CreateEditPlanModal = ({
         durationValue: 365,
         applicableUserTypes: ['ALL'],
         features: [
-          'Full Digital Monograph Formulary Database (9th Edition)',
+          'Full Digital Monograph Formulary Database (7th Edition)',
           'Drug Interaction Checker & Clinical Alerts',
           'Pediatric & Geriatric Dosage Calculator',
         ],
@@ -429,7 +429,7 @@ export const CreateEditPlanModal = ({
               <InputField
                 id="name"
                 label="Plan Name"
-                placeholder="e.g. NFI 9th Edition Formulary - Individual Pass"
+                placeholder="e.g. NFI 7th Edition Formulary - Individual Pass"
                 value={formData.name}
                 onChange={(e) => handleNameChange(e.target.value)}
                 error={errors.name}

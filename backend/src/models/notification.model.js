@@ -121,7 +121,7 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: '',
-      // e.g. "/admin/subscriptions", "/monographs/9th-edition"
+      // e.g. "/admin/subscriptions", "/monographs/7th-edition"
     },
     actionLabel: {
       type: String,

@@ -115,7 +115,7 @@ const feedbackSchema = new mongoose.Schema(
       },
       edition: {
         type: String,
-        default: '9th Edition 2022',
+        default: '7th Edition 2022',
       },
       contentUrl: {
         type: String,

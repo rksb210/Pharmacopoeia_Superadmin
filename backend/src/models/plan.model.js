@@ -39,7 +39,7 @@ const planSchema = new mongoose.Schema(
       required: [true, 'Plan name is required'],
       unique: true,
       trim: true,
-      // e.g. "NFI 9th Edition Formulary - Individual Pass"
+      // e.g. "NFI 7th Edition Formulary - Individual Pass"
     },
     code: {
       type: String,

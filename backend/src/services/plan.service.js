@@ -9,7 +9,7 @@ export const planService = {
   seedDefaultPlans: async () => {
     const defaultPlans = [
       {
-        name: 'NFI 9th Edition Formulary - Universal Access Pass',
+        name: 'NFI 7th Edition Formulary - Universal Access Pass',
         code: 'NFI-INDIVIDUAL',
         description: 'Complete digital formulary monograph database and clinical tools for all healthcare practitioners, institutions, and scholars.',
         tier: 'Individual',
@@ -18,7 +18,7 @@ export const planService = {
         fixedDate: new Date('2031-12-31T23:59:59.999Z'),
         applicableUserTypes: ['ALL'],
         features: [
-          'Full Digital Monograph Formulary (9th Edition)',
+          'Full Digital Monograph Formulary (7th Edition)',
           'Drug Interaction Checker & Clinical Alerts',
           'Pediatric & Geriatric Dosage Calculator',
           'Periodic Addendum & Safety Broadcast Updates',

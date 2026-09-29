@@ -111,20 +111,38 @@ export const AssignSubscriptionModal = ({
       try {
         const res = await planService.getPlans({ status: 'active' });
         if (res && res.plans && res.plans.length > 0) {
-          const formattedPlans = res.plans.map((p) => ({
-            name: p.name,
-            code: p.code,
-            tier: p.tier,
-            amount: p.priceINR || 0,
-            desc: p.description || 'Full digital monograph formulary access.',
-            validityType: p.validityType,
-            fixedDate: p.fixedDate,
-            deliveryType: p.deliveryType || 'ONLINE',
-            isGstApplicable: p.isGstApplicable !== false,
-            gstRatePercent: p.gstRatePercent !== undefined ? p.gstRatePercent : 18,
-            bulkDiscountEnabled: !!p.bulkDiscountEnabled,
-            bulkSlabs: p.bulkSlabs || [],
-          }));
+          const formattedPlans = res.plans.map((p) => {
+            const rawDeliveryType = p.deliveryType;
+            const nameLower = (p.name || '').toLowerCase();
+            const codeLower = (p.code || '').toLowerCase();
+            let resolvedDelivery = rawDeliveryType;
+            if (!resolvedDelivery || resolvedDelivery === 'ONLINE') {
+              if (nameLower.includes('physical') && nameLower.includes('online')) {
+                resolvedDelivery = 'ONLINE_PHYSICAL';
+              } else if (codeLower.includes('py_on')) {
+                resolvedDelivery = 'ONLINE_PHYSICAL';
+              } else if (nameLower.includes('physical') || codeLower.includes('physical')) {
+                resolvedDelivery = 'PHYSICAL';
+              } else {
+                resolvedDelivery = 'ONLINE';
+              }
+            }
+
+            return {
+              name: p.name,
+              code: p.code,
+              tier: p.tier,
+              amount: p.priceINR || 0,
+              desc: p.description || '',
+              validityType: p.validityType,
+              fixedDate: p.fixedDate,
+              deliveryType: resolvedDelivery,
+              isGstApplicable: p.isGstApplicable !== false,
+              gstRatePercent: p.gstRatePercent !== undefined ? p.gstRatePercent : 18,
+              bulkDiscountEnabled: !!p.bulkDiscountEnabled,
+              bulkSlabs: p.bulkSlabs || [],
+            };
+          });
           setPlans(formattedPlans);
           setSelectedPlan(formattedPlans[0]);
         }
@@ -137,6 +155,38 @@ export const AssignSubscriptionModal = ({
 
     fetchPlans();
   }, [isOpen]);
+
+  // Filter plans for Free Trial and Complimentary (Online Only)
+  const isOnlineOnlyCategory = subType === 'trial' || subType === 'complimentary';
+  const visiblePlans = isOnlineOnlyCategory
+    ? plans.filter((p) => {
+        if (p.deliveryType !== 'ONLINE') return false;
+        const name = (p.name || '').toLowerCase();
+        const code = (p.code || '').toLowerCase();
+        if (name.includes('physical') || code.includes('physical') || code.includes('py_on')) {
+          return false;
+        }
+        return true;
+      })
+    : plans;
+
+  // Auto-switch selected plan if user switches to trial or complimentary and current plan is not ONLINE
+  useEffect(() => {
+    if (isOnlineOnlyCategory) {
+      const isCurrentOnline =
+        selectedPlan &&
+        selectedPlan.deliveryType === 'ONLINE' &&
+        !selectedPlan.name.toLowerCase().includes('physical') &&
+        !selectedPlan.code.toLowerCase().includes('py_on');
+
+      if (!isCurrentOnline) {
+        const firstOnline = visiblePlans[0];
+        if (firstOnline) {
+          setSelectedPlan(firstOnline);
+        }
+      }
+    }
+  }, [subType, visiblePlans, selectedPlan, isOnlineOnlyCategory]);
 
   // Fetch distinct industries
   const fetchIndustries = useCallback(async (searchVal = '') => {
@@ -1070,7 +1120,7 @@ export const AssignSubscriptionModal = ({
 
         {/* 3. Plan Selection */}
         <div className="space-y-1.5">
-          <label className="font-bold text-slate-800 text-xs block">Select Formulary Tier</label>
+          <label className="font-bold text-slate-800 text-xs block">Select Formulary Plan</label>
           {loadingPlans ? (
             <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center text-xs text-slate-400">
               Loading active plans...
@@ -1079,12 +1129,12 @@ export const AssignSubscriptionModal = ({
             <select
               value={selectedPlan?.code || ''}
               onChange={(e) => {
-                const p = plans.find((plan) => plan.code === e.target.value);
+                const p = visiblePlans.find((plan) => plan.code === e.target.value);
                 if (p) setSelectedPlan(p);
               }}
               className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#E76120] cursor-pointer"
             >
-              {plans.map((plan) => {
+              {visiblePlans.map((plan) => {
                 const hasGst = plan.isGstApplicable !== false;
                 const rate = hasGst ? (plan.gstRatePercent ?? 18) : 0;
                 const gstVal = Math.round((plan.amount * rate) / 100);
@@ -1097,7 +1147,7 @@ export const AssignSubscriptionModal = ({
                     : 'Online Only';
                 return (
                   <option key={plan.code} value={plan.code}>
-                    {plan.name} [{formatLabel}] — Base: ₹{plan.amount.toLocaleString('en-IN')} | With {rate}% GST: ₹{tot.toLocaleString('en-IN')}
+                    {plan.name}  — Base: ₹{plan.amount.toLocaleString('en-IN')} | With {rate}% GST: ₹{tot.toLocaleString('en-IN')}
                   </option>
                 );
               })}
@@ -1105,7 +1155,7 @@ export const AssignSubscriptionModal = ({
           )}
           {selectedPlan?.desc && <p className="text-[11px] text-slate-400">{selectedPlan.desc}</p>}
 
-          {selectedPlan && (
+          {/* {selectedPlan && (
             <div className="flex items-center flex-wrap gap-1.5 pt-1 text-[11px]">
               <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-semibold border border-slate-200">
                 Delivery:{' '}
@@ -1129,7 +1179,7 @@ export const AssignSubscriptionModal = ({
                 </span>
               )}
             </div>
-          )}
+          )} */}
         </div>
 
         {/* 4. Type Specific Settings */}
@@ -1137,7 +1187,7 @@ export const AssignSubscriptionModal = ({
           <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl flex items-center gap-2 text-blue-900">
             <ShieldCheck className="w-4 h-4 text-[#284661] shrink-0" />
             <span>
-              <strong>BRD Business Rule Active:</strong> This purchased subscription will be valid until{' '}
+               This purchased subscription will be valid until{' '}
               <strong>
                 {selectedPlan?.fixedDate
                   ? new Date(selectedPlan.fixedDate).toLocaleDateString('en-GB', {
@@ -1159,13 +1209,16 @@ export const AssignSubscriptionModal = ({
               onChange={(e) => setTrialDays(Number(e.target.value))}
               className="h-9 px-3 bg-white border border-slate-200 rounded-xl font-bold text-xs"
             >
-              <option value={7}>7 Days (1 Week Quick Evaluation)</option>
-              <option value={14}>14 Days (Standard Evaluation)</option>
-              <option value={30}>30 Days (1 Month Evaluation Pass)</option>
-              <option value={90}>90 Days (3 Months Evaluation)</option>
-              <option value={180}>180 Days (6 Months VIP Pass)</option>
-              <option value={365}>365 Days (1 Year Full Access Pass)</option>
-              <option value={730}>730 Days (2 Years Institutional Grant)</option>
+              <option value={7}>7 Days</option>
+              <option value={14}>14 Days</option>
+              <option value={30}>30 Days</option>
+              <option value={90}>90 Days</option>
+              <option value={180}>180 Days</option>
+              <option value={365}>1 Year</option>
+              <option value={730}>2 Year</option>
+              <option value={1095}>3 Year</option>
+              <option value={1460}>4 Year</option>
+              <option value={1825}>5 Year</option>
             </select>
           </div>
         )}

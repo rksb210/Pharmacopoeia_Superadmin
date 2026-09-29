@@ -102,7 +102,7 @@ export const SettingsPage = () => {
     maintenanceAndGeneral: {
       maintenanceMode: false,
       maintenanceMessage: 'Formulary portal is undergoing scheduled maintenance.',
-      announcementBanner: 'National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.',
+      announcementBanner: 'National Formulary of India (NFI) 7th Edition 2026 digital monographs are now active.',
       announcementActive: true,
     },
   });
