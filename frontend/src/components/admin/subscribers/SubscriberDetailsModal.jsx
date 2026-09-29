@@ -58,7 +58,7 @@ export const SubscriberDetailsModal = ({
               <div className="flex items-center gap-2">
                 <h4 className="font-bold text-slate-900 text-sm sm:text-base">{subscriber.name}</h4>
                 <Badge variant="outline" className="text-[10px] font-bold uppercase">
-                  {subscriber.userType}
+                  {subscriber.userType === 'OTHERS' ? 'Other Health Care Professional' : subscriber.userType}
                 </Badge>
               </div>
               <p className="text-slate-400 text-xs">@{subscriber.username} · {subscriber.email}</p>
@@ -106,7 +106,13 @@ export const SubscriberDetailsModal = ({
             <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-2xs space-y-3">
               <div className="flex items-center gap-1.5 text-slate-800 font-bold">
                 <ShieldCheck className="w-4 h-4 text-[#E76120]" />
-                <span>Verified Dynamic Credentials ({subscriber.userType})</span>
+                <span>
+                  Verified Dynamic Credentials (
+                  {subscriber.userType === 'OTHERS'
+                    ? 'Other Health Care Professional'
+                    : subscriber.userType}
+                  )
+                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -123,6 +129,10 @@ export const SubscriberDetailsModal = ({
                           ? 'Registration State'
                           : key === 'universityCollegeName'
                           ? 'University / College Name'
+                          : key === 'hospitalName'
+                          ? 'Hospital Name'
+                          : key === 'pharmacyName'
+                          ? 'Pharmacy Name'
                           : key.replace(/([A-Z])/g, ' $1')}
                       </span>
                       <span className="font-bold text-slate-900 break-all">{val || 'N/A'}</span>

@@ -47,12 +47,14 @@ const CATEGORIES = [
 
 const AUDIENCE_TYPES = [
   'DOCTOR',
-  'PHARMACIST',
   'STUDENT',
   'NURSE',
-  'INDUSTRY',
-  'UNIVERSITIES_COLLEGES',
+  'PHARMACIST',
   'OTHERS',
+  'INDUSTRY',
+  'HOSPITALS',
+  'UNIVERSITIES_COLLEGES',
+  'RETAIL_PHARMACIST',
 ];
 
 export const CreateEditCourseModal = ({
@@ -631,7 +633,13 @@ export const CreateEditCourseModal = ({
                           : 'bg-slate-50 border-slate-200 text-slate-400'
                       }`}
                     >
-                      <span>{type === 'UNIVERSITIES_COLLEGES' ? 'Universities / Colleges' : type}</span>
+                      <span>
+                        {type === 'UNIVERSITIES_COLLEGES'
+                          ? 'Universities / Colleges'
+                          : type === 'OTHERS'
+                          ? 'Other Health Care Professional'
+                          : type.replace(/_/g, ' ')}
+                      </span>
                       {isSelected && <Check className="w-3.5 h-3.5 text-[#284661]" />}
                     </button>
                   );

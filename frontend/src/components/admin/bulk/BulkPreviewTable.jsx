@@ -176,7 +176,11 @@ export const BulkPreviewTable = ({
                   {/* User Type */}
                   <TableCell>
                     <Badge variant="outline" className="text-[9px] uppercase font-bold">
-                      {rec.userType === 'UNIVERSITIES_COLLEGES' ? 'UNIVERSITIES / COLLEGES' : rec.userType}
+                      {rec.userType === 'UNIVERSITIES_COLLEGES'
+                        ? 'UNIVERSITIES / COLLEGES'
+                        : rec.userType === 'OTHERS'
+                        ? 'OTHER HEALTH CARE PROFESSIONAL'
+                        : rec.userType}
                     </Badge>
                   </TableCell>
 
@@ -199,6 +203,16 @@ export const BulkPreviewTable = ({
                       {(rec.userType === 'UNIVERSITIES_COLLEGES' || rec.userType === 'UNIVERSITIES / COLLEGES') && (
                         <span>
                           {rec.dynamicFields?.universityCollegeName || 'University / College'} ({rec.dynamicFields?.state || 'State N/A'})
+                        </span>
+                      )}
+                      {rec.userType === 'HOSPITALS' && (
+                        <span>
+                          Hospital: {rec.dynamicFields?.hospitalName || '—'} ({rec.dynamicFields?.state || 'State N/A'})
+                        </span>
+                      )}
+                      {rec.userType === 'RETAIL_PHARMACIST' && (
+                        <span>
+                          Pharmacy: {rec.dynamicFields?.pharmacyName || '—'} ({rec.dynamicFields?.state || 'State N/A'})
                         </span>
                       )}
                       {rec.userType === 'OTHERS' && (

@@ -197,6 +197,22 @@ export const CreateEditSubscriberModal = ({
         newErrors.state = 'State is required';
       }
     }
+    if (uType === 'HOSPITALS') {
+      if (!dFields.hospitalName?.trim()) {
+        newErrors.hospitalName = 'Hospital / Facility Name is required';
+      }
+      if (!dFields.state?.trim()) {
+        newErrors.state = 'State is required';
+      }
+    }
+    if (uType === 'RETAIL_PHARMACIST') {
+      if (!dFields.pharmacyName?.trim()) {
+        newErrors.pharmacyName = 'Pharmacy / Medical Store Name is required';
+      }
+      if (!dFields.state?.trim()) {
+        newErrors.state = 'State is required';
+      }
+    }
     if (uType === 'OTHERS' && !dFields.designation?.trim()) {
       newErrors.designation = 'Designation is required';
     }
@@ -220,6 +236,16 @@ export const CreateEditSubscriberModal = ({
       if (uTypeUpper === 'UNIVERSITIES_COLLEGES' || uTypeUpper === 'UNIVERSITIES / COLLEGES') {
         cleanedFields = {
           universityCollegeName: (formData.dynamicFields?.universityCollegeName || '').trim(),
+          state: (formData.dynamicFields?.state || '').trim(),
+        };
+      } else if (uTypeUpper === 'HOSPITALS') {
+        cleanedFields = {
+          hospitalName: (formData.dynamicFields?.hospitalName || '').trim(),
+          state: (formData.dynamicFields?.state || '').trim(),
+        };
+      } else if (uTypeUpper === 'RETAIL_PHARMACIST') {
+        cleanedFields = {
+          pharmacyName: (formData.dynamicFields?.pharmacyName || '').trim(),
           state: (formData.dynamicFields?.state || '').trim(),
         };
       } else if (uTypeUpper === 'INDUSTRY') {
@@ -352,7 +378,7 @@ export const CreateEditSubscriberModal = ({
             >
               {userTypes.map((t) => (
                 <option key={t.code} value={t.code}>
-                  {t.name} ({t.code})
+                  {t.code === 'OTHERS' ? 'Other Health Care Professional' : t.name} ({t.code})
                 </option>
               ))}
             </select>

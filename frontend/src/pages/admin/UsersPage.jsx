@@ -88,13 +88,15 @@ export const UsersPage = () => {
 
       if (typesRes && typesRes.types) {
         const order = [
-          'STUDENT',
           'DOCTOR',
-          'PHARMACIST',
+          'STUDENT',
           'NURSE',
-          'INDUSTRY',
-          'UNIVERSITIES_COLLEGES',
+          'PHARMACIST',
           'OTHERS',
+          'INDUSTRY',
+          'HOSPITALS',
+          'UNIVERSITIES_COLLEGES',
+          'RETAIL_PHARMACIST',
         ];
         const sorted = [...typesRes.types].sort((a, b) => {
           const idxA = order.indexOf(a.code);
@@ -248,6 +250,16 @@ export const UsersPage = () => {
       const parts = [uni, stateVal ? `State: ${stateVal}` : ''].filter(Boolean);
       return parts.join(' · ') || 'University / College Entity';
     }
+    if (sub.userType === 'HOSPITALS') {
+      const hosp = dFields.hospitalName || '';
+      const parts = [hosp, stateVal ? `State: ${stateVal}` : ''].filter(Boolean);
+      return parts.join(' · ') || 'Hospital Facility';
+    }
+    if (sub.userType === 'RETAIL_PHARMACIST') {
+      const pharm = dFields.pharmacyName || '';
+      const parts = [pharm, stateVal ? `State: ${stateVal}` : ''].filter(Boolean);
+      return parts.join(' · ') || 'Retail Pharmacy';
+    }
     return dFields.designation
       ? `${dFields.designation}${stateVal ? ` (${stateVal})` : ''}`
       : (stateVal ? `State: ${stateVal}` : 'General Public');
@@ -276,11 +288,11 @@ export const UsersPage = () => {
     { header: 'Email Address', key: 'email' },
     { header: 'Username', key: 'username' },
     { header: 'Contact No', key: 'phoneNumber' },
-    { header: 'User Category', key: 'userType', format: (v) => v?.toUpperCase() },
+    { header: 'User Category', key: 'userType', format: (v) => (v === 'OTHERS' ? 'OTHER HEALTH CARE PROFESSIONAL' : v?.toUpperCase()) },
     {
       header: 'License / Reg No / Institution',
       key: 'dynamicFields',
-      format: (v) => v?.registrationNo || v?.apaarId || v?.gstin || v?.universityCollegeName || 'N/A',
+      format: (v) => v?.registrationNo || v?.apaarId || v?.gstin || v?.universityCollegeName || v?.hospitalName || v?.pharmacyName || 'N/A',
     },
     {
       header: 'State / Council',
@@ -460,7 +472,7 @@ export const UsersPage = () => {
             <option value="all">All User Types</option>
             {userTypes.map((t) => (
               <option key={t.code} value={t.code}>
-                {t.name}
+                {t.code === 'OTHERS' ? 'Other Health Care Professional' : t.name}
               </option>
             ))}
           </select>
@@ -564,7 +576,7 @@ export const UsersPage = () => {
                 {/* User Type */}
                 <TableCell>
                   <Badge variant="outline" className="text-[10px] font-extrabold uppercase">
-                    {sub.userType}
+                    {sub.userType === 'OTHERS' ? 'Other Health Care Professional' : sub.userType}
                   </Badge>
                 </TableCell>
 

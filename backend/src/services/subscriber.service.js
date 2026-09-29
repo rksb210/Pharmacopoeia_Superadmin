@@ -142,9 +142,51 @@ export const subscriberService = {
         ],
       },
       {
-        name: 'Others',
+        name: 'Hospitals',
+        code: 'HOSPITALS',
+        description: 'Hospitals, clinical healthcare facilities, and healthcare networks.',
+        fields: [
+          {
+            fieldKey: 'hospitalName',
+            label: 'Hospital / Facility Name',
+            type: 'text',
+            required: true,
+            placeholder: 'e.g. Apollo Hospitals / Fortis Healthcare',
+          },
+          {
+            fieldKey: 'state',
+            label: 'State',
+            type: 'select',
+            required: true,
+            placeholder: 'Select State',
+          },
+        ],
+      },
+      {
+        name: 'Retail Pharmacist',
+        code: 'RETAIL_PHARMACIST',
+        description: 'Retail pharmacies, chemists, and medical store outlets.',
+        fields: [
+          {
+            fieldKey: 'pharmacyName',
+            label: 'Pharmacy / Medical Store Name',
+            type: 'text',
+            required: true,
+            placeholder: 'e.g. Apollo Pharmacy / MedPlus',
+          },
+          {
+            fieldKey: 'state',
+            label: 'State',
+            type: 'select',
+            required: true,
+            placeholder: 'Select State',
+          },
+        ],
+      },
+      {
+        name: 'Other Health Care Professional',
         code: 'OTHERS',
-        description: 'General researchers, policymakers, and public stakeholders.',
+        description: 'General health care practitioners, policymakers, researchers, and public health stakeholders.',
         fields: [
           {
             fieldKey: 'designation',
@@ -175,19 +217,26 @@ export const subscriberService = {
   getUserTypes: async () => {
     let types = await UserType.find({ isActive: true }).lean();
     const hasUniversity = types.some((t) => t.code === 'UNIVERSITIES_COLLEGES');
-    if (types.length === 0 || !hasUniversity) {
+    const hasHospitals = types.some((t) => t.code === 'HOSPITALS');
+    const hasRetail = types.some((t) => t.code === 'RETAIL_PHARMACIST');
+    const othersType = types.find((t) => t.code === 'OTHERS');
+    const needsOthersUpdate = othersType && othersType.name !== 'Other Health Care Professional';
+
+    if (types.length === 0 || !hasUniversity || !hasHospitals || !hasRetail || needsOthersUpdate) {
       await subscriberService.seedUserTypes();
       types = await UserType.find({ isActive: true }).lean();
     }
 
     const sortOrder = [
-      'STUDENT',
       'DOCTOR',
-      'PHARMACIST',
+      'STUDENT',
       'NURSE',
-      'INDUSTRY',
-      'UNIVERSITIES_COLLEGES',
+      'PHARMACIST',
       'OTHERS',
+      'INDUSTRY',
+      'HOSPITALS',
+      'UNIVERSITIES_COLLEGES',
+      'RETAIL_PHARMACIST',
     ];
 
     types.sort((a, b) => {
@@ -229,14 +278,14 @@ export const subscriberService = {
   },
 
   /**
-   * Get distinct Industry Companies or Universities / Colleges with member counts
+   * Get distinct Industry Companies, Hospitals, Universities / Colleges, or Retail Pharmacies with member counts
    */
   getIndustriesGrouped: async (options = {}, maybeSearch = '') => {
     let search = '';
     let userType = 'INDUSTRY';
 
     if (typeof options === 'string') {
-      if (options === 'UNIVERSITIES_COLLEGES' || options === 'UNIVERSITIES / COLLEGES' || options === 'INDUSTRY') {
+      if (['UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES', 'INDUSTRY', 'HOSPITALS', 'RETAIL_PHARMACIST'].includes(options)) {
         userType = options;
         search = typeof maybeSearch === 'string' ? maybeSearch : '';
       } else {
@@ -248,15 +297,32 @@ export const subscriberService = {
       userType = typeof options.userType === 'string' ? options.userType : 'INDUSTRY';
     }
 
-    const isUni = userType === 'UNIVERSITIES_COLLEGES' || userType === 'UNIVERSITIES / COLLEGES';
-    const match = isUni
-      ? { userType: { $in: ['UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES'] } }
-      : { userType: 'INDUSTRY' };
+    const uTypeNorm = (userType || '').toUpperCase().trim();
+    let match = {};
+    let nameField = '$dynamicFields.companyName';
+    let defaultLabel = 'Unnamed Industry';
 
-    const nameField = isUni ? '$dynamicFields.universityCollegeName' : '$dynamicFields.companyName';
+    if (uTypeNorm === 'UNIVERSITIES_COLLEGES' || uTypeNorm === 'UNIVERSITIES / COLLEGES') {
+      match = { userType: { $in: ['UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES'] } };
+      nameField = '$dynamicFields.universityCollegeName';
+      defaultLabel = 'Unnamed University / College';
+    } else if (uTypeNorm === 'HOSPITALS') {
+      match = { userType: 'HOSPITALS' };
+      nameField = '$dynamicFields.hospitalName';
+      defaultLabel = 'Unnamed Hospital';
+    } else if (uTypeNorm === 'RETAIL_PHARMACIST') {
+      match = { userType: 'RETAIL_PHARMACIST' };
+      nameField = '$dynamicFields.pharmacyName';
+      defaultLabel = 'Unnamed Pharmacy';
+    } else {
+      match = { userType: 'INDUSTRY' };
+      nameField = '$dynamicFields.companyName';
+      defaultLabel = 'Unnamed Industry';
+    }
 
     if (search && search.trim()) {
-      match[isUni ? 'dynamicFields.universityCollegeName' : 'dynamicFields.companyName'] = {
+      const fieldSearchKey = nameField.replace('$', '');
+      match[fieldSearchKey] = {
         $regex: escapeRegex(search.trim()),
         $options: 'i',
       };
@@ -266,10 +332,12 @@ export const subscriberService = {
       { $match: match },
       {
         $group: {
-          _id: { $ifNull: [nameField, isUni ? 'Unnamed University / College' : 'Unnamed Industry'] },
-          name: { $first: { $ifNull: [nameField, isUni ? 'Unnamed University / College' : 'Unnamed Industry'] } },
-          companyName: { $first: { $ifNull: [nameField, isUni ? 'Unnamed University / College' : 'Unnamed Industry'] } },
-          universityCollegeName: { $first: { $ifNull: [nameField, isUni ? 'Unnamed University / College' : 'Unnamed Industry'] } },
+          _id: { $ifNull: [nameField, defaultLabel] },
+          name: { $first: { $ifNull: [nameField, defaultLabel] } },
+          companyName: { $first: '$dynamicFields.companyName' },
+          universityCollegeName: { $first: '$dynamicFields.universityCollegeName' },
+          hospitalName: { $first: '$dynamicFields.hospitalName' },
+          pharmacyName: { $first: '$dynamicFields.pharmacyName' },
           state: { $first: '$dynamicFields.state' },
           gstin: { $first: '$dynamicFields.gstin' },
           pan: { $first: '$dynamicFields.pan' },
@@ -311,6 +379,8 @@ export const subscriberService = {
         { phoneNumber: searchRegex },
         { 'dynamicFields.companyName': searchRegex },
         { 'dynamicFields.universityCollegeName': searchRegex },
+        { 'dynamicFields.hospitalName': searchRegex },
+        { 'dynamicFields.pharmacyName': searchRegex },
       ];
     }
 
@@ -324,12 +394,14 @@ export const subscriberService = {
       }
     }
 
-    // Filter by Company Name / University Name
+    // Filter by Company Name / University Name / Hospital Name / Pharmacy Name
     if (companyName && companyName.trim()) {
       const safeEntity = escapeRegex(companyName.trim());
       query.$or = [
         { 'dynamicFields.companyName': new RegExp(`^${safeEntity}$`, 'i') },
         { 'dynamicFields.universityCollegeName': new RegExp(`^${safeEntity}$`, 'i') },
+        { 'dynamicFields.hospitalName': new RegExp(`^${safeEntity}$`, 'i') },
+        { 'dynamicFields.pharmacyName': new RegExp(`^${safeEntity}$`, 'i') },
       ];
     }
 

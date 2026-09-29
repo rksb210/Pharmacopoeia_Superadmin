@@ -335,12 +335,14 @@ export const ReportsPage = () => {
                   <BarDistributionChart
                     items={[
                       { label: 'Doctors', count: domainData.typeDistribution?.DOCTOR || 0, color: 'bg-emerald-600' },
-                      { label: 'Pharmacists', count: domainData.typeDistribution?.PHARMACIST || 0, color: 'bg-blue-600' },
                       { label: 'Students (Academic)', count: domainData.typeDistribution?.STUDENT || 0, color: 'bg-indigo-600' },
                       { label: 'Nurses', count: domainData.typeDistribution?.NURSE || 0, color: 'bg-teal-600' },
+                      { label: 'Pharmacists', count: domainData.typeDistribution?.PHARMACIST || 0, color: 'bg-blue-600' },
+                      { label: 'Other Health Care Professional', count: domainData.typeDistribution?.OTHERS || 0, color: 'bg-slate-600' },
                       { label: 'Industry & Corporate', count: domainData.typeDistribution?.INDUSTRY || 0, color: 'bg-amber-600' },
+                      { label: 'Hospitals', count: domainData.typeDistribution?.HOSPITALS || 0, color: 'bg-rose-600' },
                       { label: 'Universities / Colleges', count: domainData.typeDistribution?.UNIVERSITIES_COLLEGES || 0, color: 'bg-purple-600' },
-                      { label: 'Others', count: domainData.typeDistribution?.OTHERS || 0, color: 'bg-slate-600' },
+                      { label: 'Retail Pharmacists', count: domainData.typeDistribution?.RETAIL_PHARMACIST || 0, color: 'bg-cyan-600' },
                     ]}
                     unit="users"
                   />

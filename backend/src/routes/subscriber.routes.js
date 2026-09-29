@@ -4,6 +4,8 @@ import {
   getSubscriberStats,
   getIndustries,
   getUniversities,
+  getHospitals,
+  getRetailPharmacists,
   getSubscribers,
   getSubscriberById,
   createSubscriber,
@@ -37,6 +39,12 @@ router.get('/industries', requirePermission('USERS', 'USERS', 'VIEW'), getIndust
 
 // Distinct Universities / Colleges Directory
 router.get('/universities', requirePermission('USERS', 'USERS', 'VIEW'), getUniversities);
+
+// Distinct Hospitals Directory
+router.get('/hospitals', requirePermission('USERS', 'USERS', 'VIEW'), getHospitals);
+
+// Distinct Retail Pharmacists Directory
+router.get('/retail-pharmacists', requirePermission('USERS', 'USERS', 'VIEW'), getRetailPharmacists);
 
 // Directory Listing & Details
 router.get('/', requirePermission('USERS', 'USERS', 'VIEW'), getSubscribers);

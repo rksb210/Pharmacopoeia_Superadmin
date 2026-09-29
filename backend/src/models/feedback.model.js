@@ -91,7 +91,7 @@ const feedbackSchema = new mongoose.Schema(
     },
     userType: {
       type: String,
-      enum: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES', 'OTHERS', 'PUBLIC'],
+      enum: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'HOSPITALS', 'UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES', 'RETAIL_PHARMACIST', 'OTHERS', 'PUBLIC'],
       default: 'PUBLIC',
     },
     content: {

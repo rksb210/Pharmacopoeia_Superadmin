@@ -85,6 +85,20 @@ export const validateCreateSubscriber = (req, res, next) => {
     if (!dynamicFields.state || !dynamicFields.state.trim()) {
       errors.push('State is required');
     }
+  } else if (uType === 'HOSPITALS') {
+    if (!dynamicFields.hospitalName || !dynamicFields.hospitalName.trim()) {
+      errors.push('Hospital / Facility Name is required');
+    }
+    if (!dynamicFields.state || !dynamicFields.state.trim()) {
+      errors.push('State is required');
+    }
+  } else if (uType === 'RETAIL_PHARMACIST') {
+    if (!dynamicFields.pharmacyName || !dynamicFields.pharmacyName.trim()) {
+      errors.push('Pharmacy / Medical Store Name is required');
+    }
+    if (!dynamicFields.state || !dynamicFields.state.trim()) {
+      errors.push('State is required');
+    }
   } else if (uType === 'OTHERS') {
     if (!dynamicFields.designation || !dynamicFields.designation.trim()) {
       errors.push('Designation / Role is required');
@@ -141,9 +155,15 @@ export const validateUpdateSubscriber = (req, res, next) => {
       errors.push('Invalid Corporate PAN format. Must be exactly 10 characters (e.g. AAAAA9999A)');
     }
 
-    const { universityCollegeName, state } = req.body.dynamicFields;
+    const { universityCollegeName, hospitalName, pharmacyName, state } = req.body.dynamicFields;
     if (universityCollegeName !== undefined && !String(universityCollegeName).trim()) {
       errors.push('University / College Name cannot be empty');
+    }
+    if (hospitalName !== undefined && !String(hospitalName).trim()) {
+      errors.push('Hospital / Facility Name cannot be empty');
+    }
+    if (pharmacyName !== undefined && !String(pharmacyName).trim()) {
+      errors.push('Pharmacy / Medical Store Name cannot be empty');
     }
     if (state !== undefined && !String(state).trim()) {
       errors.push('State cannot be empty');

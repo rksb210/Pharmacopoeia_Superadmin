@@ -194,7 +194,12 @@ export const SubscriptionsPage = () => {
     {
       header: 'User Category',
       key: 'user',
-      format: (val) => (val?.userType === 'UNIVERSITIES_COLLEGES' ? 'UNIVERSITIES / COLLEGES' : (val?.userType || 'N/A').toUpperCase()),
+      format: (val) =>
+        val?.userType === 'UNIVERSITIES_COLLEGES'
+          ? 'UNIVERSITIES / COLLEGES'
+          : val?.userType === 'OTHERS'
+          ? 'OTHER HEALTH CARE PROFESSIONAL'
+          : (val?.userType || 'N/A').toUpperCase(),
     },
     { header: 'Plan Name', key: 'planName', format: (val) => val || 'NFI Universal Access Pass' },
     { header: 'Tier', key: 'tier', format: (val) => val || 'Individual' },
@@ -436,11 +441,13 @@ export const SubscriptionsPage = () => {
               <option value="all">All Categories</option>
               <option value="DOCTOR">Doctors</option>
               <option value="STUDENT">Students</option>
-              <option value="PHARMACIST">Pharmacists</option>
               <option value="NURSE">Nurses</option>
+              <option value="PHARMACIST">Pharmacists</option>
+              <option value="OTHERS">Other Health Care Professional</option>
               <option value="INDUSTRY">Industry</option>
+              <option value="HOSPITALS">Hospitals</option>
               <option value="UNIVERSITIES_COLLEGES">Universities / Colleges</option>
-              <option value="OTHERS">Others</option>
+              <option value="RETAIL_PHARMACIST">Retail Pharmacists</option>
             </select>
           </div>
 
@@ -535,6 +542,8 @@ export const SubscriptionsPage = () => {
                         <Badge variant="outline" className="text-[8px] uppercase font-bold px-1 py-0">
                           {sub.user?.userType === 'UNIVERSITIES_COLLEGES' || sub.user?.userType === 'UNIVERSITIES / COLLEGES'
                             ? 'Univ / College'
+                            : sub.user?.userType === 'OTHERS'
+                            ? 'Other Health Care Professional'
                             : sub.user?.userType || 'User'}
                         </Badge>
                       </div>

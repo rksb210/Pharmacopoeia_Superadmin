@@ -25,11 +25,13 @@ import subscriberService from '../../../services/subscriber.service';
 const USER_TYPE_TABS = [
   { id: 'DOCTOR', label: 'Doctors', icon: Stethoscope },
   { id: 'STUDENT', label: 'Students', icon: GraduationCap },
-  { id: 'PHARMACIST', label: 'Pharmacists', icon: Pill },
   { id: 'NURSE', label: 'Nurses', icon: Stethoscope },
+  { id: 'PHARMACIST', label: 'Pharmacists', icon: Pill },
+  { id: 'OTHERS', label: 'Other Health Care Professional', icon: User },
   { id: 'INDUSTRY', label: 'Industry', icon: Building2 },
+  { id: 'HOSPITALS', label: 'Hospitals', icon: Stethoscope },
   { id: 'UNIVERSITIES_COLLEGES', label: 'Universities / Colleges', icon: School },
-  { id: 'OTHERS', label: 'Others', icon: User },
+  { id: 'RETAIL_PHARMACIST', label: 'Retail Pharmacist', icon: Pill },
 ];
 
 export const AssignDirectDiscountModal = ({
@@ -51,6 +53,16 @@ export const AssignDirectDiscountModal = ({
   const [universities, setUniversities] = useState([]);
   const [selectedUniversity, setSelectedUniversity] = useState(null);
   const [loadingUniversities, setLoadingUniversities] = useState(false);
+
+  // Hospital Specific Grouping State
+  const [hospitals, setHospitals] = useState([]);
+  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [loadingHospitals, setLoadingHospitals] = useState(false);
+
+  // Retail Pharmacist Specific Grouping State
+  const [retailPharmacists, setRetailPharmacists] = useState([]);
+  const [selectedRetailPharmacist, setSelectedRetailPharmacist] = useState(null);
+  const [loadingRetailPharmacists, setLoadingRetailPharmacists] = useState(false);
 
   // Pagination & Lazy loading
   const [page, setPage] = useState(1);
@@ -75,6 +87,8 @@ export const AssignDirectDiscountModal = ({
       setUserSearch('');
       setSelectedIndustryCompany(null);
       setSelectedUniversity(null);
+      setSelectedHospital(null);
+      setSelectedRetailPharmacist(null);
       setError('');
     }
   }, [isOpen]);
@@ -109,6 +123,36 @@ export const AssignDirectDiscountModal = ({
     }
   }, []);
 
+  // Fetch distinct hospitals
+  const fetchHospitals = useCallback(async (searchVal = '') => {
+    setLoadingHospitals(true);
+    try {
+      const res = await subscriberService.getHospitals({ search: searchVal });
+      if (res && res.hospitals) {
+        setHospitals(res.hospitals);
+      }
+    } catch (err) {
+      console.warn('Failed to load hospitals:', err.message);
+    } finally {
+      setLoadingHospitals(false);
+    }
+  }, []);
+
+  // Fetch distinct retail pharmacists
+  const fetchRetailPharmacists = useCallback(async (searchVal = '') => {
+    setLoadingRetailPharmacists(true);
+    try {
+      const res = await subscriberService.getRetailPharmacists({ search: searchVal });
+      if (res && res.pharmacists) {
+        setRetailPharmacists(res.pharmacists);
+      }
+    } catch (err) {
+      console.warn('Failed to load retail pharmacists:', err.message);
+    } finally {
+      setLoadingRetailPharmacists(false);
+    }
+  }, []);
+
   // Lazy-load subscribers for the active tab (or specific industry company)
   const fetchSubscribers = useCallback(async (tab, searchVal, company = null, pageNum = 1, isAppend = false) => {
     if (pageNum === 1) {
@@ -125,7 +169,7 @@ export const AssignDirectDiscountModal = ({
         limit: 15,
       };
 
-      if ((tab === 'INDUSTRY' || tab === 'UNIVERSITIES_COLLEGES') && company) {
+      if (['INDUSTRY', 'UNIVERSITIES_COLLEGES', 'HOSPITALS', 'RETAIL_PHARMACIST'].includes(tab) && company) {
         params.companyName = company;
       }
 
@@ -148,7 +192,7 @@ export const AssignDirectDiscountModal = ({
     }
   }, []);
 
-  // Fetch when tab, search, industry company, or university changes (Debounced)
+  // Fetch when tab, search, industry company, university, hospital, or pharmacy changes (Debounced)
   useEffect(() => {
     if (!isOpen) return;
     setPage(1);
@@ -158,19 +202,40 @@ export const AssignDirectDiscountModal = ({
         fetchIndustries(userSearch);
       } else if (activeCohortTab === 'UNIVERSITIES_COLLEGES' && !selectedUniversity) {
         fetchUniversities(userSearch);
+      } else if (activeCohortTab === 'HOSPITALS' && !selectedHospital) {
+        fetchHospitals(userSearch);
+      } else if (activeCohortTab === 'RETAIL_PHARMACIST' && !selectedRetailPharmacist) {
+        fetchRetailPharmacists(userSearch);
       } else {
         const entityFilter =
           activeCohortTab === 'INDUSTRY'
             ? selectedIndustryCompany
             : activeCohortTab === 'UNIVERSITIES_COLLEGES'
             ? selectedUniversity
+            : activeCohortTab === 'HOSPITALS'
+            ? selectedHospital
+            : activeCohortTab === 'RETAIL_PHARMACIST'
+            ? selectedRetailPharmacist
             : null;
         fetchSubscribers(activeCohortTab, userSearch, entityFilter, 1, false);
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [activeCohortTab, userSearch, selectedIndustryCompany, selectedUniversity, isOpen, fetchSubscribers, fetchIndustries, fetchUniversities]);
+  }, [
+    activeCohortTab,
+    userSearch,
+    selectedIndustryCompany,
+    selectedUniversity,
+    selectedHospital,
+    selectedRetailPharmacist,
+    isOpen,
+    fetchSubscribers,
+    fetchIndustries,
+    fetchUniversities,
+    fetchHospitals,
+    fetchRetailPharmacists,
+  ]);
 
   // Load More Handler for Lazy-Loading
   const handleLoadMore = () => {
@@ -182,6 +247,10 @@ export const AssignDirectDiscountModal = ({
           ? selectedIndustryCompany
           : activeCohortTab === 'UNIVERSITIES_COLLEGES'
           ? selectedUniversity
+          : activeCohortTab === 'HOSPITALS'
+          ? selectedHospital
+          : activeCohortTab === 'RETAIL_PHARMACIST'
+          ? selectedRetailPharmacist
           : null;
       fetchSubscribers(activeCohortTab, userSearch, entityFilter, nextPage, true);
     }
@@ -390,6 +459,27 @@ export const AssignDirectDiscountModal = ({
             </div>
           )}
 
+          {/* Hospital Header Breadcrumb when drilled into a specific hospital */}
+          {activeCohortTab === 'HOSPITALS' && selectedHospital && (
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200/80 px-3 py-2 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedHospital(null);
+                  setUserSearch('');
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#284661] hover:text-[#E76120] cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Hospitals</span>
+              </button>
+              <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 truncate">
+                <Stethoscope className="w-3.5 h-3.5 text-[#284661] shrink-0" />
+                <span className="truncate">{selectedHospital}</span>
+              </div>
+            </div>
+          )}
+
           {/* University Header Breadcrumb when drilled into a specific university */}
           {activeCohortTab === 'UNIVERSITIES_COLLEGES' && selectedUniversity && (
             <div className="flex items-center justify-between bg-blue-50 border border-blue-200/80 px-3 py-2 rounded-xl">
@@ -411,6 +501,27 @@ export const AssignDirectDiscountModal = ({
             </div>
           )}
 
+          {/* Retail Pharmacist Header Breadcrumb when drilled into a specific pharmacy */}
+          {activeCohortTab === 'RETAIL_PHARMACIST' && selectedRetailPharmacist && (
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200/80 px-3 py-2 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRetailPharmacist(null);
+                  setUserSearch('');
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#284661] hover:text-[#E76120] cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Retail Pharmacies</span>
+              </button>
+              <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 truncate">
+                <Pill className="w-3.5 h-3.5 text-[#284661] shrink-0" />
+                <span className="truncate">{selectedRetailPharmacist}</span>
+              </div>
+            </div>
+          )}
+
           {/* Toolbar: Search bar + Select All in Tab */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -422,11 +533,19 @@ export const AssignDirectDiscountModal = ({
                     ? 'Search company / industry by name...'
                     : activeCohortTab === 'INDUSTRY'
                     ? `Search employees in ${selectedIndustryCompany}...`
+                    : activeCohortTab === 'HOSPITALS' && !selectedHospital
+                    ? 'Search hospital by name...'
+                    : activeCohortTab === 'HOSPITALS'
+                    ? `Search staff in ${selectedHospital}...`
                     : activeCohortTab === 'UNIVERSITIES_COLLEGES' && !selectedUniversity
                     ? 'Search university / college by name...'
                     : activeCohortTab === 'UNIVERSITIES_COLLEGES'
                     ? `Search members in ${selectedUniversity}...`
-                    : `Search ${activeCohortTab.toLowerCase()} by name, email, registration...`
+                    : activeCohortTab === 'RETAIL_PHARMACIST' && !selectedRetailPharmacist
+                    ? 'Search pharmacy / medical store by name...'
+                    : activeCohortTab === 'RETAIL_PHARMACIST'
+                    ? `Search staff in ${selectedRetailPharmacist}...`
+                    : `Search ${activeCohortTab === 'OTHERS' ? 'other health care professional' : activeCohortTab.toLowerCase()} by name, email, registration...`
                 }
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
@@ -434,9 +553,11 @@ export const AssignDirectDiscountModal = ({
               />
             </div>
 
-            {((activeCohortTab !== 'INDUSTRY' && activeCohortTab !== 'UNIVERSITIES_COLLEGES') ||
+            {((activeCohortTab !== 'INDUSTRY' && activeCohortTab !== 'UNIVERSITIES_COLLEGES' && activeCohortTab !== 'HOSPITALS' && activeCohortTab !== 'RETAIL_PHARMACIST') ||
               (activeCohortTab === 'INDUSTRY' && selectedIndustryCompany) ||
-              (activeCohortTab === 'UNIVERSITIES_COLLEGES' && selectedUniversity)) &&
+              (activeCohortTab === 'UNIVERSITIES_COLLEGES' && selectedUniversity) ||
+              (activeCohortTab === 'HOSPITALS' && selectedHospital) ||
+              (activeCohortTab === 'RETAIL_PHARMACIST' && selectedRetailPharmacist)) &&
               subscribers.length > 0 && (
                 <button
                   type="button"
@@ -518,6 +639,63 @@ export const AssignDirectDiscountModal = ({
                   );
                 })
               )
+            ) : activeCohortTab === 'HOSPITALS' && !selectedHospital ? (
+              loadingHospitals ? (
+                <div className="p-4 text-slate-400 text-center flex items-center justify-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#284661]" />
+                  <span>Loading hospitals directory...</span>
+                </div>
+              ) : hospitals.length === 0 ? (
+                <p className="p-4 text-slate-400 text-center">
+                  No hospitals found matching your search.
+                </p>
+              ) : (
+                hospitals.map((hosp) => {
+                  const hospitalUsersSelected = selectedUsers.filter(
+                    (u) => u.userType === 'HOSPITALS' && u.dynamicFields?.hospitalName === hosp.hospitalName
+                  ).length;
+
+                  return (
+                    <div
+                      key={hosp._id || hosp.hospitalName}
+                      onClick={() => {
+                        setSelectedHospital(hosp.hospitalName);
+                        setUserSearch('');
+                      }}
+                      className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-blue-50/60 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#284661]/10 text-[#284661] flex items-center justify-center shrink-0">
+                          <Stethoscope className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-900 truncate block text-xs">
+                              {hosp.hospitalName}
+                            </span>
+                            {hospitalUsersSelected > 0 && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800">
+                                {hospitalUsersSelected} selected
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 truncate block">
+                            {hosp.state ? `State: ${hosp.state}` : 'Healthcare / Hospital Organization'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-bold rounded-lg text-[10px] flex items-center gap-1">
+                          <Users className="w-3 h-3 text-[#284661]" />
+                          <span>{hosp.subscribersCount} {hosp.subscribersCount === 1 ? 'Member' : 'Members'}</span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  );
+                })
+              )
             ) : activeCohortTab === 'UNIVERSITIES_COLLEGES' && !selectedUniversity ? (
               loadingUniversities ? (
                 <div className="p-4 text-slate-400 text-center flex items-center justify-center gap-2">
@@ -577,8 +755,65 @@ export const AssignDirectDiscountModal = ({
                   );
                 })
               )
+            ) : activeCohortTab === 'RETAIL_PHARMACIST' && !selectedRetailPharmacist ? (
+              loadingRetailPharmacists ? (
+                <div className="p-4 text-slate-400 text-center flex items-center justify-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#284661]" />
+                  <span>Loading retail pharmacies directory...</span>
+                </div>
+              ) : retailPharmacists.length === 0 ? (
+                <p className="p-4 text-slate-400 text-center">
+                  No retail pharmacies found matching your search.
+                </p>
+              ) : (
+                retailPharmacists.map((pharm) => {
+                  const pharmacyUsersSelected = selectedUsers.filter(
+                    (u) => u.userType === 'RETAIL_PHARMACIST' && u.dynamicFields?.pharmacyName === pharm.pharmacyName
+                  ).length;
+
+                  return (
+                    <div
+                      key={pharm._id || pharm.pharmacyName}
+                      onClick={() => {
+                        setSelectedRetailPharmacist(pharm.pharmacyName);
+                        setUserSearch('');
+                      }}
+                      className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-blue-50/60 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#284661]/10 text-[#284661] flex items-center justify-center shrink-0">
+                          <Pill className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-900 truncate block text-xs">
+                              {pharm.pharmacyName}
+                            </span>
+                            {pharmacyUsersSelected > 0 && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800">
+                                {pharmacyUsersSelected} selected
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 truncate block">
+                            {pharm.state ? `State: ${pharm.state}` : 'Retail Pharmacy Store'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-bold rounded-lg text-[10px] flex items-center gap-1">
+                          <Users className="w-3 h-3 text-[#284661]" />
+                          <span>{pharm.subscribersCount} {pharm.subscribersCount === 1 ? 'Staff' : 'Staff'}</span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  );
+                })
+              )
             ) : (
-              /* 2. Subscribers List (Doctors, Students, or Selected Company / University) */
+              /* 2. Subscribers List */
               loadingUsers ? (
                 <div className="p-4 text-slate-400 text-center flex items-center justify-center gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin text-[#284661]" />
@@ -586,8 +821,14 @@ export const AssignDirectDiscountModal = ({
                     Loading{' '}
                     {activeCohortTab === 'INDUSTRY'
                       ? 'company subscribers'
+                      : activeCohortTab === 'HOSPITALS'
+                      ? 'hospital staff'
                       : activeCohortTab === 'UNIVERSITIES_COLLEGES'
                       ? 'university members'
+                      : activeCohortTab === 'RETAIL_PHARMACIST'
+                      ? 'pharmacy staff'
+                      : activeCohortTab === 'OTHERS'
+                      ? 'other health care professionals'
                       : `${activeCohortTab.toLowerCase()}s`}...
                   </span>
                 </div>
@@ -596,8 +837,14 @@ export const AssignDirectDiscountModal = ({
                   No{' '}
                   {activeCohortTab === 'INDUSTRY'
                     ? 'subscribers found in this company'
+                    : activeCohortTab === 'HOSPITALS'
+                    ? 'subscribers found in this hospital'
                     : activeCohortTab === 'UNIVERSITIES_COLLEGES'
                     ? 'subscribers found in this university / college'
+                    : activeCohortTab === 'RETAIL_PHARMACIST'
+                    ? 'subscribers found in this retail pharmacy'
+                    : activeCohortTab === 'OTHERS'
+                    ? 'other health care professionals found'
                     : `${activeCohortTab.toLowerCase()}s found`}.
                 </p>
               ) : (
@@ -635,13 +882,15 @@ export const AssignDirectDiscountModal = ({
                               {sub.email} {sub.phoneNumber ? `· ${sub.phoneNumber}` : ''}
                             </p>
                             {/* Dynamic category credential */}
-                            {(dFields.registrationNo || dFields.apaarId || dFields.companyName || dFields.universityCollegeName) && (
+                            {(dFields.registrationNo || dFields.apaarId || dFields.companyName || dFields.universityCollegeName || dFields.hospitalName || dFields.pharmacyName) && (
                               <span className="text-[10px] text-slate-500 font-medium truncate block">
                                 {dFields.registrationNo ? `Reg: ${dFields.registrationNo}` : ''}
                                 {dFields.stateCouncil ? ` (${dFields.stateCouncil})` : ''}
                                 {dFields.apaarId ? `APAAR: ${dFields.apaarId}` : ''}
                                 {dFields.companyName ? `Org: ${dFields.companyName}` : ''}
                                 {dFields.universityCollegeName ? `Institution: ${dFields.universityCollegeName}` : ''}
+                                {dFields.hospitalName ? `Hospital: ${dFields.hospitalName}` : ''}
+                                {dFields.pharmacyName ? `Pharmacy: ${dFields.pharmacyName}` : ''}
                                 {dFields.state ? ` (${dFields.state})` : ''}
                               </span>
                             )}
@@ -649,7 +898,7 @@ export const AssignDirectDiscountModal = ({
                         </div>
 
                         <Badge variant="outline" className="text-[9px] uppercase font-bold shrink-0">
-                          {sub.userType}
+                          {sub.userType === 'OTHERS' ? 'Other Health Care Professional' : sub.userType}
                         </Badge>
                       </div>
                     );

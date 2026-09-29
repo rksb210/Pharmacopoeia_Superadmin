@@ -85,7 +85,7 @@ const systemConfigSchema = new mongoose.Schema(
       },
       allowedUserTypes: {
         type: [String],
-        default: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'],
+        default: ['DOCTOR', 'STUDENT', 'NURSE', 'PHARMACIST', 'OTHERS', 'INDUSTRY', 'HOSPITALS', 'UNIVERSITIES_COLLEGES', 'RETAIL_PHARMACIST'],
       },
       autoApproveStudents: {
         type: Boolean,

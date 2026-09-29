@@ -55,6 +55,40 @@ export const getUniversities = async (req, res, next) => {
   }
 };
 
+export const getHospitals = async (req, res, next) => {
+  try {
+    const { search } = req.query;
+    const hospitals = await subscriberService.getIndustriesGrouped({
+      search,
+      userType: 'HOSPITALS',
+    });
+    return res.status(200).json({
+      success: true,
+      hospitals,
+      industries: hospitals,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getRetailPharmacists = async (req, res, next) => {
+  try {
+    const { search } = req.query;
+    const pharmacists = await subscriberService.getIndustriesGrouped({
+      search,
+      userType: 'RETAIL_PHARMACIST',
+    });
+    return res.status(200).json({
+      success: true,
+      pharmacists,
+      industries: pharmacists,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getSubscribers = async (req, res, next) => {
   try {
     const {
