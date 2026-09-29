@@ -13,7 +13,7 @@ export const planService = {
         code: 'NFI-INDIVIDUAL',
         description: 'Complete digital formulary monograph database and clinical tools for all healthcare practitioners, institutions, and scholars.',
         tier: 'Individual',
-        priceINR: 3500,
+        priceINR: 660,
         validityType: 'fixed_date',
         fixedDate: new Date('2031-12-31T23:59:59.999Z'),
         applicableUserTypes: ['ALL'],
@@ -216,6 +216,11 @@ export const planService = {
       description = '',
       tier = 'Individual',
       priceINR,
+      deliveryType = 'ONLINE',
+      isGstApplicable = true,
+      gstRatePercent = 18,
+      bulkDiscountEnabled = false,
+      bulkSlabs = [],
       validityType = 'fixed_date',
       fixedDate = '2031-12-31T23:59:59.999Z',
       durationValue = 365,
@@ -243,6 +248,18 @@ export const planService = {
       description: description.trim(),
       tier,
       priceINR: Number(priceINR),
+      deliveryType,
+      isGstApplicable: isGstApplicable !== false,
+      gstRatePercent: Number(gstRatePercent) >= 0 ? Number(gstRatePercent) : 18,
+      bulkDiscountEnabled: !!bulkDiscountEnabled,
+      bulkSlabs: Array.isArray(bulkSlabs)
+        ? bulkSlabs.map((s) => ({
+            minQty: Number(s.minQty) || 1,
+            maxQty: s.maxQty !== null && s.maxQty !== undefined && s.maxQty !== '' ? Number(s.maxQty) : null,
+            discountPercent: Number(s.discountPercent) || 0,
+            label: s.label || '',
+          }))
+        : [],
       validityType,
       fixedDate: new Date(fixedDate),
       durationValue: Number(durationValue),
@@ -260,7 +277,7 @@ export const planService = {
           changedBy: adminUser?.name || 'Super Admin',
           changeType: 'CREATED',
           previousValues: null,
-          newValues: { priceINR: Number(priceINR), tier, validityType },
+          newValues: { priceINR: Number(priceINR), tier, validityType, isGstApplicable, gstRatePercent, bulkDiscountEnabled },
           reason: 'Initial plan provisioning',
           timestamp: new Date(),
         },
@@ -279,6 +296,11 @@ export const planService = {
 
     const previousPricing = {
       priceINR: plan.priceINR,
+      deliveryType: plan.deliveryType,
+      isGstApplicable: plan.isGstApplicable,
+      gstRatePercent: plan.gstRatePercent,
+      bulkDiscountEnabled: plan.bulkDiscountEnabled,
+      bulkSlabs: plan.bulkSlabs,
       validityType: plan.validityType,
       fixedDate: plan.fixedDate,
       durationValue: plan.durationValue,
@@ -291,6 +313,11 @@ export const planService = {
       description,
       tier,
       priceINR,
+      deliveryType,
+      isGstApplicable,
+      gstRatePercent,
+      bulkDiscountEnabled,
+      bulkSlabs,
       validityType,
       fixedDate,
       durationValue,
@@ -309,6 +336,18 @@ export const planService = {
     if (description !== undefined) plan.description = description.trim();
     if (tier) plan.tier = tier;
     if (priceINR !== undefined) plan.priceINR = Number(priceINR);
+    if (deliveryType) plan.deliveryType = deliveryType;
+    if (isGstApplicable !== undefined) plan.isGstApplicable = isGstApplicable !== false;
+    if (gstRatePercent !== undefined) plan.gstRatePercent = Number(gstRatePercent);
+    if (bulkDiscountEnabled !== undefined) plan.bulkDiscountEnabled = !!bulkDiscountEnabled;
+    if (bulkSlabs !== undefined && Array.isArray(bulkSlabs)) {
+      plan.bulkSlabs = bulkSlabs.map((s) => ({
+        minQty: Number(s.minQty) || 1,
+        maxQty: s.maxQty !== null && s.maxQty !== undefined && s.maxQty !== '' ? Number(s.maxQty) : null,
+        discountPercent: Number(s.discountPercent) || 0,
+        label: s.label || '',
+      }));
+    }
     if (validityType) plan.validityType = validityType;
     if (fixedDate) plan.fixedDate = new Date(fixedDate);
     if (durationValue !== undefined) plan.durationValue = Number(durationValue);
@@ -328,6 +367,10 @@ export const planService = {
       previousValues: previousPricing,
       newValues: {
         priceINR: plan.priceINR,
+        deliveryType: plan.deliveryType,
+        isGstApplicable: plan.isGstApplicable,
+        gstRatePercent: plan.gstRatePercent,
+        bulkDiscountEnabled: plan.bulkDiscountEnabled,
         validityType: plan.validityType,
         fixedDate: plan.fixedDate,
         durationValue: plan.durationValue,
@@ -340,6 +383,60 @@ export const planService = {
 
     await plan.save();
     return plan;
+  },
+
+  /**
+   * Universal Pricing & Tax Engine Calculator
+   * Computes Base Price, Bulk Slabs Discount, Concession, Taxable Base, GST Amount, and Final Total
+   */
+  calculatePlanPricing: (plan, { quantity = 1, concessionPercent = 0 } = {}) => {
+    const qty = Math.max(1, parseInt(quantity, 10) || 1);
+    const unitBasePrice = Number(plan?.priceINR || 0);
+    const grossBase = unitBasePrice * qty;
+
+    // 1. Check Bulk Slab Discount if enabled on plan
+    let bulkDiscountPercent = 0;
+    let appliedSlab = null;
+    if (plan?.bulkDiscountEnabled && Array.isArray(plan?.bulkSlabs) && plan.bulkSlabs.length > 0) {
+      const matched = plan.bulkSlabs.find((slab) => {
+        const min = Number(slab.minQty) || 1;
+        const max = slab.maxQty !== null && slab.maxQty !== undefined && slab.maxQty !== '' ? Number(slab.maxQty) : Infinity;
+        return qty >= min && qty <= max;
+      });
+      if (matched) {
+        bulkDiscountPercent = Number(matched.discountPercent) || 0;
+        appliedSlab = matched;
+      }
+    }
+
+    // Determine final discount percent: max between slab discount and direct concession
+    const effectiveDiscountPercent = Math.max(bulkDiscountPercent, Number(concessionPercent) || 0);
+    const discountAmount = Math.round((grossBase * effectiveDiscountPercent) / 100);
+    const taxableBase = Math.max(0, grossBase - discountAmount);
+
+    // 2. Dynamic GST Calculation
+    const isTaxable = plan?.isGstApplicable !== false;
+    const gstRate = isTaxable ? (Number(plan?.gstRatePercent) || 18) : 0;
+    const taxAmount = isTaxable ? Math.round((taxableBase * gstRate) / 100) : 0;
+    const totalAmount = taxableBase + taxAmount;
+    const effectivePerSeatPrice = qty > 0 ? (totalAmount / qty) : totalAmount;
+
+    return {
+      quantity: qty,
+      unitBasePrice,
+      grossBase,
+      bulkDiscountPercent,
+      concessionPercent: Number(concessionPercent) || 0,
+      effectiveDiscountPercent,
+      discountAmount,
+      taxableBase,
+      isGstApplicable: isTaxable,
+      gstRatePercent: gstRate,
+      taxAmount,
+      totalAmount,
+      effectivePerSeatPrice,
+      appliedSlab,
+    };
   },
 
   /**

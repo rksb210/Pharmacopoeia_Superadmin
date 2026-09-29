@@ -33,7 +33,7 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
   const finalAmount = inv.totalAmount || inv.finalAmountINR || 0;
   const subtotal = inv.subtotal || inv.subtotalINR || 0;
   const taxAmount = inv.taxAmount || inv.taxAmountINR || 0;
-  const unitPrice = inv.unitPriceINR || (subtotal && batch?.validSeats ? Math.round(subtotal / batch.validSeats) : 3500);
+  const unitPrice = inv.unitPriceINR || (subtotal && batch?.validSeats ? Math.round(subtotal / batch.validSeats) : 660);
 
   return (
     <AdminModal

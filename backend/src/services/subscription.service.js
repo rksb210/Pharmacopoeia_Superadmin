@@ -2,6 +2,7 @@ import Subscription from '../models/subscription.model.js';
 import Subscriber from '../models/subscriber.model.js';
 import SystemConfig from '../models/systemConfig.model.js';
 import Plan from '../models/plan.model.js';
+import planService from './plan.service.js';
 
 export const subscriptionService = {
   /**
@@ -336,17 +337,57 @@ export const subscriptionService = {
       } else {
         endDate = await subscriptionService.getConfiguredFixedExpiry();
       }
-      finalAmount = 0;
       paymentStatus = 'waived';
     } else if (type === 'discounted') {
       if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
         endDate = new Date(planDoc.fixedDate);
+      } else if (planDoc && planDoc.validityType === 'duration_years') {
+        endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + (planDoc.durationValue || 1));
+      } else if (planDoc && planDoc.validityType === 'duration_months') {
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + (planDoc.durationValue || 12));
       } else {
         endDate = await subscriptionService.getConfiguredFixedExpiry();
       }
-      const disc = Math.min(100, Math.max(0, parseInt(discountPercent, 10) || 0));
-      discountAmount = Math.round((Number(amount) * disc) / 100);
-      finalAmount = Math.max(0, Number(amount) - discountAmount);
+    }
+    let pricingBreakdown = null;
+    let unitBaseAmount = Number(amount);
+    let userDiscountAmount = 0;
+    let userTaxableAmount = Number(amount);
+    let userGstRate = 18;
+    let userGstAmount = 0;
+    let userFinalAmount = Number(amount);
+    let effectiveDiscountPercent = 0;
+
+    if (type === 'paid' || type === 'discounted') {
+      const planForPricing = planDoc || {
+        priceINR: Number(amount),
+        isGstApplicable: true,
+        gstRatePercent: 18,
+        bulkDiscountEnabled: false,
+        bulkSlabs: [],
+      };
+      pricingBreakdown = planService.calculatePlanPricing(planForPricing, {
+        quantity: targetUserIds.length,
+        concessionPercent: type === 'discounted' ? discountPercent : 0,
+      });
+
+      unitBaseAmount = pricingBreakdown.unitBasePrice;
+      effectiveDiscountPercent = pricingBreakdown.effectiveDiscountPercent;
+      userDiscountAmount = Math.round(pricingBreakdown.discountAmount / targetUserIds.length);
+      userTaxableAmount = Math.round(pricingBreakdown.taxableBase / targetUserIds.length);
+      userGstRate = pricingBreakdown.gstRatePercent;
+      userGstAmount = Math.round(pricingBreakdown.taxAmount / targetUserIds.length);
+      userFinalAmount = Math.round(pricingBreakdown.totalAmount / targetUserIds.length);
+    } else {
+      unitBaseAmount = Number(amount) || 0;
+      userDiscountAmount = 0;
+      userTaxableAmount = 0;
+      userGstRate = 0;
+      userGstAmount = 0;
+      userFinalAmount = 0;
+      paymentStatus = 'waived';
     }
 
     let firstSubscription = null;
@@ -369,10 +410,13 @@ export const subscriptionService = {
         status: 'active',
         startDate,
         endDate,
-        amount: Number(amount),
-        discountPercent: type === 'discounted' ? Number(discountPercent) : 0,
-        discountAmount,
-        finalAmount,
+        amount: unitBaseAmount,
+        discountPercent: effectiveDiscountPercent,
+        discountAmount: userDiscountAmount,
+        taxableAmount: userTaxableAmount,
+        gstRatePercent: userGstRate,
+        gstAmount: userGstAmount,
+        finalAmount: userFinalAmount,
         paymentMethod: type === 'trial' || type === 'complimentary' ? 'Admin Grant' : paymentMethod,
         paymentStatus,
         transactionRef: transactionRef || `TXN-${Date.now().toString().slice(-8)}`,

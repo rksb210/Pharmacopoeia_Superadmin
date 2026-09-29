@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   ChevronRight,
   Users,
+  Receipt,
 } from 'lucide-react';
 import subscriberService from '../../../services/subscriber.service';
 import planService from '../../../services/plan.service';
@@ -118,6 +119,11 @@ export const AssignSubscriptionModal = ({
             desc: p.description || 'Full digital monograph formulary access.',
             validityType: p.validityType,
             fixedDate: p.fixedDate,
+            deliveryType: p.deliveryType || 'ONLINE',
+            isGstApplicable: p.isGstApplicable !== false,
+            gstRatePercent: p.gstRatePercent !== undefined ? p.gstRatePercent : 18,
+            bulkDiscountEnabled: !!p.bulkDiscountEnabled,
+            bulkSlabs: p.bulkSlabs || [],
           }));
           setPlans(formattedPlans);
           setSelectedPlan(formattedPlans[0]);
@@ -325,15 +331,58 @@ export const AssignSubscriptionModal = ({
     }
   };
 
-  // Compute amounts
-  const baseAmount = selectedPlan?.amount || 0;
-  const validDiscount = Math.min(100, Math.max(0, Number(discountPercent) || 0));
-  const calculatedDiscount =
-    subType === 'discounted' ? Math.round((baseAmount * validDiscount) / 100) : 0;
+  // Compute amounts with Bulk Slab & 18% GST Support
+  const seatCount = Math.max(1, selectedUsers.length);
+  const unitBasePrice = selectedPlan?.amount || 0;
+  const isGst = selectedPlan?.isGstApplicable !== false;
+  const gstRatePercent = isGst ? (Number(selectedPlan?.gstRatePercent) || 18) : 0;
+
+  // Single seat unit preview
+  const singleUnitGst = isGst ? Math.round((unitBasePrice * gstRatePercent) / 100) : 0;
+  const singleUnitTotal = unitBasePrice + singleUnitGst;
+
+  // Gross base for all selected seats
+  const grossBase = unitBasePrice * seatCount;
+
+  // Bulk slab discount check
+  let bulkDiscountPercent = 0;
+  let activeBulkSlab = null;
+  if (selectedPlan?.bulkDiscountEnabled && Array.isArray(selectedPlan?.bulkSlabs) && selectedPlan.bulkSlabs.length > 0) {
+    const matched = selectedPlan.bulkSlabs.find((slab) => {
+      const min = Number(slab.minQty) || 1;
+      const max = slab.maxQty !== null && slab.maxQty !== undefined && slab.maxQty !== '' ? Number(slab.maxQty) : Infinity;
+      return seatCount >= min && seatCount <= max;
+    });
+    if (matched) {
+      bulkDiscountPercent = Number(matched.discountPercent) || 0;
+      activeBulkSlab = matched;
+    }
+  }
+
+  // Concession discount (if concession tab selected)
+  const validConcessionDiscount = Math.min(100, Math.max(0, Number(discountPercent) || 0));
+
+  // Effective discount
+  let effectiveDiscountPercent = 0;
+  if (subType === 'discounted') {
+    effectiveDiscountPercent = Math.max(bulkDiscountPercent, validConcessionDiscount);
+  } else if (subType === 'paid') {
+    effectiveDiscountPercent = bulkDiscountPercent;
+  }
+
+  const calculatedDiscount = Math.round((grossBase * effectiveDiscountPercent) / 100);
+  const taxableBase = Math.max(0, grossBase - calculatedDiscount);
+  const calculatedGst =
+    subType === 'trial' || subType === 'complimentary' || !isGst
+      ? 0
+      : Math.round((taxableBase * gstRatePercent) / 100);
+
   const finalPrice =
     subType === 'trial' || subType === 'complimentary'
       ? 0
-      : Math.max(0, baseAmount - calculatedDiscount);
+      : taxableBase + calculatedGst;
+
+  const baseAmount = unitBasePrice;
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -357,8 +406,13 @@ export const AssignSubscriptionModal = ({
         planName: selectedPlan.name,
         planCode: selectedPlan.code,
         tier: selectedPlan.tier,
-        amount: baseAmount,
-        discountPercent: subType === 'discounted' ? validDiscount : 0,
+        amount: unitBasePrice,
+        discountPercent: effectiveDiscountPercent,
+        discountAmount: calculatedDiscount,
+        taxableAmount: taxableBase,
+        gstRatePercent: gstRatePercent,
+        gstAmount: calculatedGst,
+        finalAmount: finalPrice,
         paymentMethod: subType === 'trial' || subType === 'complimentary' ? 'Admin Grant' : paymentMethod,
         transactionRef: subType === 'trial' || subType === 'complimentary' ? 'COMPLIMENTARY-VIP' : transactionRef,
         notes,
@@ -1030,14 +1084,52 @@ export const AssignSubscriptionModal = ({
               }}
               className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#E76120] cursor-pointer"
             >
-              {plans.map((plan) => (
-                <option key={plan.code} value={plan.code}>
-                  {plan.name} — ₹{plan.amount.toLocaleString('en-IN')}
-                </option>
-              ))}
+              {plans.map((plan) => {
+                const hasGst = plan.isGstApplicable !== false;
+                const rate = hasGst ? (plan.gstRatePercent ?? 18) : 0;
+                const gstVal = Math.round((plan.amount * rate) / 100);
+                const tot = plan.amount + gstVal;
+                const formatLabel =
+                  plan.deliveryType === 'ONLINE_PHYSICAL'
+                    ? 'Online + Physical'
+                    : plan.deliveryType === 'PHYSICAL'
+                    ? 'Physical Only'
+                    : 'Online Only';
+                return (
+                  <option key={plan.code} value={plan.code}>
+                    {plan.name} [{formatLabel}] — Base: ₹{plan.amount.toLocaleString('en-IN')} | With {rate}% GST: ₹{tot.toLocaleString('en-IN')}
+                  </option>
+                );
+              })}
             </select>
           )}
           {selectedPlan?.desc && <p className="text-[11px] text-slate-400">{selectedPlan.desc}</p>}
+
+          {selectedPlan && (
+            <div className="flex items-center flex-wrap gap-1.5 pt-1 text-[11px]">
+              <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+                Delivery:{' '}
+                <strong className="text-slate-900">
+                  {selectedPlan.deliveryType === 'ONLINE_PHYSICAL'
+                    ? 'Online + Physical (Hybrid)'
+                    : selectedPlan.deliveryType === 'PHYSICAL'
+                    ? 'Physical Only (Hardcopy Book Delivery)'
+                    : 'Online (Digital Only)'}
+                </strong>
+              </span>
+              <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+                Base: ₹{selectedPlan.amount.toLocaleString('en-IN')}
+              </span>
+              <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                Inc. {selectedPlan.isGstApplicable ? `${selectedPlan.gstRatePercent}% GST` : '0% GST'}: ₹{singleUnitTotal.toLocaleString('en-IN')}
+              </span>
+              {selectedPlan.bulkDiscountEnabled && selectedPlan.bulkSlabs?.length > 0 && (
+                <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 font-semibold border border-amber-200 flex items-center gap-1">
+                  <span>⚡ Bulk Slabs ({selectedPlan.bulkSlabs.length} tiers configured)</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 4. Type Specific Settings */}
@@ -1162,7 +1254,102 @@ export const AssignSubscriptionModal = ({
           </div>
         )}
 
-        {/* 5. Invoicing & Payment Info */}
+        {/* 5. Pricing & GST Tax Invoice Breakdown Card */}
+        {(subType === 'paid' || subType === 'discounted') && (
+          <div className="p-3.5 bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
+              <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-[#284661]" />
+                <span>Pricing & GST Tax Invoice Breakdown</span>
+              </span>
+              <span className="text-[11px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                {seatCount} {seatCount > 1 ? 'Subscribers Selected' : 'Subscriber Selected'}
+              </span>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              {/* Unit Base & Gross Base */}
+              <div className="flex items-center justify-between text-slate-600">
+                <span>
+                  Base Plan Rate {seatCount > 1 && `(₹${unitBasePrice.toLocaleString('en-IN')} × ${seatCount})`}:
+                </span>
+                <span className="font-semibold text-slate-800">
+                  ₹{grossBase.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {/* Bulk Slab Discount if matched */}
+              {activeBulkSlab && (
+                <div className="flex items-center justify-between text-emerald-700 bg-emerald-50/80 px-2.5 py-1 rounded-lg border border-emerald-200/60 text-[11px]">
+                  <span className="flex items-center gap-1">
+                    <span className="font-bold">⚡ Bulk Slab Discount ({activeBulkSlab.minQty}–{activeBulkSlab.maxQty || '∞'} seats):</span>
+                    <span>{activeBulkSlab.discountPercent}% off</span>
+                  </span>
+                  <span className="font-bold">
+                    -₹{Math.round((grossBase * activeBulkSlab.discountPercent) / 100).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              )}
+
+              {/* Concession Discount if applied */}
+              {subType === 'discounted' && validConcessionDiscount > 0 && (
+                <div className="flex items-center justify-between text-indigo-700 bg-indigo-50/80 px-2.5 py-1 rounded-lg border border-indigo-200/60 text-[11px]">
+                  <span className="font-bold">Concession Rate Applied ({validConcessionDiscount}%):</span>
+                  <span className="font-bold">
+                    -₹{Math.round((grossBase * validConcessionDiscount) / 100).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              )}
+
+              {/* Net Taxable Base */}
+              {calculatedDiscount > 0 && (
+                <div className="flex items-center justify-between text-slate-600 pt-1 border-t border-dashed border-slate-200">
+                  <span>Net Taxable Base Value:</span>
+                  <span className="font-semibold text-slate-800">
+                    ₹{taxableBase.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              )}
+
+              {/* GST */}
+              <div className="flex items-center justify-between text-slate-600">
+                <span className="flex items-center gap-1">
+                  <span>GST ({gstRatePercent}%):</span>
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    {isGst ? `CGST ${(gstRatePercent / 2).toFixed(1)}% + SGST ${(gstRatePercent / 2).toFixed(1)}%` : 'Tax Exempt'}
+                  </span>
+                </span>
+                <span className="font-semibold text-slate-800">
+                  + ₹{calculatedGst.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {/* Total Payable */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-300 font-bold text-slate-900 text-sm">
+                <div className="flex flex-col">
+                  <span>Total Payable (Inc. GST):</span>
+                  {seatCount > 1 && (
+                    <span className="text-[10px] text-slate-500 font-normal">
+                      Effective ₹{Math.round(finalPrice / seatCount).toLocaleString('en-IN')} per subscriber
+                    </span>
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className="text-base text-[#284661]">
+                    ₹{finalPrice.toLocaleString('en-IN')}
+                  </span>
+                  {calculatedDiscount > 0 && (
+                    <div className="text-[10px] text-emerald-600 font-semibold">
+                      Total savings: ₹{calculatedDiscount.toLocaleString('en-IN')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. Invoicing & Payment Info */}
         {(subType === 'paid' || subType === 'discounted') && (
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">

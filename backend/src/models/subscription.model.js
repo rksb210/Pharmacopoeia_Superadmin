@@ -93,6 +93,18 @@ const subscriptionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    taxableAmount: {
+      type: Number,
+      default: 0,
+    },
+    gstRatePercent: {
+      type: Number,
+      default: 18,
+    },
+    gstAmount: {
+      type: Number,
+      default: 0,
+    },
     finalAmount: {
       type: Number,
       required: true,
