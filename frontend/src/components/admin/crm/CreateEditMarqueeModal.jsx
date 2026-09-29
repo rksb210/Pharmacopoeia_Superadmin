@@ -21,13 +21,15 @@ import {
 
 const USER_TYPES = [
   { id: 'ALL', label: 'All Users (Universal)' },
-  { id: 'STUDENT', label: 'Students' },
   { id: 'DOCTOR', label: 'Doctors' },
-  { id: 'PHARMACIST', label: 'Pharmacists' },
+  { id: 'STUDENT', label: 'Students' },
   { id: 'NURSE', label: 'Nurses' },
+  { id: 'PHARMACIST', label: 'Pharmacists' },
+  { id: 'OTHERS', label: 'Other Health Care Professional' },
   { id: 'INDUSTRY', label: 'Industry & Corporate' },
+  { id: 'HOSPITALS', label: 'Hospitals' },
   { id: 'UNIVERSITIES_COLLEGES', label: 'Universities / Colleges' },
-  { id: 'OTHERS', label: 'Others' },
+  { id: 'RETAIL_PHARMACIST', label: 'Retail Pharmacist' },
 ];
 
 const ALERT_TYPES = [
@@ -315,7 +317,7 @@ export const CreateEditMarqueeModal = ({
           <InputField
             id="linkUrl"
             label="Action Link (Optional URL)"
-            placeholder="e.g. /monographs/9th-edition"
+            placeholder="e.g. /monographs/7th-edition"
             value={formData.linkUrl}
             onChange={(e) => handleChange('linkUrl', e.target.value)}
           />

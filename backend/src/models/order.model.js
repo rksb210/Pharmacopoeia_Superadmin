@@ -67,7 +67,7 @@ const orderSchema = new mongoose.Schema(
     },
     userType: {
       type: String,
-      enum: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES', 'OTHERS'],
+      enum: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'HOSPITALS', 'UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES', 'RETAIL_PHARMACIST', 'OTHERS'],
       default: 'DOCTOR',
     },
     plan: {

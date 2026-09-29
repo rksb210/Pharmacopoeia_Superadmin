@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   ChevronRight,
   Users,
+  Receipt,
 } from 'lucide-react';
 import subscriberService from '../../../services/subscriber.service';
 import planService from '../../../services/plan.service';
@@ -29,11 +30,13 @@ import planService from '../../../services/plan.service';
 const USER_TYPE_TABS = [
   { id: 'DOCTOR', label: 'Doctors', icon: Stethoscope },
   { id: 'STUDENT', label: 'Students', icon: GraduationCap },
-  { id: 'PHARMACIST', label: 'Pharmacists', icon: Pill },
   { id: 'NURSE', label: 'Nurses', icon: Stethoscope },
+  { id: 'PHARMACIST', label: 'Pharmacists', icon: Pill },
+  { id: 'OTHERS', label: 'Other Health Care Professional', icon: User },
   { id: 'INDUSTRY', label: 'Industry', icon: Building2 },
+  { id: 'HOSPITALS', label: 'Hospitals', icon: Stethoscope },
   { id: 'UNIVERSITIES_COLLEGES', label: 'Universities / Colleges', icon: School },
-  { id: 'OTHERS', label: 'Others', icon: User },
+  { id: 'RETAIL_PHARMACIST', label: 'Retail Pharmacist', icon: Pill },
 ];
 
 export const AssignSubscriptionModal = ({
@@ -55,6 +58,16 @@ export const AssignSubscriptionModal = ({
   const [universities, setUniversities] = useState([]);
   const [selectedUniversity, setSelectedUniversity] = useState(null);
   const [loadingUniversities, setLoadingUniversities] = useState(false);
+
+  // Hospital Specific Grouping State
+  const [hospitals, setHospitals] = useState([]);
+  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [loadingHospitals, setLoadingHospitals] = useState(false);
+
+  // Retail Pharmacist Specific Grouping State
+  const [retailPharmacists, setRetailPharmacists] = useState([]);
+  const [selectedRetailPharmacist, setSelectedRetailPharmacist] = useState(null);
+  const [loadingRetailPharmacists, setLoadingRetailPharmacists] = useState(false);
   
   // Pagination & Lazy loading
   const [page, setPage] = useState(1);
@@ -67,7 +80,7 @@ export const AssignSubscriptionModal = ({
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
-  const [subType, setSubType] = useState('paid'); // 'paid' | 'trial' | 'discounted'
+  const [subType, setSubType] = useState('paid'); // 'paid' | 'trial' | 'complimentary' | 'discounted'
   const [discountPercent, setDiscountPercent] = useState(20);
   const [trialDays, setTrialDays] = useState(14);
   const [paymentMethod, setPaymentMethod] = useState('UPI / BharatPay');
@@ -84,6 +97,8 @@ export const AssignSubscriptionModal = ({
       setUserSearch('');
       setSelectedIndustryCompany(null);
       setSelectedUniversity(null);
+      setSelectedHospital(null);
+      setSelectedRetailPharmacist(null);
     }
   }, [isOpen]);
 
@@ -96,15 +111,38 @@ export const AssignSubscriptionModal = ({
       try {
         const res = await planService.getPlans({ status: 'active' });
         if (res && res.plans && res.plans.length > 0) {
-          const formattedPlans = res.plans.map((p) => ({
-            name: p.name,
-            code: p.code,
-            tier: p.tier,
-            amount: p.priceINR || 0,
-            desc: p.description || 'Full digital monograph formulary access.',
-            validityType: p.validityType,
-            fixedDate: p.fixedDate,
-          }));
+          const formattedPlans = res.plans.map((p) => {
+            const rawDeliveryType = p.deliveryType;
+            const nameLower = (p.name || '').toLowerCase();
+            const codeLower = (p.code || '').toLowerCase();
+            let resolvedDelivery = rawDeliveryType;
+            if (!resolvedDelivery || resolvedDelivery === 'ONLINE') {
+              if (nameLower.includes('physical') && nameLower.includes('online')) {
+                resolvedDelivery = 'ONLINE_PHYSICAL';
+              } else if (codeLower.includes('py_on')) {
+                resolvedDelivery = 'ONLINE_PHYSICAL';
+              } else if (nameLower.includes('physical') || codeLower.includes('physical')) {
+                resolvedDelivery = 'PHYSICAL';
+              } else {
+                resolvedDelivery = 'ONLINE';
+              }
+            }
+
+            return {
+              name: p.name,
+              code: p.code,
+              tier: p.tier,
+              amount: p.priceINR || 0,
+              desc: p.description || '',
+              validityType: p.validityType,
+              fixedDate: p.fixedDate,
+              deliveryType: resolvedDelivery,
+              isGstApplicable: p.isGstApplicable !== false,
+              gstRatePercent: p.gstRatePercent !== undefined ? p.gstRatePercent : 18,
+              bulkDiscountEnabled: !!p.bulkDiscountEnabled,
+              bulkSlabs: p.bulkSlabs || [],
+            };
+          });
           setPlans(formattedPlans);
           setSelectedPlan(formattedPlans[0]);
         }
@@ -117,6 +155,38 @@ export const AssignSubscriptionModal = ({
 
     fetchPlans();
   }, [isOpen]);
+
+  // Filter plans for Free Trial and Complimentary (Online Only)
+  const isOnlineOnlyCategory = subType === 'trial' || subType === 'complimentary';
+  const visiblePlans = isOnlineOnlyCategory
+    ? plans.filter((p) => {
+        if (p.deliveryType !== 'ONLINE') return false;
+        const name = (p.name || '').toLowerCase();
+        const code = (p.code || '').toLowerCase();
+        if (name.includes('physical') || code.includes('physical') || code.includes('py_on')) {
+          return false;
+        }
+        return true;
+      })
+    : plans;
+
+  // Auto-switch selected plan if user switches to trial or complimentary and current plan is not ONLINE
+  useEffect(() => {
+    if (isOnlineOnlyCategory) {
+      const isCurrentOnline =
+        selectedPlan &&
+        selectedPlan.deliveryType === 'ONLINE' &&
+        !selectedPlan.name.toLowerCase().includes('physical') &&
+        !selectedPlan.code.toLowerCase().includes('py_on');
+
+      if (!isCurrentOnline) {
+        const firstOnline = visiblePlans[0];
+        if (firstOnline) {
+          setSelectedPlan(firstOnline);
+        }
+      }
+    }
+  }, [subType, visiblePlans, selectedPlan, isOnlineOnlyCategory]);
 
   // Fetch distinct industries
   const fetchIndustries = useCallback(async (searchVal = '') => {
@@ -148,7 +218,37 @@ export const AssignSubscriptionModal = ({
     }
   }, []);
 
-  // Lazy-load subscribers for the active tab (or specific industry company)
+  // Fetch distinct hospitals
+  const fetchHospitals = useCallback(async (searchVal = '') => {
+    setLoadingHospitals(true);
+    try {
+      const res = await subscriberService.getHospitals({ search: searchVal });
+      if (res && res.hospitals) {
+        setHospitals(res.hospitals);
+      }
+    } catch (err) {
+      console.warn('Failed to load hospitals:', err.message);
+    } finally {
+      setLoadingHospitals(false);
+    }
+  }, []);
+
+  // Fetch distinct retail pharmacists
+  const fetchRetailPharmacists = useCallback(async (searchVal = '') => {
+    setLoadingRetailPharmacists(true);
+    try {
+      const res = await subscriberService.getRetailPharmacists({ search: searchVal });
+      if (res && res.pharmacists) {
+        setRetailPharmacists(res.pharmacists);
+      }
+    } catch (err) {
+      console.warn('Failed to load retail pharmacists:', err.message);
+    } finally {
+      setLoadingRetailPharmacists(false);
+    }
+  }, []);
+
+  // Lazy-load subscribers for the active tab (or specific company/university/hospital/pharmacy)
   const fetchSubscribers = useCallback(async (tab, searchVal, company = null, pageNum = 1, isAppend = false) => {
     if (pageNum === 1) {
       setLoadingUsers(true);
@@ -164,7 +264,7 @@ export const AssignSubscriptionModal = ({
         limit: 15,
       };
 
-      if ((tab === 'INDUSTRY' || tab === 'UNIVERSITIES_COLLEGES') && company) {
+      if (['INDUSTRY', 'UNIVERSITIES_COLLEGES', 'HOSPITALS', 'RETAIL_PHARMACIST'].includes(tab) && company) {
         params.companyName = company;
       }
 
@@ -187,7 +287,7 @@ export const AssignSubscriptionModal = ({
     }
   }, []);
 
-  // Fetch when tab, search, industry company, or university changes (Debounced)
+  // Fetch when tab, search, industry company, university, hospital, or pharmacy changes (Debounced)
   useEffect(() => {
     if (!isOpen) return;
     setPage(1);
@@ -197,19 +297,40 @@ export const AssignSubscriptionModal = ({
         fetchIndustries(userSearch);
       } else if (activeCohortTab === 'UNIVERSITIES_COLLEGES' && !selectedUniversity) {
         fetchUniversities(userSearch);
+      } else if (activeCohortTab === 'HOSPITALS' && !selectedHospital) {
+        fetchHospitals(userSearch);
+      } else if (activeCohortTab === 'RETAIL_PHARMACIST' && !selectedRetailPharmacist) {
+        fetchRetailPharmacists(userSearch);
       } else {
         const entityFilter =
           activeCohortTab === 'INDUSTRY'
             ? selectedIndustryCompany
             : activeCohortTab === 'UNIVERSITIES_COLLEGES'
             ? selectedUniversity
+            : activeCohortTab === 'HOSPITALS'
+            ? selectedHospital
+            : activeCohortTab === 'RETAIL_PHARMACIST'
+            ? selectedRetailPharmacist
             : null;
         fetchSubscribers(activeCohortTab, userSearch, entityFilter, 1, false);
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [activeCohortTab, userSearch, selectedIndustryCompany, selectedUniversity, isOpen, fetchSubscribers, fetchIndustries, fetchUniversities]);
+  }, [
+    activeCohortTab,
+    userSearch,
+    selectedIndustryCompany,
+    selectedUniversity,
+    selectedHospital,
+    selectedRetailPharmacist,
+    isOpen,
+    fetchSubscribers,
+    fetchIndustries,
+    fetchUniversities,
+    fetchHospitals,
+    fetchRetailPharmacists,
+  ]);
 
   // Load More Handler for Lazy-Loading
   const handleLoadMore = () => {
@@ -221,6 +342,10 @@ export const AssignSubscriptionModal = ({
           ? selectedIndustryCompany
           : activeCohortTab === 'UNIVERSITIES_COLLEGES'
           ? selectedUniversity
+          : activeCohortTab === 'HOSPITALS'
+          ? selectedHospital
+          : activeCohortTab === 'RETAIL_PHARMACIST'
+          ? selectedRetailPharmacist
           : null;
       fetchSubscribers(activeCohortTab, userSearch, entityFilter, nextPage, true);
     }
@@ -256,13 +381,58 @@ export const AssignSubscriptionModal = ({
     }
   };
 
-  // Compute amounts
-  const baseAmount = selectedPlan?.amount || 0;
-  const validDiscount = Math.min(100, Math.max(0, Number(discountPercent) || 0));
-  const calculatedDiscount =
-    subType === 'discounted' ? Math.round((baseAmount * validDiscount) / 100) : 0;
+  // Compute amounts with Bulk Slab & 18% GST Support
+  const seatCount = Math.max(1, selectedUsers.length);
+  const unitBasePrice = selectedPlan?.amount || 0;
+  const isGst = selectedPlan?.isGstApplicable !== false;
+  const gstRatePercent = isGst ? (Number(selectedPlan?.gstRatePercent) || 18) : 0;
+
+  // Single seat unit preview
+  const singleUnitGst = isGst ? Math.round((unitBasePrice * gstRatePercent) / 100) : 0;
+  const singleUnitTotal = unitBasePrice + singleUnitGst;
+
+  // Gross base for all selected seats
+  const grossBase = unitBasePrice * seatCount;
+
+  // Bulk slab discount check
+  let bulkDiscountPercent = 0;
+  let activeBulkSlab = null;
+  if (selectedPlan?.bulkDiscountEnabled && Array.isArray(selectedPlan?.bulkSlabs) && selectedPlan.bulkSlabs.length > 0) {
+    const matched = selectedPlan.bulkSlabs.find((slab) => {
+      const min = Number(slab.minQty) || 1;
+      const max = slab.maxQty !== null && slab.maxQty !== undefined && slab.maxQty !== '' ? Number(slab.maxQty) : Infinity;
+      return seatCount >= min && seatCount <= max;
+    });
+    if (matched) {
+      bulkDiscountPercent = Number(matched.discountPercent) || 0;
+      activeBulkSlab = matched;
+    }
+  }
+
+  // Concession discount (if concession tab selected)
+  const validConcessionDiscount = Math.min(100, Math.max(0, Number(discountPercent) || 0));
+
+  // Effective discount
+  let effectiveDiscountPercent = 0;
+  if (subType === 'discounted') {
+    effectiveDiscountPercent = Math.max(bulkDiscountPercent, validConcessionDiscount);
+  } else if (subType === 'paid') {
+    effectiveDiscountPercent = bulkDiscountPercent;
+  }
+
+  const calculatedDiscount = Math.round((grossBase * effectiveDiscountPercent) / 100);
+  const taxableBase = Math.max(0, grossBase - calculatedDiscount);
+  const calculatedGst =
+    subType === 'trial' || subType === 'complimentary' || !isGst
+      ? 0
+      : Math.round((taxableBase * gstRatePercent) / 100);
+
   const finalPrice =
-    subType === 'trial' ? 0 : Math.max(0, baseAmount - calculatedDiscount);
+    subType === 'trial' || subType === 'complimentary'
+      ? 0
+      : taxableBase + calculatedGst;
+
+  const baseAmount = unitBasePrice;
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -286,10 +456,15 @@ export const AssignSubscriptionModal = ({
         planName: selectedPlan.name,
         planCode: selectedPlan.code,
         tier: selectedPlan.tier,
-        amount: baseAmount,
-        discountPercent: subType === 'discounted' ? validDiscount : 0,
-        paymentMethod,
-        transactionRef,
+        amount: unitBasePrice,
+        discountPercent: effectiveDiscountPercent,
+        discountAmount: calculatedDiscount,
+        taxableAmount: taxableBase,
+        gstRatePercent: gstRatePercent,
+        gstAmount: calculatedGst,
+        finalAmount: finalPrice,
+        paymentMethod: subType === 'trial' || subType === 'complimentary' ? 'Admin Grant' : paymentMethod,
+        transactionRef: subType === 'trial' || subType === 'complimentary' ? 'COMPLIMENTARY-VIP' : transactionRef,
         notes,
         customDays: trialDays,
       });
@@ -305,7 +480,7 @@ export const AssignSubscriptionModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Provision &amp; Assign Subscription"
+      title="Offline Subscription Purchase"
       description="Issue official digital formulary access with automatic dynamic fixed expiry enforcement."
       confirmLabel={
         selectedUsers.length > 1
@@ -368,6 +543,8 @@ export const AssignSubscriptionModal = ({
                     setActiveCohortTab(tab.id);
                     setSelectedIndustryCompany(null);
                     setSelectedUniversity(null);
+                    setSelectedHospital(null);
+                    setSelectedRetailPharmacist(null);
                     setUserSearch('');
                   }}
                   className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
@@ -409,6 +586,27 @@ export const AssignSubscriptionModal = ({
             </div>
           )}
 
+          {/* Hospital Header Breadcrumb when drilled into a specific hospital */}
+          {activeCohortTab === 'HOSPITALS' && selectedHospital && (
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200/80 px-3 py-2 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedHospital(null);
+                  setUserSearch('');
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#284661] hover:text-[#E76120] cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Hospitals</span>
+              </button>
+              <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 truncate">
+                <Stethoscope className="w-3.5 h-3.5 text-[#284661] shrink-0" />
+                <span className="truncate">{selectedHospital}</span>
+              </div>
+            </div>
+          )}
+
           {/* University Header Breadcrumb when drilled into a specific university */}
           {activeCohortTab === 'UNIVERSITIES_COLLEGES' && selectedUniversity && (
             <div className="flex items-center justify-between bg-blue-50 border border-blue-200/80 px-3 py-2 rounded-xl">
@@ -430,6 +628,27 @@ export const AssignSubscriptionModal = ({
             </div>
           )}
 
+          {/* Retail Pharmacist Header Breadcrumb when drilled into a specific pharmacy */}
+          {activeCohortTab === 'RETAIL_PHARMACIST' && selectedRetailPharmacist && (
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200/80 px-3 py-2 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRetailPharmacist(null);
+                  setUserSearch('');
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#284661] hover:text-[#E76120] cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Retail Pharmacies</span>
+              </button>
+              <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 truncate">
+                <Pill className="w-3.5 h-3.5 text-[#284661] shrink-0" />
+                <span className="truncate">{selectedRetailPharmacist}</span>
+              </div>
+            </div>
+          )}
+
           {/* Toolbar: Search bar + Select All in Tab */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -441,11 +660,19 @@ export const AssignSubscriptionModal = ({
                     ? 'Search company / industry by name...'
                     : activeCohortTab === 'INDUSTRY'
                     ? `Search employees in ${selectedIndustryCompany}...`
+                    : activeCohortTab === 'HOSPITALS' && !selectedHospital
+                    ? 'Search hospital by name...'
+                    : activeCohortTab === 'HOSPITALS'
+                    ? `Search staff in ${selectedHospital}...`
                     : activeCohortTab === 'UNIVERSITIES_COLLEGES' && !selectedUniversity
                     ? 'Search university / college by name...'
                     : activeCohortTab === 'UNIVERSITIES_COLLEGES'
                     ? `Search members in ${selectedUniversity}...`
-                    : `Search ${activeCohortTab.toLowerCase()} by name, email, registration...`
+                    : activeCohortTab === 'RETAIL_PHARMACIST' && !selectedRetailPharmacist
+                    ? 'Search pharmacy / medical store by name...'
+                    : activeCohortTab === 'RETAIL_PHARMACIST'
+                    ? `Search staff in ${selectedRetailPharmacist}...`
+                    : `Search ${activeCohortTab === 'OTHERS' ? 'other health care professional' : activeCohortTab.toLowerCase()} by name, email, registration...`
                 }
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
@@ -453,9 +680,11 @@ export const AssignSubscriptionModal = ({
               />
             </div>
 
-            {((activeCohortTab !== 'INDUSTRY' && activeCohortTab !== 'UNIVERSITIES_COLLEGES') ||
+            {((activeCohortTab !== 'INDUSTRY' && activeCohortTab !== 'UNIVERSITIES_COLLEGES' && activeCohortTab !== 'HOSPITALS' && activeCohortTab !== 'RETAIL_PHARMACIST') ||
               (activeCohortTab === 'INDUSTRY' && selectedIndustryCompany) ||
-              (activeCohortTab === 'UNIVERSITIES_COLLEGES' && selectedUniversity)) &&
+              (activeCohortTab === 'UNIVERSITIES_COLLEGES' && selectedUniversity) ||
+              (activeCohortTab === 'HOSPITALS' && selectedHospital) ||
+              (activeCohortTab === 'RETAIL_PHARMACIST' && selectedRetailPharmacist)) &&
               subscribers.length > 0 && (
                 <button
                   type="button"
@@ -596,8 +825,126 @@ export const AssignSubscriptionModal = ({
                   );
                 })
               )
+            ) : activeCohortTab === 'HOSPITALS' && !selectedHospital ? (
+              loadingHospitals ? (
+                <div className="p-4 text-slate-400 text-center flex items-center justify-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#284661]" />
+                  <span>Loading hospital directory...</span>
+                </div>
+              ) : hospitals.length === 0 ? (
+                <p className="p-4 text-slate-400 text-center">
+                  No hospitals found matching your search.
+                </p>
+              ) : (
+                hospitals.map((hosp) => {
+                  const hospUsersSelected = selectedUsers.filter(
+                    (u) =>
+                      u.userType === 'HOSPITALS' &&
+                      u.dynamicFields?.hospitalName === hosp.hospitalName
+                  ).length;
+
+                  return (
+                    <div
+                      key={hosp._id || hosp.hospitalName}
+                      onClick={() => {
+                        setSelectedHospital(hosp.hospitalName);
+                        setUserSearch('');
+                      }}
+                      className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-blue-50/60 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#284661]/10 text-[#284661] flex items-center justify-center shrink-0">
+                          <Stethoscope className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-900 truncate block text-xs">
+                              {hosp.hospitalName}
+                            </span>
+                            {hospUsersSelected > 0 && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800">
+                                {hospUsersSelected} selected
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 truncate block">
+                            {hosp.state ? `State: ${hosp.state}` : 'Affiliated Clinical Healthcare Facility'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-bold rounded-lg text-[10px] flex items-center gap-1">
+                          <Users className="w-3 h-3 text-[#284661]" />
+                          <span>{hosp.subscribersCount} {hosp.subscribersCount === 1 ? 'Member' : 'Members'}</span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  );
+                })
+              )
+            ) : activeCohortTab === 'RETAIL_PHARMACIST' && !selectedRetailPharmacist ? (
+              loadingRetailPharmacists ? (
+                <div className="p-4 text-slate-400 text-center flex items-center justify-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#284661]" />
+                  <span>Loading retail pharmacy directory...</span>
+                </div>
+              ) : retailPharmacists.length === 0 ? (
+                <p className="p-4 text-slate-400 text-center">
+                  No retail pharmacies found matching your search.
+                </p>
+              ) : (
+                retailPharmacists.map((pharm) => {
+                  const pharmUsersSelected = selectedUsers.filter(
+                    (u) =>
+                      u.userType === 'RETAIL_PHARMACIST' &&
+                      u.dynamicFields?.pharmacyName === pharm.pharmacyName
+                  ).length;
+
+                  return (
+                    <div
+                      key={pharm._id || pharm.pharmacyName}
+                      onClick={() => {
+                        setSelectedRetailPharmacist(pharm.pharmacyName);
+                        setUserSearch('');
+                      }}
+                      className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-blue-50/60 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#284661]/10 text-[#284661] flex items-center justify-center shrink-0">
+                          <Pill className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-900 truncate block text-xs">
+                              {pharm.pharmacyName}
+                            </span>
+                            {pharmUsersSelected > 0 && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800">
+                                {pharmUsersSelected} selected
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 truncate block">
+                            {pharm.state ? `State: ${pharm.state}` : 'Registered Retail Pharmacy Outlet'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-bold rounded-lg text-[10px] flex items-center gap-1">
+                          <Users className="w-3 h-3 text-[#284661]" />
+                          <span>{pharm.subscribersCount} {pharm.subscribersCount === 1 ? 'Member' : 'Members'}</span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  );
+                })
+              )
             ) : (
-              /* 2. Subscribers List (Doctors, Students, or Selected Company / University) */
+              /* 2. Subscribers List (Doctors, Students, or Selected Company / University / Hospital / Pharmacy) */
               loadingUsers ? (
                 <div className="p-4 text-slate-400 text-center flex items-center justify-center gap-2">
                   <RefreshCw className="w-4 h-4 animate-spin text-[#284661]" />
@@ -607,7 +954,11 @@ export const AssignSubscriptionModal = ({
                       ? 'company subscribers'
                       : activeCohortTab === 'UNIVERSITIES_COLLEGES'
                       ? 'university members'
-                      : `${activeCohortTab.toLowerCase()}s`}...
+                      : activeCohortTab === 'HOSPITALS'
+                      ? 'hospital staff'
+                      : activeCohortTab === 'RETAIL_PHARMACIST'
+                      ? 'pharmacy staff'
+                      : `${activeCohortTab === 'OTHERS' ? 'other health care professional' : activeCohortTab.toLowerCase()}s`}...
                   </span>
                 </div>
               ) : subscribers.length === 0 ? (
@@ -617,7 +968,11 @@ export const AssignSubscriptionModal = ({
                     ? 'subscribers found in this company'
                     : activeCohortTab === 'UNIVERSITIES_COLLEGES'
                     ? 'subscribers found in this university / college'
-                    : `${activeCohortTab.toLowerCase()}s found`}.
+                    : activeCohortTab === 'HOSPITALS'
+                    ? 'subscribers found in this hospital'
+                    : activeCohortTab === 'RETAIL_PHARMACIST'
+                    ? 'subscribers found in this retail pharmacy'
+                    : `${activeCohortTab === 'OTHERS' ? 'other health care professional' : activeCohortTab.toLowerCase()}s found`}.
                 </p>
               ) : (
                 <>
@@ -654,13 +1009,15 @@ export const AssignSubscriptionModal = ({
                               {sub.email} {sub.phoneNumber ? `· ${sub.phoneNumber}` : ''}
                             </p>
                             {/* Dynamic category credential */}
-                            {(dFields.registrationNo || dFields.apaarId || dFields.companyName || dFields.universityCollegeName) && (
+                            {(dFields.registrationNo || dFields.apaarId || dFields.companyName || dFields.universityCollegeName || dFields.hospitalName || dFields.pharmacyName) && (
                               <span className="text-[10px] text-slate-500 font-medium truncate block">
                                 {dFields.registrationNo ? `Reg: ${dFields.registrationNo}` : ''}
                                 {dFields.stateCouncil ? ` (${dFields.stateCouncil})` : ''}
                                 {dFields.apaarId ? `APAAR: ${dFields.apaarId}` : ''}
                                 {dFields.companyName ? `Org: ${dFields.companyName}` : ''}
                                 {dFields.universityCollegeName ? `Institution: ${dFields.universityCollegeName}` : ''}
+                                {dFields.hospitalName ? `Hospital: ${dFields.hospitalName}` : ''}
+                                {dFields.pharmacyName ? `Pharmacy: ${dFields.pharmacyName}` : ''}
                                 {dFields.state ? ` (${dFields.state})` : ''}
                               </span>
                             )}
@@ -668,7 +1025,7 @@ export const AssignSubscriptionModal = ({
                         </div>
 
                         <Badge variant="outline" className="text-[9px] uppercase font-bold shrink-0">
-                          {sub.userType}
+                          {sub.userType === 'OTHERS' ? 'Other Health Care Professional' : sub.userType}
                         </Badge>
                       </div>
                     );
@@ -706,7 +1063,7 @@ export const AssignSubscriptionModal = ({
         {/* 2. Subscription Type Selection */}
         <div className="space-y-1.5">
           <label className="font-bold text-slate-800 text-xs block">Subscription Category</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               type="button"
               onClick={() => setSubType('paid')}
@@ -735,6 +1092,19 @@ export const AssignSubscriptionModal = ({
 
             <button
               type="button"
+              onClick={() => setSubType('complimentary')}
+              className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 font-bold transition-all cursor-pointer ${
+                subType === 'complimentary'
+                  ? 'bg-purple-50 border-purple-600 text-purple-700 shadow-2xs'
+                  : 'bg-white border-slate-200 text-slate-600'
+              }`}
+            >
+              <Gift className="w-4 h-4" />
+              <span>Complimentary</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setSubType('discounted')}
               className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 font-bold transition-all cursor-pointer ${
                 subType === 'discounted'
@@ -750,7 +1120,7 @@ export const AssignSubscriptionModal = ({
 
         {/* 3. Plan Selection */}
         <div className="space-y-1.5">
-          <label className="font-bold text-slate-800 text-xs block">Select Formulary Tier</label>
+          <label className="font-bold text-slate-800 text-xs block">Select Formulary Plan</label>
           {loadingPlans ? (
             <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center text-xs text-slate-400">
               Loading active plans...
@@ -759,19 +1129,57 @@ export const AssignSubscriptionModal = ({
             <select
               value={selectedPlan?.code || ''}
               onChange={(e) => {
-                const p = plans.find((plan) => plan.code === e.target.value);
+                const p = visiblePlans.find((plan) => plan.code === e.target.value);
                 if (p) setSelectedPlan(p);
               }}
               className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#E76120] cursor-pointer"
             >
-              {plans.map((plan) => (
-                <option key={plan.code} value={plan.code}>
-                  {plan.name} — ₹{plan.amount.toLocaleString('en-IN')}
-                </option>
-              ))}
+              {visiblePlans.map((plan) => {
+                const hasGst = plan.isGstApplicable !== false;
+                const rate = hasGst ? (plan.gstRatePercent ?? 18) : 0;
+                const gstVal = Math.round((plan.amount * rate) / 100);
+                const tot = plan.amount + gstVal;
+                const formatLabel =
+                  plan.deliveryType === 'ONLINE_PHYSICAL'
+                    ? 'Online + Physical'
+                    : plan.deliveryType === 'PHYSICAL'
+                    ? 'Physical Only'
+                    : 'Online Only';
+                return (
+                  <option key={plan.code} value={plan.code}>
+                    {plan.name}  — Base: ₹{plan.amount.toLocaleString('en-IN')} | With {rate}% GST: ₹{tot.toLocaleString('en-IN')}
+                  </option>
+                );
+              })}
             </select>
           )}
           {selectedPlan?.desc && <p className="text-[11px] text-slate-400">{selectedPlan.desc}</p>}
+
+          {/* {selectedPlan && (
+            <div className="flex items-center flex-wrap gap-1.5 pt-1 text-[11px]">
+              <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+                Delivery:{' '}
+                <strong className="text-slate-900">
+                  {selectedPlan.deliveryType === 'ONLINE_PHYSICAL'
+                    ? 'Online + Physical (Hybrid)'
+                    : selectedPlan.deliveryType === 'PHYSICAL'
+                    ? 'Physical Only (Hardcopy Book Delivery)'
+                    : 'Online (Digital Only)'}
+                </strong>
+              </span>
+              <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+                Base: ₹{selectedPlan.amount.toLocaleString('en-IN')}
+              </span>
+              <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                Inc. {selectedPlan.isGstApplicable ? `${selectedPlan.gstRatePercent}% GST` : '0% GST'}: ₹{singleUnitTotal.toLocaleString('en-IN')}
+              </span>
+              {selectedPlan.bulkDiscountEnabled && selectedPlan.bulkSlabs?.length > 0 && (
+                <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 font-semibold border border-amber-200 flex items-center gap-1">
+                  <span>⚡ Bulk Slabs ({selectedPlan.bulkSlabs.length} tiers configured)</span>
+                </span>
+              )}
+            </div>
+          )} */}
         </div>
 
         {/* 4. Type Specific Settings */}
@@ -779,7 +1187,7 @@ export const AssignSubscriptionModal = ({
           <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl flex items-center gap-2 text-blue-900">
             <ShieldCheck className="w-4 h-4 text-[#284661] shrink-0" />
             <span>
-              <strong>BRD Business Rule Active:</strong> This purchased subscription will be valid until{' '}
+               This purchased subscription will be valid until{' '}
               <strong>
                 {selectedPlan?.fixedDate
                   ? new Date(selectedPlan.fixedDate).toLocaleDateString('en-GB', {
@@ -801,14 +1209,36 @@ export const AssignSubscriptionModal = ({
               onChange={(e) => setTrialDays(Number(e.target.value))}
               className="h-9 px-3 bg-white border border-slate-200 rounded-xl font-bold text-xs"
             >
-              <option value={7}>7 Days (1 Week Quick Evaluation)</option>
-              <option value={14}>14 Days (Standard Evaluation)</option>
-              <option value={30}>30 Days (1 Month Evaluation Pass)</option>
-              <option value={90}>90 Days (3 Months Evaluation)</option>
-              <option value={180}>180 Days (6 Months VIP Pass)</option>
-              <option value={365}>365 Days (1 Year Full Access Pass)</option>
-              <option value={730}>730 Days (2 Years Institutional Grant)</option>
+              <option value={7}>7 Days</option>
+              <option value={14}>14 Days</option>
+              <option value={30}>30 Days</option>
+              <option value={90}>90 Days</option>
+              <option value={180}>180 Days</option>
+              <option value={365}>1 Year</option>
+              <option value={730}>2 Year</option>
+              <option value={1095}>3 Year</option>
+              <option value={1460}>4 Year</option>
+              <option value={1825}>5 Year</option>
             </select>
+          </div>
+        )}
+
+        {subType === 'complimentary' && (
+          <div className="p-3 bg-purple-50/70 border border-purple-200 rounded-xl flex items-center gap-2 text-purple-900">
+            <Gift className="w-4 h-4 text-purple-600 shrink-0" />
+            <span>
+              <strong>100% Free Complimentary Access:</strong> Subscriber will receive full digital formulary access for{' '}
+              <strong>{selectedPlan?.name || 'Selected Tier'}</strong> completely free of charge, valid until{' '}
+              <strong>
+                {selectedPlan?.fixedDate
+                  ? new Date(selectedPlan.fixedDate).toLocaleDateString('en-GB', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })
+                  : '31 December 2031'}
+              </strong>.
+            </span>
           </div>
         )}
 
@@ -877,7 +1307,102 @@ export const AssignSubscriptionModal = ({
           </div>
         )}
 
-        {/* 5. Invoicing & Payment Info */}
+        {/* 5. Pricing & GST Tax Invoice Breakdown Card */}
+        {(subType === 'paid' || subType === 'discounted') && (
+          <div className="p-3.5 bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
+              <span className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-[#284661]" />
+                <span>Pricing & GST Tax Invoice Breakdown</span>
+              </span>
+              <span className="text-[11px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                {seatCount} {seatCount > 1 ? 'Subscribers Selected' : 'Subscriber Selected'}
+              </span>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              {/* Unit Base & Gross Base */}
+              <div className="flex items-center justify-between text-slate-600">
+                <span>
+                  Base Plan Rate {seatCount > 1 && `(₹${unitBasePrice.toLocaleString('en-IN')} × ${seatCount})`}:
+                </span>
+                <span className="font-semibold text-slate-800">
+                  ₹{grossBase.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {/* Bulk Slab Discount if matched */}
+              {activeBulkSlab && (
+                <div className="flex items-center justify-between text-emerald-700 bg-emerald-50/80 px-2.5 py-1 rounded-lg border border-emerald-200/60 text-[11px]">
+                  <span className="flex items-center gap-1">
+                    <span className="font-bold">⚡ Bulk Slab Discount ({activeBulkSlab.minQty}–{activeBulkSlab.maxQty || '∞'} seats):</span>
+                    <span>{activeBulkSlab.discountPercent}% off</span>
+                  </span>
+                  <span className="font-bold">
+                    -₹{Math.round((grossBase * activeBulkSlab.discountPercent) / 100).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              )}
+
+              {/* Concession Discount if applied */}
+              {subType === 'discounted' && validConcessionDiscount > 0 && (
+                <div className="flex items-center justify-between text-indigo-700 bg-indigo-50/80 px-2.5 py-1 rounded-lg border border-indigo-200/60 text-[11px]">
+                  <span className="font-bold">Concession Rate Applied ({validConcessionDiscount}%):</span>
+                  <span className="font-bold">
+                    -₹{Math.round((grossBase * validConcessionDiscount) / 100).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              )}
+
+              {/* Net Taxable Base */}
+              {calculatedDiscount > 0 && (
+                <div className="flex items-center justify-between text-slate-600 pt-1 border-t border-dashed border-slate-200">
+                  <span>Net Taxable Base Value:</span>
+                  <span className="font-semibold text-slate-800">
+                    ₹{taxableBase.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              )}
+
+              {/* GST */}
+              <div className="flex items-center justify-between text-slate-600">
+                <span className="flex items-center gap-1">
+                  <span>GST ({gstRatePercent}%):</span>
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    {isGst ? `CGST ${(gstRatePercent / 2).toFixed(1)}% + SGST ${(gstRatePercent / 2).toFixed(1)}%` : 'Tax Exempt'}
+                  </span>
+                </span>
+                <span className="font-semibold text-slate-800">
+                  + ₹{calculatedGst.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {/* Total Payable */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-300 font-bold text-slate-900 text-sm">
+                <div className="flex flex-col">
+                  <span>Total Payable (Inc. GST):</span>
+                  {seatCount > 1 && (
+                    <span className="text-[10px] text-slate-500 font-normal">
+                      Effective ₹{Math.round(finalPrice / seatCount).toLocaleString('en-IN')} per subscriber
+                    </span>
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className="text-base text-[#284661]">
+                    ₹{finalPrice.toLocaleString('en-IN')}
+                  </span>
+                  {calculatedDiscount > 0 && (
+                    <div className="text-[10px] text-emerald-600 font-semibold">
+                      Total savings: ₹{calculatedDiscount.toLocaleString('en-IN')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. Invoicing & Payment Info */}
         {(subType === 'paid' || subType === 'discounted') && (
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">

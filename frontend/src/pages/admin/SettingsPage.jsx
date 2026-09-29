@@ -38,7 +38,17 @@ const TABS = [
   { id: 'history', label: '6. Version History & Rollback', icon: History },
 ];
 
-const ALL_USER_TYPES = ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'];
+const ALL_USER_TYPES = [
+  'DOCTOR',
+  'STUDENT',
+  'NURSE',
+  'PHARMACIST',
+  'OTHERS',
+  'INDUSTRY',
+  'HOSPITALS',
+  'UNIVERSITIES_COLLEGES',
+  'RETAIL_PHARMACIST',
+];
 
 export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('subscription');
@@ -92,7 +102,7 @@ export const SettingsPage = () => {
     maintenanceAndGeneral: {
       maintenanceMode: false,
       maintenanceMessage: 'Formulary portal is undergoing scheduled maintenance.',
-      announcementBanner: 'National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.',
+      announcementBanner: 'National Formulary of India (NFI) 7th Edition 2026 digital monographs are now active.',
       announcementActive: true,
     },
   });
@@ -458,7 +468,13 @@ export const SettingsPage = () => {
                             : 'bg-slate-50 border-slate-200 text-slate-400'
                         }`}
                       >
-                        <span>{type}</span>
+                        <span>
+                          {type === 'UNIVERSITIES_COLLEGES'
+                            ? 'UNIVERSITIES / COLLEGES'
+                            : type === 'OTHERS'
+                            ? 'OTHER HEALTH CARE PROFESSIONAL'
+                            : type.replace(/_/g, ' ')}
+                        </span>
                         {isChecked && <CheckCircle2 className="w-3.5 h-3.5 text-[#284661]" />}
                       </button>
                     );

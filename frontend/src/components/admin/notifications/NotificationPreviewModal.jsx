@@ -171,7 +171,7 @@ export const NotificationPreviewModal = ({
 
                 {/* Email Footer */}
                 <div className="pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400">
-                  <p>National Formulary of India (9th Edition) · Official Government Notification</p>
+                  <p>National Formulary of India (7th Edition) · Official Government Notification</p>
                   <p>Sector 23, Raj Nagar, Ghaziabad, Uttar Pradesh 201002</p>
                 </div>
               </div>

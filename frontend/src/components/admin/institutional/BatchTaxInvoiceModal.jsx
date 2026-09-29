@@ -33,7 +33,7 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
   const finalAmount = inv.totalAmount || inv.finalAmountINR || 0;
   const subtotal = inv.subtotal || inv.subtotalINR || 0;
   const taxAmount = inv.taxAmount || inv.taxAmountINR || 0;
-  const unitPrice = inv.unitPriceINR || (subtotal && batch?.validSeats ? Math.round(subtotal / batch.validSeats) : 3500);
+  const unitPrice = inv.unitPriceINR || (subtotal && batch?.validSeats ? Math.round(subtotal / batch.validSeats) : 660);
 
   return (
     <AdminModal
@@ -123,7 +123,7 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
               <tr>
                 <td className="p-3 font-medium">
                   <span className="font-bold text-slate-900 block">
-                    {batch?.plan?.name || 'NFI 9th Edition Institutional Formulary Access Pass'}
+                    {batch?.plan?.name || 'NFI 7th Edition Institutional Formulary Access Pass'}
                   </span>
                   <span className="text-[10px] text-slate-400">
                     Comprehensive digital monograph access, interactions engine, and search suite.

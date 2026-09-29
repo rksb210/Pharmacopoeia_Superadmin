@@ -205,7 +205,7 @@ export const AdminsPage = () => {
       {/* Page Header */}
       <PageHeader
         title="Administrator Management"
-        subtitle="Manage official Indian Pharmacopoeia Commission administrative staff, roles, and fine-grained security policies."
+        subtitle="Manage Indian Pharmacopoeia Commission administrative staff, roles, and fine-grained security policies."
       >
         <ExportDropdown
           filename="NFI_Administrators_Ledger"

@@ -4,6 +4,7 @@ import {
   getPlans,
   getPlanById,
   getPlanSubscribers,
+  calculatePlanPricing,
   createPlan,
   updatePlan,
   togglePlanStatus,
@@ -24,6 +25,7 @@ router.use(authenticate);
 router.get('/stats', requirePermission('COMMERCIAL', 'PLANS', 'VIEW'), getPlansStats);
 router.get('/', requirePermission('COMMERCIAL', 'PLANS', 'VIEW'), getPlans);
 router.get('/:id', requirePermission('COMMERCIAL', 'PLANS', 'VIEW'), getPlanById);
+router.get('/:id/pricing', calculatePlanPricing);
 router.get('/:id/subscribers', requirePermission('COMMERCIAL', 'PLANS', 'VIEW'), getPlanSubscribers);
 
 // Mutations

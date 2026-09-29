@@ -21,6 +21,10 @@ export const planService = {
     return api.post('/plans', data);
   },
 
+  calculatePricing: async (id, params = {}) => {
+    return api.get(`/plans/${id}/pricing`, { params });
+  },
+
   updatePlan: async (id, data) => {
     return api.put(`/plans/${id}`, data);
   },

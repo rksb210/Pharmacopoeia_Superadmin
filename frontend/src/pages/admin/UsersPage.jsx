@@ -88,13 +88,15 @@ export const UsersPage = () => {
 
       if (typesRes && typesRes.types) {
         const order = [
-          'STUDENT',
           'DOCTOR',
-          'PHARMACIST',
+          'STUDENT',
           'NURSE',
-          'INDUSTRY',
-          'UNIVERSITIES_COLLEGES',
+          'PHARMACIST',
           'OTHERS',
+          'INDUSTRY',
+          'HOSPITALS',
+          'UNIVERSITIES_COLLEGES',
+          'RETAIL_PHARMACIST',
         ];
         const sorted = [...typesRes.types].sort((a, b) => {
           const idxA = order.indexOf(a.code);
@@ -214,13 +216,13 @@ export const UsersPage = () => {
       case 'active':
         return <Badge variant="nfiNavy" className="text-[10px] font-bold">Active</Badge>;
       case 'trial':
-        return <Badge variant="nfiYellow" className="text-[10px] font-bold">Trial</Badge>;
+        return <Badge variant="nfiYellow" className="text-[10px] font-bold">Free Trial</Badge>;
       case 'complimentary':
         return <Badge variant="secondary" className="text-[10px] font-bold bg-purple-100 text-purple-800">Complimentary</Badge>;
       case 'expired':
         return <Badge variant="destructive" className="text-[10px] font-bold">Expired</Badge>;
       default:
-        return <Badge variant="outline" className="text-[10px] font-bold text-slate-400">Free</Badge>;
+        return <Badge variant="outline" className="text-[10px] font-bold text-slate-500 bg-slate-50">Basic Access</Badge>;
     }
   };
 
@@ -247,6 +249,16 @@ export const UsersPage = () => {
       const uni = dFields.universityCollegeName || '';
       const parts = [uni, stateVal ? `State: ${stateVal}` : ''].filter(Boolean);
       return parts.join(' · ') || 'University / College Entity';
+    }
+    if (sub.userType === 'HOSPITALS') {
+      const hosp = dFields.hospitalName || '';
+      const parts = [hosp, stateVal ? `State: ${stateVal}` : ''].filter(Boolean);
+      return parts.join(' · ') || 'Hospital Facility';
+    }
+    if (sub.userType === 'RETAIL_PHARMACIST') {
+      const pharm = dFields.pharmacyName || '';
+      const parts = [pharm, stateVal ? `State: ${stateVal}` : ''].filter(Boolean);
+      return parts.join(' · ') || 'Retail Pharmacy';
     }
     return dFields.designation
       ? `${dFields.designation}${stateVal ? ` (${stateVal})` : ''}`
@@ -276,11 +288,11 @@ export const UsersPage = () => {
     { header: 'Email Address', key: 'email' },
     { header: 'Username', key: 'username' },
     { header: 'Contact No', key: 'phoneNumber' },
-    { header: 'User Category', key: 'userType', format: (v) => v?.toUpperCase() },
+    { header: 'User Category', key: 'userType', format: (v) => (v === 'OTHERS' ? 'OTHER HEALTH CARE PROFESSIONAL' : v?.toUpperCase()) },
     {
       header: 'License / Reg No / Institution',
       key: 'dynamicFields',
-      format: (v) => v?.registrationNo || v?.apaarId || v?.gstin || v?.universityCollegeName || 'N/A',
+      format: (v) => v?.registrationNo || v?.apaarId || v?.gstin || v?.universityCollegeName || v?.hospitalName || v?.pharmacyName || 'N/A',
     },
     {
       header: 'State / Council',
@@ -290,7 +302,7 @@ export const UsersPage = () => {
     {
       header: 'Subscription Plan',
       key: 'subscription',
-      format: (v) => v?.planName || 'Free Access Tier',
+      format: (v) => v?.planName || 'Basic Access',
     },
     {
       header: 'Plan Status',
@@ -313,7 +325,7 @@ export const UsersPage = () => {
     <PageContainer>
       {/* Header */}
       <PageHeader
-        title="Public User &amp; Subscriber Management"
+        title="User &amp; Subscriber Management"
         subtitle="Manage registered healthcare professionals, students, researchers, institutional accounts, and subscription licenses."
       >
         <ExportDropdown
@@ -353,7 +365,7 @@ export const UsersPage = () => {
             className="rounded-xl text-xs font-bold shadow-2xs"
           >
             <Plus className="w-4 h-4 mr-1" />
-            <span>Register Subscriber</span>
+            <span>Register New user</span>
           </Button>
         </PermissionGuard>
       </PageHeader>
@@ -460,7 +472,7 @@ export const UsersPage = () => {
             <option value="all">All User Types</option>
             {userTypes.map((t) => (
               <option key={t.code} value={t.code}>
-                {t.name}
+                {t.code === 'OTHERS' ? 'Other Health Care Professional' : t.name}
               </option>
             ))}
           </select>
@@ -475,11 +487,11 @@ export const UsersPage = () => {
             className="h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
           >
             <option value="all">All Subscriptions</option>
-            <option value="active">Active Paid</option>
+            <option value="active">Paid</option>
             <option value="trial">Free Trial</option>
             <option value="complimentary">Complimentary</option>
             <option value="expired">Expired</option>
-            <option value="none">Free Tier</option>
+            <option value="none">Basic Access</option>
           </select>
 
           {/* Date From */}
@@ -564,7 +576,7 @@ export const UsersPage = () => {
                 {/* User Type */}
                 <TableCell>
                   <Badge variant="outline" className="text-[10px] font-extrabold uppercase">
-                    {sub.userType}
+                    {sub.userType === 'OTHERS' ? 'Other Health Care Professional' : sub.userType}
                   </Badge>
                 </TableCell>
 
@@ -656,8 +668,8 @@ export const UsersPage = () => {
                       </button>
                     </PermissionGuard>
 
-                    {/* Manage Subscriptions */}
-                    <PermissionGuard module="USERS" section="USERS" action="EDIT">
+                    {/* Manage Subscriptions - Temporarily commented out */}
+                    {/* <PermissionGuard module="USERS" section="USERS" action="EDIT">
                       <button
                         type="button"
                         onClick={() => setSubscriptionSubscriber(sub)}
@@ -666,7 +678,7 @@ export const UsersPage = () => {
                       >
                         <CreditCard className="w-4 h-4" />
                       </button>
-                    </PermissionGuard>
+                    </PermissionGuard> */}
 
                     {/* Reset Password */}
                     <PermissionGuard module="USERS" section="USERS" action="EDIT">

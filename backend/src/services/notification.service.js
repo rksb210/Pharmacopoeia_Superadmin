@@ -10,7 +10,7 @@ export const notificationService = {
   seedDefaultNotifications: async () => {
     const defaultCampaigns = [
       {
-        title: 'Release of NFI 9th Edition Monograph Addendum 2026',
+        title: 'Release of NFI 7th Edition Monograph Addendum 2026',
         message: 'The Indian Pharmacopoeia Commission has published the official 2026 Monograph Addendum including 45 updated therapeutic monographs and pediatric dosage schedules.',
         category: 'NEW_CONTENT',
         channels: ['in_app', 'email', 'broadcast_banner'],
@@ -86,7 +86,7 @@ export const notificationService = {
       },
       {
         title: 'Live Webinar: Pediatric & Geriatric Dosage Calculator Walkthrough',
-        message: 'Interactive digital masterclass demonstrating real-time renal adjustment and black-box safety checks in the 9th Edition formulary.',
+        message: 'Interactive digital masterclass demonstrating real-time renal adjustment and black-box safety checks in the 7th Edition formulary.',
         category: 'WEBINARS',
         channels: ['in_app', 'email'],
         priority: 'medium',

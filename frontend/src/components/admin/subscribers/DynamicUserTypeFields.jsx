@@ -1,7 +1,7 @@
 import React from 'react';
 import InputField from '../../common/InputField';
 import { Badge } from '../../ui/badge';
-import { FileBadge2, Building2, User, Stethoscope, School } from 'lucide-react';
+import { FileBadge2, Building2, User, Stethoscope, School, Pill } from 'lucide-react';
 
 const INDIAN_STATES = [
   'Andhra Pradesh',
@@ -66,14 +66,22 @@ export const DynamicUserTypeFields = ({
             <Stethoscope className="w-4 h-4 text-emerald-600" />
           )}
           {uType === 'INDUSTRY' && <Building2 className="w-4 h-4 text-[#E76120]" />}
+          {uType === 'HOSPITALS' && <Building2 className="w-4 h-4 text-rose-600" />}
           {(uType === 'UNIVERSITIES_COLLEGES' || uType === 'UNIVERSITIES / COLLEGES') && (
             <School className="w-4 h-4 text-[#284661]" />
           )}
+          {uType === 'RETAIL_PHARMACIST' && <Pill className="w-4 h-4 text-cyan-600" />}
           {uType === 'OTHERS' && <User className="w-4 h-4 text-[#284661]" />}
 
           <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
-            {(uType === 'UNIVERSITIES_COLLEGES' || uType === 'UNIVERSITIES / COLLEGES')
+            {uType === 'UNIVERSITIES_COLLEGES' || uType === 'UNIVERSITIES / COLLEGES'
               ? 'Universities / Colleges'
+              : uType === 'OTHERS'
+              ? 'Other Health Care Professional'
+              : uType === 'HOSPITALS'
+              ? 'Hospitals'
+              : uType === 'RETAIL_PHARMACIST'
+              ? 'Retail Pharmacist'
               : uType}{' '}
             Verification Credentials
           </h4>
@@ -214,6 +222,88 @@ export const DynamicUserTypeFields = ({
             value={dynamicFields.universityCollegeName || ''}
             onChange={(e) => handleChange('universityCollegeName', e.target.value)}
             error={errors.universityCollegeName}
+            required
+          />
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="state" className="text-xs font-semibold text-slate-700">
+              State <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="state"
+              name="state"
+              value={dynamicFields.state || ''}
+              onChange={(e) => handleChange('state', e.target.value)}
+              className={`h-10 px-3 bg-white border rounded-xl font-medium text-xs text-slate-800 outline-none transition-all focus:border-[#E76120] focus:ring-1 focus:ring-[#E76120] cursor-pointer ${
+                errors.state ? 'border-red-400' : 'border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              <option value="">Select State</option>
+              {INDIAN_STATES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+            {errors.state && (
+              <span className="text-[11px] text-red-600 font-medium">{errors.state}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Hospitals Fields */}
+      {uType === 'HOSPITALS' && (
+        <div className="space-y-3">
+          <InputField
+            id="hospitalName"
+            name="hospitalName"
+            label="Hospital / Facility Name"
+            placeholder="e.g. Apollo Hospitals / Fortis Healthcare"
+            value={dynamicFields.hospitalName || ''}
+            onChange={(e) => handleChange('hospitalName', e.target.value)}
+            error={errors.hospitalName}
+            required
+          />
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="state" className="text-xs font-semibold text-slate-700">
+              State <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="state"
+              name="state"
+              value={dynamicFields.state || ''}
+              onChange={(e) => handleChange('state', e.target.value)}
+              className={`h-10 px-3 bg-white border rounded-xl font-medium text-xs text-slate-800 outline-none transition-all focus:border-[#E76120] focus:ring-1 focus:ring-[#E76120] cursor-pointer ${
+                errors.state ? 'border-red-400' : 'border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              <option value="">Select State</option>
+              {INDIAN_STATES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+            {errors.state && (
+              <span className="text-[11px] text-red-600 font-medium">{errors.state}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Retail Pharmacist Fields */}
+      {uType === 'RETAIL_PHARMACIST' && (
+        <div className="space-y-3">
+          <InputField
+            id="pharmacyName"
+            name="pharmacyName"
+            label="Pharmacy / Medical Store Name"
+            placeholder="e.g. Apollo Pharmacy / MedPlus"
+            value={dynamicFields.pharmacyName || ''}
+            onChange={(e) => handleChange('pharmacyName', e.target.value)}
+            error={errors.pharmacyName}
             required
           />
 

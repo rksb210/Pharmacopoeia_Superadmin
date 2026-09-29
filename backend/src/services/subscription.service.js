@@ -2,6 +2,7 @@ import Subscription from '../models/subscription.model.js';
 import Subscriber from '../models/subscriber.model.js';
 import SystemConfig from '../models/systemConfig.model.js';
 import Plan from '../models/plan.model.js';
+import planService from './plan.service.js';
 
 export const subscriptionService = {
   /**
@@ -269,7 +270,7 @@ export const subscriptionService = {
       userId,
       userIds,
       type = 'paid',
-      planName = 'NFI 9th Edition Formulary - Universal Access Pass',
+      planName = 'NFI 7th Edition Formulary - Universal Access Pass',
       planCode = 'NFI-INDIVIDUAL',
       tier = 'Individual',
       amount = 5000,
@@ -321,20 +322,72 @@ export const subscriptionService = {
       finalAmount = 0;
       paymentStatus = 'waived';
     } else if (type === 'complimentary') {
-      const months = parseInt(customMonths, 10) || 12;
-      endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + months);
-      finalAmount = 0;
+      if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
+        endDate = new Date(planDoc.fixedDate);
+      } else if (planDoc && planDoc.validityType === 'duration_years') {
+        endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + (planDoc.durationValue || 1));
+      } else if (planDoc && planDoc.validityType === 'duration_months') {
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + (planDoc.durationValue || 12));
+      } else if (customMonths) {
+        const months = parseInt(customMonths, 10) || 12;
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + months);
+      } else {
+        endDate = await subscriptionService.getConfiguredFixedExpiry();
+      }
       paymentStatus = 'waived';
     } else if (type === 'discounted') {
       if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
         endDate = new Date(planDoc.fixedDate);
+      } else if (planDoc && planDoc.validityType === 'duration_years') {
+        endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + (planDoc.durationValue || 1));
+      } else if (planDoc && planDoc.validityType === 'duration_months') {
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + (planDoc.durationValue || 12));
       } else {
         endDate = await subscriptionService.getConfiguredFixedExpiry();
       }
-      const disc = Math.min(100, Math.max(0, parseInt(discountPercent, 10) || 0));
-      discountAmount = Math.round((Number(amount) * disc) / 100);
-      finalAmount = Math.max(0, Number(amount) - discountAmount);
+    }
+    let pricingBreakdown = null;
+    let unitBaseAmount = Number(amount);
+    let userDiscountAmount = 0;
+    let userTaxableAmount = Number(amount);
+    let userGstRate = 18;
+    let userGstAmount = 0;
+    let userFinalAmount = Number(amount);
+    let effectiveDiscountPercent = 0;
+
+    if (type === 'paid' || type === 'discounted') {
+      const planForPricing = planDoc || {
+        priceINR: Number(amount),
+        isGstApplicable: true,
+        gstRatePercent: 18,
+        bulkDiscountEnabled: false,
+        bulkSlabs: [],
+      };
+      pricingBreakdown = planService.calculatePlanPricing(planForPricing, {
+        quantity: targetUserIds.length,
+        concessionPercent: type === 'discounted' ? discountPercent : 0,
+      });
+
+      unitBaseAmount = pricingBreakdown.unitBasePrice;
+      effectiveDiscountPercent = pricingBreakdown.effectiveDiscountPercent;
+      userDiscountAmount = Math.round(pricingBreakdown.discountAmount / targetUserIds.length);
+      userTaxableAmount = Math.round(pricingBreakdown.taxableBase / targetUserIds.length);
+      userGstRate = pricingBreakdown.gstRatePercent;
+      userGstAmount = Math.round(pricingBreakdown.taxAmount / targetUserIds.length);
+      userFinalAmount = Math.round(pricingBreakdown.totalAmount / targetUserIds.length);
+    } else {
+      unitBaseAmount = Number(amount) || 0;
+      userDiscountAmount = 0;
+      userTaxableAmount = 0;
+      userGstRate = 0;
+      userGstAmount = 0;
+      userFinalAmount = 0;
+      paymentStatus = 'waived';
     }
 
     let firstSubscription = null;
@@ -357,10 +410,13 @@ export const subscriptionService = {
         status: 'active',
         startDate,
         endDate,
-        amount: Number(amount),
-        discountPercent: type === 'discounted' ? Number(discountPercent) : 0,
-        discountAmount,
-        finalAmount,
+        amount: unitBaseAmount,
+        discountPercent: effectiveDiscountPercent,
+        discountAmount: userDiscountAmount,
+        taxableAmount: userTaxableAmount,
+        gstRatePercent: userGstRate,
+        gstAmount: userGstAmount,
+        finalAmount: userFinalAmount,
         paymentMethod: type === 'trial' || type === 'complimentary' ? 'Admin Grant' : paymentMethod,
         paymentStatus,
         transactionRef: transactionRef || `TXN-${Date.now().toString().slice(-8)}`,
@@ -379,27 +435,38 @@ export const subscriptionService = {
         ],
       });
 
-      // Update Subscriber's top-level subscription and order history
-      subscriber.subscription = {
-        status: type === 'trial' ? 'trial' : type === 'complimentary' ? 'complimentary' : 'active',
-        planName,
-        startDate,
-        endDate,
-        isTrial: type === 'trial',
-        isComplimentary: type === 'complimentary',
-        discountPercent: Number(discountPercent),
-        discountNotes: notes,
+      // Update Subscriber's top-level subscription and order history safely
+      const updateData = {
+        $set: {
+          subscription: {
+            status: type === 'trial' ? 'trial' : type === 'complimentary' ? 'complimentary' : 'active',
+            planName,
+            startDate,
+            endDate,
+            isTrial: type === 'trial',
+            isComplimentary: type === 'complimentary',
+            discountPercent: Number(discountPercent),
+            discountNotes: notes,
+          },
+        },
+        $push: {
+          orderHistory: {
+            orderId: subscriptionId,
+            planName,
+            amount: finalAmount,
+            date: new Date(),
+            paymentStatus: 'Success',
+          },
+        },
       };
 
-      subscriber.orderHistory.push({
-        orderId: subscriptionId,
-        planName,
-        amount: finalAmount,
-        date: new Date(),
-        paymentStatus: 'Success',
-      });
+      if (!subscriber.username) {
+        updateData.$set.username = (subscriber.email?.split('@')[0] || `user_${subscriber._id.toString().slice(-6)}`)
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, '_');
+      }
 
-      await subscriber.save();
+      await Subscriber.findByIdAndUpdate(subscriber._id, updateData);
 
       if (!firstSubscription) {
         firstSubscription = newSubscription;
@@ -418,7 +485,7 @@ export const subscriptionService = {
       throw new Error('Subscription not found');
     }
 
-    const { notes = '', renewMonths = 12 } = data;
+    const { notes = '', renewDays, renewMonths } = data;
     const oldStatus = subscription.status;
 
     // If paid/discounted, re-confirm dynamic fixed expiry date from Plan or SystemConfig
@@ -432,8 +499,14 @@ export const subscriptionService = {
       }
     } else {
       const currentEnd = new Date(subscription.endDate) > new Date() ? new Date(subscription.endDate) : new Date();
-      newEndDate = new Date(currentEnd);
-      newEndDate.setMonth(newEndDate.getMonth() + parseInt(renewMonths, 10));
+      if (renewDays) {
+        newEndDate = new Date(currentEnd.getTime() + parseInt(renewDays, 10) * 24 * 60 * 60 * 1000);
+      } else if (renewMonths) {
+        newEndDate = new Date(currentEnd);
+        newEndDate.setMonth(newEndDate.getMonth() + parseInt(renewMonths, 10));
+      } else {
+        newEndDate = new Date(currentEnd.getTime() + 14 * 24 * 60 * 60 * 1000);
+      }
     }
 
     subscription.status = 'active';

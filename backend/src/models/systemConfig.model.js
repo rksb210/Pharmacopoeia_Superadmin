@@ -85,7 +85,7 @@ const systemConfigSchema = new mongoose.Schema(
       },
       allowedUserTypes: {
         type: [String],
-        default: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'],
+        default: ['DOCTOR', 'STUDENT', 'NURSE', 'PHARMACIST', 'OTHERS', 'INDUSTRY', 'HOSPITALS', 'UNIVERSITIES_COLLEGES', 'RETAIL_PHARMACIST'],
       },
       autoApproveStudents: {
         type: Boolean,
@@ -173,7 +173,7 @@ const systemConfigSchema = new mongoose.Schema(
       },
       announcementBanner: {
         type: String,
-        default: 'National Formulary of India (NFI) 9th Edition 2026 digital monographs are now active.',
+        default: 'National Formulary of India (NFI) 7th Edition 2026 digital monographs are now active.',
       },
       announcementActive: {
         type: Boolean,

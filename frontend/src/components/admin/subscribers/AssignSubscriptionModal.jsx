@@ -112,13 +112,16 @@ export const AssignSubscriptionModal = ({
                 onChange={(e) => setTrialDays(e.target.value)}
                 className="h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none focus:border-[#E76120]"
               >
-                <option value={7}>7 Days (1 Week Quick Evaluation)</option>
-                <option value={14}>14 Days (Standard Evaluation Trial)</option>
-                <option value={30}>30 Days (1 Month Evaluation Pass)</option>
-                <option value={90}>90 Days (3 Months Evaluation Pass)</option>
-                <option value={180}>180 Days (6 Months VIP Complimentary Pass)</option>
-                <option value={365}>365 Days (1 Year Full Access Grant)</option>
-                <option value={730}>730 Days (2 Years Institutional Grant)</option>
+                <option value={7}>7 Days</option>
+                <option value={14}>14 Days</option>
+                <option value={30}>30 Days</option>
+                <option value={90}>90 Days</option>
+                <option value={180}>180 Days</option>
+                <option value={365}>1 Year</option>
+                <option value={730}>2 Year</option>
+                <option value={1095}>3 Year</option>
+                <option value={1460}>4 Year</option>
+                <option value={1825}>5 Year</option>
               </select>
             </div>
           </div>
@@ -129,7 +132,7 @@ export const AssignSubscriptionModal = ({
             <h4 className="font-bold text-slate-900">Assign Subscription Concession / Discount Rate</h4>
             {(!subscriber.subscription || subscriber.subscription.status === 'none') && (
               <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-800 font-medium">
-                Note: Subscriber is currently on Free Tier. Concession rate will be applied when enrolling in a commercial paid formulary pass.
+                Note: Subscriber is currently on Basic Access. Concession rate will be applied when enrolling in a commercial paid formulary pass.
               </div>
             )}
             <div className="flex flex-col gap-1.5">

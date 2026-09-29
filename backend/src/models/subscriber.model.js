@@ -170,7 +170,7 @@ const subscriberSchema = new mongoose.Schema(
       },
       planName: {
         type: String,
-        default: 'NFI 9th Edition Formulary - Universal Access Pass',
+        default: 'NFI 7th Edition Formulary - Universal Access Pass',
       },
       startDate: {
         type: Date,

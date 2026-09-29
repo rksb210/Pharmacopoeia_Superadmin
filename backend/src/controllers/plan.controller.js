@@ -1,5 +1,24 @@
 import planService from '../services/plan.service.js';
+import Plan from '../models/plan.model.js';
 import { auditService } from '../services/audit.service.js';
+
+export const calculatePlanPricing = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { quantity = 1, concessionPercent = 0 } = req.query;
+    const plan = await Plan.findById(id);
+    if (!plan) {
+      return res.status(404).json({ success: false, message: 'Plan not found' });
+    }
+    const calculation = planService.calculatePlanPricing(plan, { quantity, concessionPercent });
+    return res.status(200).json({
+      success: true,
+      calculation,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const getPlansStats = async (req, res, next) => {
   try {

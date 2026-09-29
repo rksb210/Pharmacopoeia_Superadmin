@@ -47,12 +47,14 @@ import ExportDropdown from '../../components/admin/common/ExportDropdown';
 const USER_TYPES = [
   { id: 'all', label: 'All Healthcare Categories' },
   { id: 'DOCTOR', label: 'Doctor' },
-  { id: 'PHARMACIST', label: 'Pharmacist' },
   { id: 'STUDENT', label: 'Student' },
   { id: 'NURSE', label: 'Nurse' },
+  { id: 'PHARMACIST', label: 'Pharmacist' },
+  { id: 'OTHERS', label: 'Other Health Care Professional' },
   { id: 'INDUSTRY', label: 'Industry & Corporate' },
+  { id: 'HOSPITALS', label: 'Hospitals' },
   { id: 'UNIVERSITIES_COLLEGES', label: 'Universities / Colleges' },
-  { id: 'OTHERS', label: 'Others' },
+  { id: 'RETAIL_PHARMACIST', label: 'Retail Pharmacist' },
 ];
 
 const SEGMENTS = [
@@ -385,7 +387,14 @@ export const CRMPage = () => {
                         {c.name}
                       </span>
                       <span className="text-[10px] text-slate-400 block truncate">
-                        {c.email} · <strong className="text-slate-600">{c.userType === 'UNIVERSITIES_COLLEGES' ? 'UNIVERSITIES / COLLEGES' : c.userType}</strong>
+                        {c.email} ·{' '}
+                        <strong className="text-slate-600">
+                          {c.userType === 'UNIVERSITIES_COLLEGES'
+                            ? 'UNIVERSITIES / COLLEGES'
+                            : c.userType === 'OTHERS'
+                            ? 'OTHER HEALTH CARE PROFESSIONAL'
+                            : c.userType?.replace(/_/g, ' ')}
+                        </strong>
                       </span>
                     </div>
                   </TableCell>

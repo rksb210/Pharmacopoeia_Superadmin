@@ -46,7 +46,17 @@ import CouponDetailsModal from '../../components/admin/coupons/CouponDetailsModa
 import AssignDirectDiscountModal from '../../components/admin/coupons/AssignDirectDiscountModal';
 import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
-const USER_TYPES = ['STUDENT', 'DOCTOR', 'PHARMACIST', 'NURSE', 'INDUSTRY', 'UNIVERSITIES_COLLEGES', 'OTHERS'];
+const USER_TYPES = [
+  'DOCTOR',
+  'STUDENT',
+  'NURSE',
+  'PHARMACIST',
+  'OTHERS',
+  'INDUSTRY',
+  'HOSPITALS',
+  'UNIVERSITIES_COLLEGES',
+  'RETAIL_PHARMACIST',
+];
 
 export const DiscountsPage = () => {
   const { can } = usePermission();
@@ -423,7 +433,11 @@ export const DiscountsPage = () => {
               <option value="all">All Target Users</option>
               {USER_TYPES.map((ut) => (
                 <option key={ut} value={ut}>
-                  {ut === 'UNIVERSITIES_COLLEGES' ? 'Universities / Colleges' : ut}
+                  {ut === 'UNIVERSITIES_COLLEGES'
+                    ? 'Universities / Colleges'
+                    : ut === 'OTHERS'
+                    ? 'Other Health Care Professional'
+                    : ut.replace(/_/g, ' ')}
                 </option>
               ))}
             </select>

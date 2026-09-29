@@ -39,7 +39,7 @@ const planSchema = new mongoose.Schema(
       required: [true, 'Plan name is required'],
       unique: true,
       trim: true,
-      // e.g. "NFI 9th Edition Formulary - Individual Pass"
+      // e.g. "NFI 7th Edition Formulary - Individual Pass"
     },
     code: {
       type: String,
@@ -65,6 +65,52 @@ const planSchema = new mongoose.Schema(
       min: [0, 'Price cannot be negative'],
       default: 0,
     },
+    // Delivery Type (Online, Online + Physical, or Physical Only)
+    deliveryType: {
+      type: String,
+      enum: ['ONLINE', 'ONLINE_PHYSICAL', 'PHYSICAL'],
+      default: 'ONLINE',
+    },
+    // Dynamic GST Configuration
+    isGstApplicable: {
+      type: Boolean,
+      default: true,
+    },
+    gstRatePercent: {
+      type: Number,
+      default: 18,
+      min: 0,
+      max: 100,
+    },
+    // Dynamic Bulk Slabs / Volume Discount Engine
+    bulkDiscountEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    bulkSlabs: [
+      {
+        minQty: {
+          type: Number,
+          required: true,
+          default: 1,
+        },
+        maxQty: {
+          type: Number,
+          default: null, // null means unlimited (e.g. 10+)
+        },
+        discountPercent: {
+          type: Number,
+          default: 0,
+          min: 0,
+          max: 100,
+        },
+        label: {
+          type: String,
+          default: '',
+          trim: true,
+        },
+      },
+    ],
     // Validity Configuration
     validityType: {
       type: String,

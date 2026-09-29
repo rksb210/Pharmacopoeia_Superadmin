@@ -206,7 +206,11 @@ function AppRoutes() {
           path="content"
           element={
             <PermissionGuard module="CONTENT" section="MONOGRAPHS" action="VIEW" pageLevel>
-              <ContentPage />
+              <AdminModulePlaceholderPage
+                moduleId="content"
+                title="Content & Monographs"
+                description="Indian Pharmacopoeia drug monographs, dosage guidelines, and advisories."
+              />
             </PermissionGuard>
           }
         />

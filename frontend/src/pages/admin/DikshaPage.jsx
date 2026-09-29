@@ -347,7 +347,7 @@ export const DikshaPage = () => {
         />
 
         <StatCard
-          title="Commercial Revenue"
+          title="Total Sales"
           value={`₹${(stats.totalRevenue || 0).toLocaleString('en-IN')}`}
           subtitle="Course enrollments"
           icon={TrendingUp}
@@ -847,7 +847,7 @@ export const DikshaPage = () => {
 
             <div className="p-5 bg-white border border-slate-200 rounded-2xl space-y-2">
               <span className="text-xs font-bold text-slate-500 block uppercase tracking-wider">
-                Commercial Revenue Summary
+                Total Sales Summary
               </span>
               <div className="space-y-1.5 pt-1">
                 <div className="flex items-center justify-between text-xs">

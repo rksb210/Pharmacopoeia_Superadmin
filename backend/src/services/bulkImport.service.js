@@ -25,14 +25,14 @@ export const bulkImportService = {
       'Full Name',
       'Email Address',
       'Phone Number',
-      'User Type (STUDENT/DOCTOR/PHARMACIST/NURSE/INDUSTRY/UNIVERSITIES_COLLEGES/OTHERS)',
+      'User Type (STUDENT/DOCTOR/PHARMACIST/NURSE/INDUSTRY/HOSPITALS/UNIVERSITIES_COLLEGES/RETAIL_PHARMACIST/OTHERS)',
       'Plan Code (Optional - e.g. NFI-INDIVIDUAL, NFI-STUDENT-SPECIAL)',
-      'APAAR ID / College Name (Student / University)',
+      'APAAR ID / College / Hospital / Pharmacy Name',
       'Registration No (Required for Doctor/Pharmacist/Nurse)',
-      'Registration State (Required for Doctor/Pharmacist/Nurse/University)',
+      'Registration State (Required for Doctor/Pharmacist/Nurse/University/Hospital/Pharmacy)',
       'GSTIN (Required for Industry)',
       'PAN (Required for Industry)',
-      'Designation (For Others)',
+      'Designation (For Other Health Care Professional)',
     ];
 
     const sampleRows = [
@@ -131,7 +131,7 @@ export const bulkImportService = {
 
     // Resolve Default Plan details
     const selectedPlan = await Plan.findOne({ code: defaultPlanCode.toUpperCase().trim() });
-    const planName = selectedPlan?.name || 'NFI 9th Edition Formulary';
+    const planName = selectedPlan?.name || 'NFI 7th Edition Formulary';
     const tier = selectedPlan?.tier || 'Institutional';
 
     // In-file duplicate trackers
@@ -308,6 +308,32 @@ export const bulkImportService = {
         }
         if (!state) {
           errors.push('State is mandatory for Universities / Colleges');
+        } else {
+          dynamicFields.state = state;
+          dynamicFields.registrationState = state;
+        }
+      } else if (userType === 'HOSPITALS') {
+        const hospName = String(row[5] || institutionName || '').trim();
+        if (!hospName) {
+          errors.push('Hospital / Facility Name is mandatory for Hospitals');
+        } else {
+          dynamicFields.hospitalName = hospName;
+        }
+        if (!state) {
+          errors.push('State is mandatory for Hospitals');
+        } else {
+          dynamicFields.state = state;
+          dynamicFields.registrationState = state;
+        }
+      } else if (userType === 'RETAIL_PHARMACIST') {
+        const pharmName = String(row[5] || institutionName || '').trim();
+        if (!pharmName) {
+          errors.push('Pharmacy / Medical Store Name is mandatory for Retail Pharmacist');
+        } else {
+          dynamicFields.pharmacyName = pharmName;
+        }
+        if (!state) {
+          errors.push('State is mandatory for Retail Pharmacist');
         } else {
           dynamicFields.state = state;
           dynamicFields.registrationState = state;

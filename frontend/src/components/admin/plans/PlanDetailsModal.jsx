@@ -87,10 +87,24 @@ export const PlanDetailsModal = ({
           </div>
 
           <div className="flex flex-col items-start sm:items-end shrink-0">
-            <span className="text-xl sm:text-2xl font-black text-slate-900">
-              ₹{p.priceINR?.toLocaleString('en-IN')}
-            </span>
-            <span className="text-[11px] font-bold text-emerald-600">
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl sm:text-2xl font-black text-slate-900">
+                ₹{p.priceINR?.toLocaleString('en-IN')}
+              </span>
+              <span className="text-[11px] font-bold text-slate-400">Base</span>
+            </div>
+            <div className="text-xs font-bold text-emerald-700">
+              ₹{(
+                (p.priceINR || 0) +
+                Math.round(
+                  ((p.priceINR || 0) * (p.isGstApplicable !== false ? (p.gstRatePercent ?? 18) : 0)) / 100
+                )
+              ).toLocaleString('en-IN')}{' '}
+              <span className="text-[10px] text-slate-400 font-normal">
+                (Inc. {p.isGstApplicable !== false ? `${p.gstRatePercent ?? 18}% GST` : '0% GST'})
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-emerald-600 mt-0.5">
               ● {p.isActive ? 'Active in Public Store' : 'Deactivated'}
             </span>
           </div>
@@ -153,16 +167,27 @@ export const PlanDetailsModal = ({
         {/* Tab 1: Rules & Features */}
         {activeTab === 'overview' && (
           <div className="space-y-3.5">
-            {/* Validity & Quotas */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Delivery, GST & Quotas */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-3 bg-white border border-slate-200/80 rounded-xl space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">
-                  Validity Policy
+                  Delivery Format
                 </span>
-                <p className="font-bold text-slate-900">
-                  {p.validityType === 'fixed_date'
-                    ? `Fixed Expiry: ${p.fixedDate ? new Date(p.fixedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '31 Dec 2031'}`
-                    : `${p.durationValue} ${p.validityType?.replace('duration_', '')}`}
+                <p className="font-bold text-slate-900 text-xs">
+                  {p.deliveryType === 'ONLINE_PHYSICAL'
+                    ? 'Online + Physical (Hybrid)'
+                    : p.deliveryType === 'PHYSICAL'
+                    ? 'Physical Only (Hardcopy Book Delivery)'
+                    : 'Online (Digital Only)'}
+                </p>
+              </div>
+
+              <div className="p-3 bg-white border border-slate-200/80 rounded-xl space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  GST Policy (18%)
+                </span>
+                <p className="font-bold text-emerald-700 text-xs">
+                  {p.isGstApplicable !== false ? `${p.gstRatePercent ?? 18}% GST Included` : 'Tax Exempt (0%)'}
                 </p>
               </div>
 
@@ -170,15 +195,67 @@ export const PlanDetailsModal = ({
                 <span className="text-[10px] font-bold text-slate-400 uppercase">
                   Concurrent Seats
                 </span>
-                <p className="font-bold text-slate-900">
+                <p className="font-bold text-slate-900 text-xs">
                   {p.seatQuota === 1
-                    ? 'Single User (1 Workstation)'
+                    ? 'Single User (1 Seat)'
                     : p.seatQuota === 0
                     ? 'Unlimited Campus Seats'
                     : `${p.seatQuota} Concurrent Users`}
                 </p>
               </div>
             </div>
+
+            {/* Validity Policy */}
+            <div className="p-3 bg-white border border-slate-200/80 rounded-xl space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">
+                Validity Policy
+              </span>
+              <p className="font-bold text-slate-900">
+                {p.validityType === 'fixed_date'
+                  ? `Fixed Expiry: ${p.fixedDate ? new Date(p.fixedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '31 Dec 2031'}`
+                  : `${p.durationValue} ${p.validityType?.replace('duration_', '')}`}
+              </p>
+            </div>
+
+            {/* Bulk Quantity Slabs Table if enabled */}
+            {p.bulkDiscountEnabled && Array.isArray(p.bulkSlabs) && p.bulkSlabs.length > 0 && (
+              <div className="p-3 bg-amber-50/60 border border-amber-200 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-amber-800 uppercase flex items-center gap-1">
+                    <span>⚡ Configured Bulk Quantity Discount Slabs</span>
+                  </span>
+                  <span className="text-[10px] font-bold bg-amber-200/60 text-amber-900 px-2 py-0.5 rounded-md">
+                    {p.bulkSlabs.length} Slabs Active
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-amber-200 text-amber-900 font-bold text-[10px] uppercase">
+                        <th className="pb-1">Quantity Range</th>
+                        <th className="pb-1">Discount Rate</th>
+                        <th className="pb-1">Tier Classification</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-amber-100">
+                      {p.bulkSlabs.map((slab, i) => (
+                        <tr key={i} className="text-slate-800">
+                          <td className="py-1 font-bold">
+                            {slab.minQty} – {slab.maxQty !== null && slab.maxQty !== undefined && slab.maxQty !== '' ? slab.maxQty : '∞'} seats
+                          </td>
+                          <td className="py-1 font-bold text-emerald-700">
+                            {slab.discountPercent}% OFF
+                          </td>
+                          <td className="py-1 text-slate-600">
+                            {slab.label || `Slab ${i + 1}`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* Applicable User Types */}
             <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">

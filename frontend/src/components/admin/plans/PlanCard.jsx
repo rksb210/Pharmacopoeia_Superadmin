@@ -5,7 +5,6 @@ import {
   Check,
   Users,
   Calendar,
-  Sparkles,
   Edit2,
   Eye,
   CreditCard,
@@ -46,6 +45,11 @@ export const PlanCard = ({
     );
   };
 
+  const isGst = plan.isGstApplicable !== false;
+  const gstRate = isGst ? (plan.gstRatePercent ?? 18) : 0;
+  const gstAmount = Math.round(((plan.priceINR || 0) * gstRate) / 100);
+  const totalWithGst = (plan.priceINR || 0) + gstAmount;
+
   return (
     <div
       className={`
@@ -57,22 +61,9 @@ export const PlanCard = ({
         }
       `}
     >
-      {/* Top Tag & Popular Ribbon */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-1.5">
-          <Badge variant="outline" className="text-[9px] font-extrabold uppercase tracking-wider">
-            {plan.tier}
-          </Badge>
-          {plan.isPopular && (
-            <Badge
-              variant="nfiYellow"
-              className="text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-2xs"
-            >
-              <Sparkles className="w-2.5 h-2.5" />
-              <span>Recommended</span>
-            </Badge>
-          )}
-        </div>
+      {/* Header: Status Toggle Pill */}
+      <div className="flex items-center justify-end gap-2 mb-3">
+        {/* Badges (tier, delivery format, recommended) removed from heading as requested */}
 
         {/* Status Toggle Pill */}
         {canEdit ? (
@@ -126,16 +117,24 @@ export const PlanCard = ({
       {/* Pricing Tag */}
       <div className="my-4 py-3 border-y border-slate-100 flex items-baseline justify-between">
         <div>
-          <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            ₹{plan.priceINR?.toLocaleString('en-IN')}
-          </span>
-          <span className="text-slate-400 text-xs ml-1 font-medium">
-            {plan.validityType === 'duration_years'
-              ? '/ year'
-              : plan.validityType === 'duration_months'
-              ? `/${plan.durationValue} mo`
-              : ''}
-          </span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              ₹{plan.priceINR?.toLocaleString('en-IN')}
+            </span>
+            <span className="text-slate-400 text-xs font-medium">
+              Base{plan.validityType === 'duration_years'
+                ? '/yr'
+                : plan.validityType === 'duration_months'
+                ? `/${plan.durationValue}mo`
+                : ''}
+            </span>
+          </div>
+          <div className="text-[11px] font-bold text-emerald-700 mt-0.5">
+            ₹{totalWithGst.toLocaleString('en-IN')}{' '}
+            <span className="text-slate-400 font-normal">
+              (Inc. {isGst ? `${gstRate}% GST` : '0% GST'})
+            </span>
+          </div>
         </div>
 
         {/* Validity Tag */}
@@ -144,9 +143,17 @@ export const PlanCard = ({
         </div>
       </div>
 
+      {/* Bulk Slabs Indicator if configured */}
+      {plan.bulkDiscountEnabled && plan.bulkSlabs?.length > 0 && (
+        <div className="mb-3 flex items-center justify-between text-[11px] bg-amber-50 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-200/70">
+          <span className="font-bold">⚡ Bulk Slabs:</span>
+          <span className="font-semibold">{plan.bulkSlabs.length} discount tiers</span>
+        </div>
+      )}
+
       {/* Seat & User Type Badges */}
       <div className="space-y-2 mb-4">
-        <div className="flex items-center justify-between text-[11px] text-slate-600">
+        {/* <div className="flex items-center justify-between text-[11px] text-slate-600">
           <span>Seat Quota:</span>
           <strong className="text-slate-900">
             {plan.seatQuota === 1
@@ -155,7 +162,7 @@ export const PlanCard = ({
               ? 'Unlimited Seats'
               : `${plan.seatQuota} Concurrent Seats`}
           </strong>
-        </div>
+        </div> */}
 
         <div className="flex flex-wrap gap-1 items-center">
           <span className="text-[10px] text-slate-400 font-semibold mr-1">Target:</span>
@@ -190,7 +197,7 @@ export const PlanCard = ({
 
       {/* Usage Analytics Footer & Actions */}
       <div className="pt-3 border-t border-slate-100 space-y-3">
-        <div className="flex items-center justify-between text-[11px]">
+        {/* <div className="flex items-center justify-between text-[11px]">
           <button
             type="button"
             onClick={() => onViewSubscribers(plan)}
@@ -203,7 +210,7 @@ export const PlanCard = ({
           <span className="text-emerald-700 font-bold">
             ₹{(plan.revenueGeneratedINR || 0).toLocaleString('en-IN')}
           </span>
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-2">
           <Button

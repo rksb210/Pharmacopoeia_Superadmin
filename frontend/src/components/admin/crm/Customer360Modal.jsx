@@ -105,6 +105,8 @@ export const Customer360Modal = ({
   const pan = c.pan || dFields.pan || '';
   const designation = c.designation || dFields.designation || '';
   const universityCollegeName = c.universityCollegeName || dFields.universityCollegeName || '';
+  const hospitalName = c.hospitalName || dFields.hospitalName || '';
+  const pharmacyName = c.pharmacyName || dFields.pharmacyName || '';
 
   return (
     <AdminModal
@@ -124,7 +126,11 @@ export const Customer360Modal = ({
               <span className="font-bold text-slate-900 text-sm">{c.name}</span>
               <CRMSegmentBadge segment={c.segment} />
               <Badge variant="outline" className="text-[9px] uppercase font-bold">
-                {c.userType === 'UNIVERSITIES_COLLEGES' || c.userType === 'UNIVERSITIES / COLLEGES' ? 'UNIVERSITIES / COLLEGES' : c.userType || 'Subscriber'}
+                {c.userType === 'UNIVERSITIES_COLLEGES' || c.userType === 'UNIVERSITIES / COLLEGES'
+                  ? 'UNIVERSITIES / COLLEGES'
+                  : c.userType === 'OTHERS'
+                  ? 'OTHER HEALTH CARE PROFESSIONAL'
+                  : c.userType?.replace(/_/g, ' ') || 'Subscriber'}
               </Badge>
             </div>
             <p className="text-slate-500 text-xs mt-0.5 truncate">
@@ -276,6 +282,36 @@ export const Customer360Modal = ({
                     <div className="sm:col-span-2">
                       <span className="text-slate-400 block">University / College Name</span>
                       <span className="font-bold text-slate-900">{universityCollegeName || 'N/A'}</span>
+                    </div>
+                    {regState && (
+                      <div>
+                        <span className="text-slate-400 block">State</span>
+                        <span className="font-bold text-slate-900">{regState}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {c.userType === 'HOSPITALS' && (
+                  <>
+                    <div className="sm:col-span-2">
+                      <span className="text-slate-400 block">Hospital Name</span>
+                      <span className="font-bold text-slate-900">{hospitalName || 'N/A'}</span>
+                    </div>
+                    {regState && (
+                      <div>
+                        <span className="text-slate-400 block">State</span>
+                        <span className="font-bold text-slate-900">{regState}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {c.userType === 'RETAIL_PHARMACIST' && (
+                  <>
+                    <div className="sm:col-span-2">
+                      <span className="text-slate-400 block">Pharmacy / Store Name</span>
+                      <span className="font-bold text-slate-900">{pharmacyName || 'N/A'}</span>
                     </div>
                     {regState && (
                       <div>

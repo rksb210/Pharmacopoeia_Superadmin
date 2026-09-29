@@ -149,9 +149,40 @@ export const PlansPage = () => {
     { header: 'Plan Code', key: 'code' },
     { header: 'Tier', key: 'tier' },
     {
+      header: 'Delivery Format',
+      key: 'deliveryType',
+      format: (val) =>
+        val === 'ONLINE_PHYSICAL'
+          ? 'Online + Physical'
+          : val === 'PHYSICAL'
+          ? 'Physical Only'
+          : 'Online Only',
+    },
+    {
       header: 'Base Price (INR)',
       key: 'priceINR',
       format: (val) => (val !== undefined && val !== null ? `₹${val.toLocaleString('en-IN')}` : '₹0'),
+    },
+    {
+      header: 'GST Rate',
+      key: 'isGstApplicable',
+      format: (val, item) => (val === false ? 'Exempt (0%)' : `${item.gstRatePercent ?? 18}%`),
+    },
+    {
+      header: 'Total Price Inc. GST (INR)',
+      key: 'priceINR',
+      format: (val, item) => {
+        const isGst = item.isGstApplicable !== false;
+        const rate = isGst ? (item.gstRatePercent ?? 18) : 0;
+        const total = (val || 0) + Math.round(((val || 0) * rate) / 100);
+        return `₹${total.toLocaleString('en-IN')}`;
+      },
+    },
+    {
+      header: 'Bulk Slabs',
+      key: 'bulkDiscountEnabled',
+      format: (val, item) =>
+        val && item.bulkSlabs?.length ? `${item.bulkSlabs.length} Slabs Configured` : 'Disabled',
     },
     {
       header: 'Validity Policy',
@@ -296,7 +327,7 @@ export const PlansPage = () => {
           </div>
 
           {/* Tier Filter */}
-          <select
+          {/* <select
             value={tierFilter}
             onChange={(e) => setTierFilter(e.target.value)}
             className="h-9 px-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-[#E76120] cursor-pointer"
@@ -307,7 +338,7 @@ export const PlansPage = () => {
                 {t}
               </option>
             ))}
-          </select>
+          </select> */}
 
           {/* Status Filter */}
           <select
@@ -387,8 +418,8 @@ export const PlansPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Plan &amp; Code</TableHead>
-                <TableHead>Tier</TableHead>
-                <TableHead>Base Price (₹)</TableHead>
+                <TableHead>Tier &amp; Format</TableHead>
+                <TableHead>Pricing (Base &amp; GST)</TableHead>
                 <TableHead>Validity Policy</TableHead>
                 <TableHead>Seats</TableHead>
                 <TableHead>Subscribers</TableHead>
@@ -397,26 +428,58 @@ export const PlansPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {plans.map((p) => (
-                <TableRow key={p._id}>
-                  <TableCell>
-                    <div>
-                      <span className="font-bold text-slate-900 text-xs block">{p.name}</span>
-                      <span className="font-mono text-slate-400 text-[10px]">{p.code}</span>
-                    </div>
-                  </TableCell>
+              {plans.map((p) => {
+                const isGst = p.isGstApplicable !== false;
+                const rate = isGst ? (p.gstRatePercent ?? 18) : 0;
+                const gstAmount = Math.round(((p.priceINR || 0) * rate) / 100);
+                const totalWithGst = (p.priceINR || 0) + gstAmount;
+                const isHybrid = p.deliveryType === 'ONLINE_PHYSICAL';
+                const isPhysicalOnly = p.deliveryType === 'PHYSICAL';
 
-                  <TableCell>
-                    <Badge variant="outline" className="text-[9px] uppercase font-bold">
-                      {p.tier}
-                    </Badge>
-                  </TableCell>
+                return (
+                  <TableRow key={p._id}>
+                    <TableCell>
+                      <div>
+                        <span className="font-bold text-slate-900 text-xs block">{p.name}</span>
+                        <span className="font-mono text-slate-400 text-[10px]">{p.code}</span>
+                      </div>
+                    </TableCell>
 
-                  <TableCell>
-                    <span className="font-black text-slate-900 text-xs">
-                      ₹{p.priceINR?.toLocaleString('en-IN')}
-                    </span>
-                  </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge variant="outline" className="text-[9px] uppercase font-bold">
+                          {p.tier}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={`text-[8px] font-bold ${
+                            isHybrid
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : isPhysicalOnly
+                              ? 'bg-purple-50 text-purple-800 border-purple-200'
+                              : 'bg-blue-50 text-blue-800 border-blue-200'
+                          }`}
+                        >
+                          {isHybrid ? 'Online + Physical' : isPhysicalOnly ? 'Physical Only' : 'Online Only'}
+                        </Badge>
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <div className="font-black text-slate-900 text-xs">
+                          Base: ₹{p.priceINR?.toLocaleString('en-IN')}
+                        </div>
+                        <div className="text-[11px] font-bold text-emerald-700">
+                          Inc. {isGst ? `${rate}% GST` : '0% GST'}: ₹{totalWithGst.toLocaleString('en-IN')}
+                        </div>
+                        {p.bulkDiscountEnabled && p.bulkSlabs?.length > 0 && (
+                          <span className="inline-block text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded-md">
+                            ⚡ {p.bulkSlabs.length} Bulk Slabs
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
 
                   <TableCell>
                     <span className="text-xs font-semibold text-slate-700">
@@ -497,7 +560,8 @@ export const PlansPage = () => {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              );
+            })}
             </TableBody>
           </Table>
         </div>

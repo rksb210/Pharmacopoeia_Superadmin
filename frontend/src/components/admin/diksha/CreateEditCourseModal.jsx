@@ -47,12 +47,14 @@ const CATEGORIES = [
 
 const AUDIENCE_TYPES = [
   'DOCTOR',
-  'PHARMACIST',
   'STUDENT',
   'NURSE',
-  'INDUSTRY',
-  'UNIVERSITIES_COLLEGES',
+  'PHARMACIST',
   'OTHERS',
+  'INDUSTRY',
+  'HOSPITALS',
+  'UNIVERSITIES_COLLEGES',
+  'RETAIL_PHARMACIST',
 ];
 
 export const CreateEditCourseModal = ({
@@ -631,7 +633,13 @@ export const CreateEditCourseModal = ({
                           : 'bg-slate-50 border-slate-200 text-slate-400'
                       }`}
                     >
-                      <span>{type === 'UNIVERSITIES_COLLEGES' ? 'Universities / Colleges' : type}</span>
+                      <span>
+                        {type === 'UNIVERSITIES_COLLEGES'
+                          ? 'Universities / Colleges'
+                          : type === 'OTHERS'
+                          ? 'Other Health Care Professional'
+                          : type.replace(/_/g, ' ')}
+                      </span>
                       {isSelected && <Check className="w-3.5 h-3.5 text-[#284661]" />}
                     </button>
                   );
@@ -920,7 +928,7 @@ export const CreateEditCourseModal = ({
                           type="text"
                           value={mat.title || ''}
                           onChange={(e) => handleMaterialChange(idx, 'title', e.target.value)}
-                          placeholder="Document Title (e.g. NFI 9th Edition Handbook)..."
+                          placeholder="Document Title (e.g. NFI 7th Edition Handbook)..."
                           className="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-[#E76120]"
                         />
                       </div>
