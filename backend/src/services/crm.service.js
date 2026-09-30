@@ -14,68 +14,55 @@ export const crmService = {
     const [
       totalCustomers,
       activePaidSubscribers,
-      trialSubscribers,
       revenueAgg,
     ] = await Promise.all([
       Subscriber.countDocuments(),
-      Subscription.countDocuments({ status: 'active', type: 'paid' }),
-      Subscription.countDocuments({ status: 'active', type: 'trial' }),
+      Subscription.countDocuments({ status: 'active' }),
       Subscription.aggregate([
         { $match: { status: { $in: ['active', 'expired'] } } },
         { $group: { _id: null, totalLTV: { $sum: '$finalAmount' } } },
       ]),
     ]);
 
-    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    const expiringSoonCount = await Subscription.countDocuments({
-      status: 'active',
-      endDate: { $gt: new Date(), $lte: thirtyDaysFromNow },
-    });
-
+    const unsubscribedCount = Math.max(0, totalCustomers - activePaidSubscribers);
     const totalLTVINR = revenueAgg[0]?.totalLTV || 0;
 
     return {
       totalCustomers,
       activePaidSubscribers,
-      trialSubscribers,
-      expiringSoonCount,
+      unsubscribedCount,
       totalLTVINR,
+      // Retain legacy keys for backwards-compatibility
+      trialSubscribers: 0,
+      expiringSoonCount: 0,
     };
   },
 
   /**
-   * Helper: Determine Dynamic Customer Segment
+   * Helper: Determine Dynamic Customer Segment (NFI Healthcare & Pass Model)
    */
   determineSegment: (subscriber, latestSub) => {
-    if (!latestSub) return 'LEAD_PROSPECT';
+    if (!latestSub || latestSub.status !== 'active') return 'PROSPECT';
 
-    if (latestSub.status === 'active') {
-      const isExpiring =
-        new Date(latestSub.endDate) > new Date() &&
-        new Date(latestSub.endDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      if (isExpiring) return 'EXPIRING_SOON';
-
-      if (latestSub.type === 'trial') return 'PROMOTIONAL_TRIAL';
-      if (
-        latestSub.tier === 'INSTITUTIONAL' ||
-        subscriber.userType === 'INDUSTRY' ||
-        subscriber.userType === 'UNIVERSITIES_COLLEGES' ||
-        subscriber.userType === 'UNIVERSITIES / COLLEGES'
-      ) {
-        return 'INSTITUTIONAL_VIP';
-      }
-      if (subscriber.userType === 'STUDENT') return 'SCHOLAR';
-      if (['DOCTOR', 'PHARMACIST', 'NURSE'].includes(subscriber.userType)) {
-        return 'ACTIVE_PRACTITIONER';
-      }
-      return 'ACTIVE_PRACTITIONER';
+    if (
+      latestSub.tier === 'INSTITUTIONAL' ||
+      subscriber.userType === 'INDUSTRY' ||
+      subscriber.userType === 'UNIVERSITIES_COLLEGES' ||
+      subscriber.userType === 'UNIVERSITIES / COLLEGES' ||
+      subscriber.userType === 'HOSPITALS'
+    ) {
+      return 'INSTITUTIONAL';
     }
 
-    if (latestSub.status === 'expired' || latestSub.status === 'cancelled') {
-      return 'INACTIVE_CHURNED';
+    if (subscriber.userType === 'STUDENT') {
+      return 'STUDENT_SCHOLAR';
     }
 
-    return 'LEAD_PROSPECT';
+    if (['DOCTOR', 'PHARMACIST', 'NURSE', 'RETAIL_PHARMACIST', 'OTHERS'].includes(subscriber.userType)) {
+      return 'PRACTITIONER';
+    }
+
+    return 'SUBSCRIBED';
   },
 
   /**
@@ -122,6 +109,22 @@ export const crmService = {
     if (status && status !== 'all') {
       if (status === 'active') query.isActive = true;
       else if (status === 'inactive') query.isActive = false;
+    }
+
+    if (segment && segment !== 'all') {
+      if (segment === 'active') {
+        const activeUserIds = await Subscription.distinct('user', { status: 'active' });
+        query._id = { $in: activeUserIds };
+      } else if (segment === 'prospect' || segment === 'LEAD_PROSPECT') {
+        const activeUserIds = await Subscription.distinct('user', { status: 'active' });
+        query._id = { $nin: activeUserIds };
+      } else if (segment === 'institutional' || segment === 'INSTITUTIONAL' || segment === 'INSTITUTIONAL_VIP') {
+        query.userType = { $in: ['INDUSTRY', 'UNIVERSITIES_COLLEGES', 'UNIVERSITIES / COLLEGES', 'HOSPITALS'] };
+      } else if (segment === 'practitioner' || segment === 'PRACTITIONER' || segment === 'ACTIVE_PRACTITIONER') {
+        query.userType = { $in: ['DOCTOR', 'PHARMACIST', 'NURSE', 'RETAIL_PHARMACIST', 'OTHERS'] };
+      } else if (segment === 'student' || segment === 'STUDENT_SCHOLAR' || segment === 'SCHOLAR') {
+        query.userType = 'STUDENT';
+      }
     }
 
     const pageNumber = Math.max(1, parseInt(page, 10));
@@ -173,14 +176,8 @@ export const crmService = {
       })
     );
 
-    // Filter by segment if specified
-    let filteredRecords = customerRecords;
-    if (segment && segment !== 'all') {
-      filteredRecords = customerRecords.filter((c) => c.segment === segment);
-    }
-
     return {
-      customers: filteredRecords,
+      customers: customerRecords,
       pagination: {
         total,
         page: pageNumber,
