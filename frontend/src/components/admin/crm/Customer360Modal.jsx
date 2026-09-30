@@ -124,7 +124,6 @@ export const Customer360Modal = ({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-bold text-slate-900 text-sm">{c.name}</span>
-              <CRMSegmentBadge segment={c.segment} />
               <Badge variant="outline" className="text-[9px] uppercase font-bold">
                 {c.userType === 'UNIVERSITIES_COLLEGES' || c.userType === 'UNIVERSITIES / COLLEGES'
                   ? 'UNIVERSITIES / COLLEGES'
@@ -150,17 +149,14 @@ export const Customer360Modal = ({
         {/* Tab Navigation */}
         <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2 overflow-x-auto">
           {[
-            { id: 'overview', label: '1. Overview & LTV' },
-            { id: 'subscriptions', label: `2. Subscriptions (${subs.length})` },
-            { id: 'timeline', label: `3. Unified Timeline (${timeline.length})` },
-            { id: 'communications', label: `4. Communications (${notifs.length})` },
-            { id: 'feedback', label: `5. Feedback & Tickets (${tickets.length})` },
+            { id: 'overview', label: '1. Profile, Credentials & Notes' },
+            { id: 'subscriptions', label: `2. Formulary Pass & Orders (${subs.length})` },
           ].map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === tab.id
                   ? 'bg-[#284661] text-white shadow-2xs'
                   : 'text-slate-600 hover:bg-slate-100'
@@ -181,7 +177,7 @@ export const Customer360Modal = ({
                   Active Formulary Pass
                 </span>
                 <span className="text-xs font-black text-slate-900 block truncate mt-0.5">
-                  {c.latestSubscription?.planName || 'None / Prospect'}
+                  {c.latestSubscription?.status === 'active' ? c.latestSubscription.planName : 'None / Prospect'}
                 </span>
               </div>
 
@@ -190,9 +186,9 @@ export const Customer360Modal = ({
                   Pass Validity
                 </span>
                 <span className="text-xs font-black text-[#284661] block truncate mt-0.5">
-                  {c.latestSubscription?.endDate
+                  {c.latestSubscription?.status === 'active' && c.latestSubscription?.endDate
                     ? new Date(c.latestSubscription.endDate).toLocaleDateString('en-IN')
-                    : 'N/A'}
+                    : 'No active pass'}
                 </span>
               </div>
 
@@ -207,10 +203,10 @@ export const Customer360Modal = ({
 
               <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl min-w-0">
                 <span className="text-[10px] font-bold text-emerald-700 uppercase block truncate">
-                  Concessions Saved
+                  Total Lifetime Spend
                 </span>
                 <span className="text-lg font-black text-emerald-900 block truncate">
-                  ₹{(c.totalConcessionsSavedINR || 0).toLocaleString('en-IN')}
+                  ₹{(c.totalLTVSpendINR || 0).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -219,14 +215,7 @@ export const Customer360Modal = ({
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-800 block">
-                  {c.isVerified ? 'Verified Category Credentials' : 'Category Credentials (Verification Pending)'}
-                </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                  c.isVerified
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border-amber-200'
-                }`}>
-                  {c.isVerified ? 'Verified' : (c.verificationStatus || 'Unverified')}
+                  Category Credentials
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px] bg-white p-3 rounded-xl border border-slate-100">
@@ -451,92 +440,6 @@ export const Customer360Modal = ({
                       </span>
                     )}
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Tab 3: Unified Multi-System Timeline */}
-        {activeTab === 'timeline' && (
-          <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1 animate-in fade-in-0 duration-150">
-            {timeline.length === 0 ? (
-              <p className="text-center py-8 text-slate-400">No interactions recorded.</p>
-            ) : (
-              timeline.map((evt, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 bg-white border border-slate-200/80 rounded-xl flex items-start gap-3 shadow-2xs"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#284661] flex items-center justify-center shrink-0 border border-blue-100 mt-0.5">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-bold text-slate-900 truncate">{evt.action}</span>
-                        {evt.badge && (
-                          <Badge variant="outline" className="text-[9px] uppercase font-semibold shrink-0">
-                            {evt.badge}
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-slate-400 shrink-0 font-mono">
-                        {new Date(evt.timestamp).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-
-                    <p className="text-[11px] text-slate-600 mt-0.5 break-words">{evt.details}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Tab 4: Communications */}
-        {activeTab === 'communications' && (
-          <div className="space-y-2.5 max-h-[45vh] overflow-y-auto pr-1 animate-in fade-in-0 duration-150">
-            {notifs.length === 0 ? (
-              <p className="text-center py-8 text-slate-400">No communication broadcasts dispatched to this user.</p>
-            ) : (
-              notifs.map((n, idx) => (
-                <div key={idx} className="p-3 bg-white border border-slate-200/80 rounded-xl space-y-1 shadow-2xs">
-                  <div className="flex items-center justify-between text-[10px] text-slate-400">
-                    <div className="flex items-center gap-1.5">
-                      <Badge variant="outline" className="text-[8px] uppercase font-bold">
-                        {n.category}
-                      </Badge>
-                      <span className="font-bold text-slate-900">{n.title}</span>
-                    </div>
-                    <span>{new Date(n.sentAt || n.createdAt).toLocaleString('en-IN')}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600">{n.message}</p>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Tab 5: Feedback & Inquiries */}
-        {activeTab === 'feedback' && (
-          <div className="space-y-2.5 max-h-[45vh] overflow-y-auto pr-1 animate-in fade-in-0 duration-150">
-            {tickets.length === 0 ? (
-              <p className="text-center py-8 text-slate-400">No feedback tickets filed by this subscriber.</p>
-            ) : (
-              tickets.map((t, idx) => (
-                <div key={idx} className="p-3 bg-white border border-slate-200/80 rounded-xl space-y-1 shadow-2xs">
-                  <div className="flex items-center justify-between text-[10px] text-slate-400">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono font-bold text-slate-800">{t.ticketId}</span>
-                      <Badge variant="outline" className="text-[8px] uppercase font-bold">
-                        {t.status}
-                      </Badge>
-                    </div>
-                    <span>{new Date(t.createdAt).toLocaleString('en-IN')}</span>
-                  </div>
-                  <span className="font-bold text-slate-900 text-xs block">{t.subject}</span>
-                  <p className="text-[11px] text-slate-600">{t.message}</p>
                 </div>
               ))
             )}

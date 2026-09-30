@@ -17,6 +17,7 @@ import {
   Clock,
   RotateCw,
   Megaphone,
+  UserPlus,
 } from 'lucide-react';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
@@ -58,22 +59,16 @@ const USER_TYPES = [
 ];
 
 const SEGMENTS = [
-  { id: 'all', label: 'All Customer Segments' },
-  { id: 'INSTITUTIONAL_VIP', label: 'Institutional VIP' },
-  { id: 'ACTIVE_PRACTITIONER', label: 'Active Practitioners' },
-  { id: 'SCHOLAR', label: 'Academic Scholars' },
-  { id: 'PROMOTIONAL_TRIAL', label: 'Trialists' },
-  { id: 'EXPIRING_SOON', label: 'Expiring Soon' },
-  { id: 'INACTIVE_CHURNED', label: 'Inactive / Churned' },
-  { id: 'LEAD_PROSPECT', label: 'Leads & Prospects' },
+  { id: 'all', label: 'All Subscribers' },
+  { id: 'active', label: 'Active Subscribers' },
+  { id: 'prospect', label: 'Unsubscribers' },
 ];
 
 export const CRMPage = () => {
   const [stats, setStats] = useState({
     totalCustomers: 0,
     activePaidSubscribers: 0,
-    trialSubscribers: 0,
-    expiringSoonCount: 0,
+    unsubscribedCount: 0,
     totalLTVINR: 0,
   });
 
@@ -161,21 +156,15 @@ export const CRMPage = () => {
     { header: 'Customer Name', key: 'name' },
     { header: 'Email Address', key: 'email' },
     { header: 'Healthcare Category', key: 'userType' },
-    { header: 'CRM Segment', key: 'segment' },
     {
       header: 'Active Formulary Pass',
       key: 'latestSubscription',
-      format: (val) => val?.planName || 'None (Prospect)',
-    },
-    {
-      header: 'Pass Tier',
-      key: 'latestSubscription',
-      format: (val) => val?.tier || 'N/A',
+      format: (val) => (val?.status === 'active' ? val.planName : 'None (Prospect)'),
     },
     {
       header: 'Access Validity',
       key: 'latestSubscription',
-      format: (val) => (val?.endDate ? new Date(val.endDate).toLocaleDateString('en-GB') : 'N/A'),
+      format: (val) => (val?.status === 'active' && val?.endDate ? new Date(val.endDate).toLocaleDateString('en-GB') : 'No active pass'),
     },
     {
       header: 'Lifetime Spend (INR)',
@@ -253,21 +242,21 @@ export const CRMPage = () => {
         />
 
         <StatCard
-          title="Active Paid Passes"
+          title="Active Pass Holders"
           value={stats.activePaidSubscribers}
-          subtitle="Valid commercial access"
+          subtitle="Valid formulary access (till 2031)"
           icon={CreditCard}
           iconColor="text-emerald-600"
           iconBg="bg-emerald-50"
         />
 
         <StatCard
-          title="Trial Accounts"
-          value={stats.trialSubscribers}
-          subtitle="Evaluation licenses"
-          icon={Sparkles}
-          iconColor="text-sky-600"
-          iconBg="bg-sky-50"
+          title="Unsubscribed (Prospects)"
+          value={stats.unsubscribedCount ?? Math.max(0, stats.totalCustomers - stats.activePaidSubscribers)}
+          subtitle="Registered without active pass"
+          icon={UserPlus}
+          iconColor="text-slate-600"
+          iconBg="bg-slate-100"
         />
 
         <StatCard
@@ -334,7 +323,7 @@ export const CRMPage = () => {
             ))}
           </select>
 
-          <select
+          {/* <select
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
@@ -345,7 +334,7 @@ export const CRMPage = () => {
             <option value="all">All Account Statuses</option>
             <option value="active">Active Accounts</option>
             <option value="inactive">Inactive Accounts</option>
-          </select>
+          </select> */}
         </div>
       </div>
 
@@ -369,7 +358,6 @@ export const CRMPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Customer Profile</TableHead>
-                <TableHead>Cohort Segment</TableHead>
                 <TableHead>Active Formulary Pass</TableHead>
                 <TableHead>Validity</TableHead>
                 <TableHead>Lifetime Spend (LTV)</TableHead>
@@ -396,38 +384,35 @@ export const CRMPage = () => {
                             : c.userType?.replace(/_/g, ' ')}
                         </strong>
                       </span>
-                    </div>
-                  </TableCell>
-
-                  {/* Cohort Segment */}
-                  <TableCell>
-                    <CRMSegmentBadge segment={c.segment} />
-                  </TableCell>
-
-                  {/* Active Plan */}
-                  <TableCell>
-                    <div>
-                      <span className="font-bold text-slate-800 text-xs block truncate max-w-[170px]" title={c.latestSubscription?.planName}>
-                        {c.latestSubscription?.planName || 'None (Prospect)'}
-                      </span>
-                      {c.latestSubscription && (
-                        <Badge variant="outline" className="text-[8px] uppercase font-semibold">
-                          {c.latestSubscription.tier} Pass
-                        </Badge>
+                      {(c.registrationNo || c.apaarId || c.gstin) && (
+                        <span className="text-[10px] font-mono text-slate-500 block truncate mt-0.5">
+                          {c.registrationNo ? `Reg: ${c.registrationNo}` : c.apaarId ? `APAAR: ${c.apaarId}` : `GSTIN: ${c.gstin}`}
+                        </span>
                       )}
                     </div>
                   </TableCell>
 
+                  {/* Active Plan */}
+                  <TableCell>
+                    <span className="font-bold text-slate-800 text-xs block truncate max-w-[220px]" title={c.latestSubscription?.status === 'active' ? c.latestSubscription?.planName : 'None (Prospect)'}>
+                      {c.latestSubscription?.status === 'active' ? c.latestSubscription?.planName : 'None (Prospect)'}
+                    </span>
+                  </TableCell>
+
                   {/* Validity */}
                   <TableCell>
-                    <span className="font-bold text-[#284661] text-xs block">
-                      {c.latestSubscription?.endDate
-                        ? new Date(c.latestSubscription.endDate).toLocaleDateString('en-IN')
-                        : 'N/A'}
-                    </span>
-                    {c.latestSubscription?.status === 'active' && (
-                      <span className="text-[10px] text-emerald-700 font-semibold block">
-                        ● Active Pass
+                    {c.latestSubscription?.status === 'active' ? (
+                      <div>
+                        <span className="font-bold text-[#284661] text-xs block">
+                          Valid till {c.latestSubscription?.endDate ? new Date(c.latestSubscription.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '31 Dec 2031'}
+                        </span>
+                        <span className="text-[10px] text-emerald-700 font-semibold block">
+                          ● Active Pass
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 text-xs italic block">
+                        No active pass
                       </span>
                     )}
                   </TableCell>
