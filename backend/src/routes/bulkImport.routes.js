@@ -3,6 +3,7 @@ import multer from 'multer';
 import {
   downloadTemplate,
   uploadAndValidate,
+  validateDirectRows,
   confirmImport,
   getHistory,
   getJobById,
@@ -30,7 +31,11 @@ const upload = multer({
     if (isMimeValid || isExtValid) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only Excel spreadsheets (.xlsx, .xls) and CSV files are permitted.'));
+      cb(
+        new Error(
+          'Invalid file type. Only Excel spreadsheets (.xlsx, .xls) and CSV files are permitted.'
+        )
+      );
     }
   },
 });
@@ -41,12 +46,19 @@ router.use(authenticate);
 // Official Template Download
 router.get('/template', downloadTemplate);
 
-// Upload & Pre-flight Validation
+// Upload & Pre-flight Validation (Excel / CSV)
 router.post(
   '/upload',
   requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'ADD'),
   upload.single('file'),
   uploadAndValidate
+);
+
+// Direct Manual Roster Table Pre-flight Validation (JSON)
+router.post(
+  '/validate-direct',
+  requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'ADD'),
+  validateDirectRows
 );
 
 // Confirm & Execute Batch
@@ -59,6 +71,10 @@ router.post(
 // History & Details
 router.get('/history', requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'VIEW'), getHistory);
 router.get('/:id', requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'VIEW'), getJobById);
-router.get('/:id/error-report', requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'VIEW'), downloadErrorReport);
+router.get(
+  '/:id/error-report',
+  requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'VIEW'),
+  downloadErrorReport
+);
 
 export default router;

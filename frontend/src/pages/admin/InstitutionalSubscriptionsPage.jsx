@@ -327,7 +327,7 @@ export const InstitutionalSubscriptionsPage = () => {
           value={`₹${stats.totalInvoicedVolume?.toLocaleString('en-IN') || '0'}`}
           icon={Receipt}
           description="Aggregate institutional billing value"
-          trend="18% GST Compliant"
+          trend="Consolidated Billing"
           variant="success"
         />
       </div>
@@ -382,6 +382,8 @@ export const InstitutionalSubscriptionsPage = () => {
                 { id: 'ALL', label: 'All Stakeholders' },
                 { id: 'UNIVERSITIES_COLLEGES', label: 'Universities & Colleges', icon: GraduationCap },
                 { id: 'INDUSTRY', label: 'Industry / Enterprise', icon: Briefcase },
+                { id: 'HOSPITALS', label: 'Hospitals', icon: Building2 },
+                { id: 'RETAIL_PHARMACIST', label: 'Retail Pharmacy', icon: Building2 },
               ].map((seg) => (
                 <button
                   key={seg.id}
@@ -602,22 +604,28 @@ export const InstitutionalSubscriptionsPage = () => {
               </div>
 
               {/* Stakeholder filter */}
-              <div className="flex items-center gap-1">
-                {['ALL', 'UNIVERSITIES_COLLEGES', 'INDUSTRY'].map((t) => (
+              <div className="flex items-center gap-1 flex-wrap">
+                {[
+                  { id: 'ALL', label: 'All' },
+                  { id: 'UNIVERSITIES_COLLEGES', label: 'Colleges' },
+                  { id: 'INDUSTRY', label: 'Industry' },
+                  { id: 'HOSPITALS', label: 'Hospitals' },
+                  { id: 'RETAIL_PHARMACIST', label: 'Pharmacy' },
+                ].map((t) => (
                   <button
-                    key={t}
+                    key={t.id}
                     type="button"
                     onClick={() => {
-                      setMemberStakeholder(t);
+                      setMemberStakeholder(t.id);
                       setMemberPage(1);
                     }}
                     className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
-                      memberStakeholder === t
+                      memberStakeholder === t.id
                         ? 'bg-[#284661] text-white'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    {t === 'ALL' ? 'All' : t === 'UNIVERSITIES_COLLEGES' ? 'Colleges' : 'Industry'}
+                    {t.label}
                   </button>
                 ))}
               </div>
@@ -751,19 +759,25 @@ export const InstitutionalSubscriptionsPage = () => {
               />
             </div>
 
-            <div className="flex items-center gap-1.5">
-              {['ALL', 'UNIVERSITIES_COLLEGES', 'INDUSTRY'].map((t) => (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { id: 'ALL', label: 'All Registered' },
+                { id: 'UNIVERSITIES_COLLEGES', label: 'Colleges' },
+                { id: 'INDUSTRY', label: 'Industry' },
+                { id: 'HOSPITALS', label: 'Hospitals' },
+                { id: 'RETAIL_PHARMACIST', label: 'Pharmacy' },
+              ].map((t) => (
                 <button
-                  key={t}
+                  key={t.id}
                   type="button"
-                  onClick={() => setInstStakeholder(t)}
+                  onClick={() => setInstStakeholder(t.id)}
                   className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    instStakeholder === t
+                    instStakeholder === t.id
                       ? 'bg-[#284661] text-white shadow-2xs'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  {t === 'ALL' ? 'All Registered' : t === 'UNIVERSITIES_COLLEGES' ? 'Colleges' : 'Industry'}
+                  {t.label}
                 </button>
               ))}
             </div>

@@ -21,7 +21,7 @@ export const institutionalSubscriptionService = {
         $or: [
           { parentInstitutionId: { $ne: null } },
           { batchReference: { $exists: true, $ne: null, $ne: '' } },
-          { userType: { $in: ['UNIVERSITIES_COLLEGES', 'INDUSTRY'] } },
+          { userType: { $in: ['UNIVERSITIES_COLLEGES', 'INDUSTRY', 'HOSPITALS', 'HOSPITAL', 'RETAIL_PHARMACIST'] } },
         ],
       }),
 
@@ -111,40 +111,66 @@ export const institutionalSubscriptionService = {
   }) => {
     const query = {};
 
+    const andConditions = [];
+
     // Search query
     if (search && search.trim()) {
       const safe = escapeRegex(search.trim());
       const regex = new RegExp(safe, 'i');
-      query.$or = [
-        { jobId: regex },
-        { batchReference: regex },
-        { institutionName: regex },
-        { 'coordinator.name': regex },
-        { 'coordinator.email': regex },
-        { billingContact: regex },
-        { 'consolidatedInvoice.invoiceNumber': regex },
-        { 'invoice.invoiceNumber': regex },
-      ];
+      andConditions.push({
+        $or: [
+          { jobId: regex },
+          { batchReference: regex },
+          { institutionName: regex },
+          { 'coordinator.name': regex },
+          { 'coordinator.email': regex },
+          { billingContact: regex },
+          { 'consolidatedInvoice.invoiceNumber': regex },
+          { 'invoice.invoiceNumber': regex },
+        ],
+      });
     }
 
     // Stakeholder Type Filter
     if (stakeholderType && stakeholderType !== 'ALL') {
       if (stakeholderType === 'UNIVERSITIES_COLLEGES') {
-        query.$or = [
-          { userType: 'UNIVERSITIES_COLLEGES' },
-          { institutionName: { $regex: /university|college|institute|academy|campus|school/i } },
-        ];
+        andConditions.push({
+          $or: [
+            { userType: 'UNIVERSITIES_COLLEGES' },
+            { institutionName: { $regex: /university|college|institute|academy|campus|school/i } },
+          ],
+        });
+      } else if (stakeholderType === 'HOSPITALS') {
+        andConditions.push({
+          $or: [
+            { userType: { $in: ['HOSPITALS', 'HOSPITAL'] } },
+            { institutionName: { $regex: /hospital|clinic|medical center|healthcare/i } },
+          ],
+        });
+      } else if (stakeholderType === 'RETAIL_PHARMACIST') {
+        andConditions.push({
+          $or: [
+            { userType: 'RETAIL_PHARMACIST' },
+            { institutionName: { $regex: /pharmacy|chemist|medplus|apollo pharmacy|store/i } },
+          ],
+        });
       } else if (stakeholderType === 'INDUSTRY') {
-        query.$and = [
-          { userType: { $ne: 'UNIVERSITIES_COLLEGES' } },
-          { institutionName: { $not: { $regex: /university|college|institute|academy|campus|school/i } } },
-        ];
+        andConditions.push({
+          userType: { $nin: ['UNIVERSITIES_COLLEGES', 'HOSPITALS', 'HOSPITAL', 'RETAIL_PHARMACIST'] },
+          institutionName: { $not: { $regex: /university|college|institute|academy|campus|school/i } },
+        });
       }
     }
 
-    // Status Filter
+    // Status Filter (Case-insensitive for 'completed' / 'COMPLETED')
     if (status && status !== 'ALL') {
-      query.status = status.toLowerCase();
+      andConditions.push({
+        status: new RegExp(`^${escapeRegex(status)}$`, 'i'),
+      });
+    } else {
+      andConditions.push({
+        status: { $nin: ['preview', 'PREVIEW'] },
+      });
     }
 
     // Date Range Filters
@@ -156,6 +182,10 @@ export const institutionalSubscriptionService = {
         toDate.setHours(23, 59, 59, 999);
         query.createdAt.$lte = toDate;
       }
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
     }
 
     const pageNumber = Math.max(1, parseInt(page, 10));
@@ -175,40 +205,109 @@ export const institutionalSubscriptionService = {
 
     // Format batches for unified consumption
     const formattedBatches = batches.map((b) => {
+      const rawType = (b.userType || '').toUpperCase();
       const isUniversity =
-        b.userType === 'UNIVERSITIES_COLLEGES' ||
+        rawType === 'UNIVERSITIES_COLLEGES' ||
         /university|college|institute|academy|campus|school/i.test(b.institutionName || '');
+      const isHospital = rawType === 'HOSPITALS' || rawType === 'HOSPITAL';
+      const isRetail = rawType === 'RETAIL_PHARMACIST';
+
+      const stakeholderLabel = isUniversity
+        ? 'Academic / University'
+        : isHospital
+        ? 'Hospital / Clinical'
+        : isRetail
+        ? 'Retail Pharmacy'
+        : 'Industry / Corporate';
+
+      const validSeats =
+        b.validCount ||
+        b.validRows ||
+        (b.records?.filter(
+          (r) => r.status === 'valid' || r.status === 'imported' || r.status === 'ENROLLED'
+        )?.length || 0);
+      const failedRows =
+        b.invalidCount ||
+        b.failedRows ||
+        (b.records?.filter(
+          (r) =>
+            r.status === 'invalid' ||
+            r.status === 'failed' ||
+            r.status === 'INVALID' ||
+            r.status === 'FAILED'
+        )?.length || 0);
+
+      const unitPriceINR =
+        b.consolidatedInvoice?.unitPriceINR ||
+        b.plan?.pricePerSeat ||
+        (b.invoice?.subtotal && validSeats ? Math.round(b.invoice.subtotal / validSeats) : 3500);
+      const subtotal =
+        b.consolidatedInvoice?.subtotalINR || b.invoice?.subtotal || validSeats * unitPriceINR;
+      const totalAmount =
+        b.consolidatedInvoice?.finalAmountINR || b.invoice?.totalAmount || subtotal;
+      const discountAmount =
+        b.consolidatedInvoice?.discountINR ??
+        b.invoice?.discountAmount ??
+        Math.max(0, subtotal - totalAmount);
 
       return {
         _id: b._id,
         batchRef: b.batchReference || b.jobId || `BATCH-${b._id}`,
         jobId: b.jobId || b.batchReference,
         createdAt: b.createdAt,
-        institutionName: b.institutionName || b.institutionId?.dynamicFields?.universityCollegeName || b.institutionId?.dynamicFields?.companyName || 'Institutional Partner',
+        institutionName:
+          b.institutionName ||
+          b.institutionId?.dynamicFields?.universityCollegeName ||
+          b.institutionId?.dynamicFields?.companyName ||
+          b.institutionId?.dynamicFields?.hospitalName ||
+          b.institutionId?.dynamicFields?.pharmacyName ||
+          'Institutional Partner',
         institutionId: b.institutionId?._id || b.institutionId || null,
-        userType: isUniversity ? 'UNIVERSITIES_COLLEGES' : 'INDUSTRY',
-        stakeholderLabel: isUniversity ? 'Academic / University' : 'Industry / Corporate',
+        userType: isUniversity
+          ? 'UNIVERSITIES_COLLEGES'
+          : isHospital
+          ? 'HOSPITALS'
+          : isRetail
+          ? 'RETAIL_PHARMACIST'
+          : 'INDUSTRY',
+        stakeholderLabel,
         coordinator: {
-          name: b.coordinator?.name || b.billingContact || b.importedBy?.name || 'Authorized Coordinator',
+          name:
+            b.coordinator?.name ||
+            b.billingContact ||
+            b.importedBy?.name ||
+            'Authorized Coordinator',
           email: b.coordinator?.email || b.importedBy?.email || '',
           phone: b.coordinator?.phone || '',
         },
         totalRows: b.totalRows || b.records?.length || 0,
-        validSeats: b.validCount ?? b.validRows ?? (b.records?.filter((r) => r.status === 'valid' || r.status === 'imported' || r.status === 'ENROLLED')?.length || 0),
-        failedRows: b.invalidCount ?? b.failedRows ?? (b.records?.filter((r) => r.status === 'invalid' || r.status === 'failed' || r.status === 'INVALID' || r.status === 'FAILED')?.length || 0),
+        validSeats,
+        failedRows,
         invoice: {
-          invoiceNumber: b.consolidatedInvoice?.invoiceNumber || b.invoice?.invoiceNumber || `INV-${(b.jobId || b._id).toString().slice(-6).toUpperCase()}`,
-          invoiceDate: b.consolidatedInvoice?.generatedAt || b.invoice?.invoiceDate || b.createdAt,
-          subtotal: b.consolidatedInvoice?.subtotalINR || b.invoice?.subtotal || 0,
-          taxAmount: b.consolidatedInvoice?.taxAmountINR || b.invoice?.taxAmount || 0,
-          totalAmount: b.consolidatedInvoice?.finalAmountINR || b.invoice?.totalAmount || 0,
-          status: (b.consolidatedInvoice?.paymentStatus || b.invoice?.status || 'PAID').toUpperCase(),
-          paymentMethod: b.consolidatedInvoice?.paymentMethod || 'Institutional Invoice / NEFT',
-          unitPriceINR: b.consolidatedInvoice?.unitPriceINR || (b.consolidatedInvoice?.subtotalINR ? Math.round(b.consolidatedInvoice.subtotalINR / (b.validCount || 1)) : 3500),
+          invoiceNumber:
+            b.consolidatedInvoice?.invoiceNumber ||
+            b.invoice?.invoiceNumber ||
+            `INV-${(b.jobId || b._id).toString().slice(-6).toUpperCase()}`,
+          invoiceDate:
+            b.consolidatedInvoice?.generatedAt || b.invoice?.invoiceDate || b.createdAt,
+          subtotal,
+          discountAmount,
+          slabDiscountPercent: b.consolidatedInvoice?.slabDiscountPercent || 0,
+          slabDiscountINR: b.consolidatedInvoice?.slabDiscountINR || 0,
+          couponCode: b.consolidatedInvoice?.couponCode || b.couponCode || '',
+          couponDiscountINR: b.consolidatedInvoice?.couponDiscountINR || 0,
+          taxAmount: 0,
+          totalAmount,
+          status: (b.consolidatedInvoice?.paymentStatus || b.invoice?.paymentStatus || b.invoice?.status || 'PAID').toUpperCase(),
+          paymentMethod:
+            b.consolidatedInvoice?.paymentMethod ||
+            b.invoice?.paymentMethod ||
+            'Razorpay Online Gateway',
+          unitPriceINR,
         },
         plan: {
-          code: b.planCode || 'NFI-INSTITUTIONAL',
-          name: b.planName || 'Institutional Universal Access Pass',
+          code: b.planCode || b.plan?.planId || 'NFI-INSTITUTIONAL',
+          name: b.planName || b.plan?.name || 'Institutional Universal Access Pass',
           tier: b.tier || 'Institutional',
         },
         status: (b.status || 'COMPLETED').toUpperCase(),
@@ -478,11 +577,14 @@ export const institutionalSubscriptionService = {
    */
   getInstitutionMaster: async ({ search = '', stakeholderType = 'ALL' }) => {
     const match = {
-      userType: { $in: ['UNIVERSITIES_COLLEGES', 'INDUSTRY'] },
+      userType: {
+        $in: ['UNIVERSITIES_COLLEGES', 'INDUSTRY', 'HOSPITALS', 'HOSPITAL', 'RETAIL_PHARMACIST'],
+      },
     };
 
     if (stakeholderType && stakeholderType !== 'ALL') {
-      match.userType = stakeholderType;
+      match.userType =
+        stakeholderType === 'HOSPITALS' ? { $in: ['HOSPITALS', 'HOSPITAL'] } : stakeholderType;
     }
 
     if (search && search.trim()) {
