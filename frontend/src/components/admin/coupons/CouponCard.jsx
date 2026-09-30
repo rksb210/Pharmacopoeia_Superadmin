@@ -34,10 +34,10 @@ export const CouponCard = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const usagePercent =
-    coupon.usageLimit > 0
-      ? Math.min(100, Math.round((coupon.usageCount / coupon.usageLimit) * 100))
-      : null;
+  // const usagePercent =
+  //   coupon.usageLimit > 0
+  //     ? Math.min(100, Math.round((coupon.usageCount / coupon.usageLimit) * 100))
+  //     : null;
 
   return (
     <div
@@ -159,7 +159,7 @@ export const CouponCard = ({
         </div>
 
         {/* Usage Limit Progress Bar */}
-        {coupon.usageLimit > 0 && (
+        {/* {coupon.usageLimit > 0 && (
           <div className="space-y-1 pt-1">
             <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
               <span>Redemptions</span>
@@ -180,7 +180,7 @@ export const CouponCard = ({
               />
             </div>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Footer & Actions */}

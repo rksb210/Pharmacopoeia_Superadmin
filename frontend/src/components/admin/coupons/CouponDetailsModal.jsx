@@ -135,7 +135,7 @@ export const CouponDetailsModal = ({
         </div>
 
         {/* Quick Stats Metric Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-center min-w-0 overflow-hidden">
             <span className="text-[10px] font-bold text-[#284661] uppercase block truncate">
               Total Redemptions
@@ -143,14 +143,14 @@ export const CouponDetailsModal = ({
             <span className="text-lg font-black text-slate-900 block truncate">{c.usageCount || 0}</span>
           </div>
 
-          <div className="p-3 bg-amber-50/70 border border-amber-100 rounded-xl text-center min-w-0 overflow-hidden">
+          {/* <div className="p-3 bg-amber-50/70 border border-amber-100 rounded-xl text-center min-w-0 overflow-hidden">
             <span className="text-[10px] font-bold text-amber-700 uppercase block truncate">
               Remaining Quota
             </span>
             <span className="text-lg font-black text-slate-900 block truncate">
               {c.usageLimit > 0 ? Math.max(0, c.usageLimit - c.usageCount) : 'Unlimited'}
             </span>
-          </div>
+          </div> */}
 
           <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl text-center min-w-0 overflow-hidden">
             <span className="text-[10px] font-bold text-emerald-700 uppercase block truncate">
@@ -191,7 +191,7 @@ export const CouponDetailsModal = ({
         {/* Tab 1: Overview */}
         {activeTab === 'overview' && (
           <div className="space-y-3.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div className="p-3 bg-white border border-slate-200/80 rounded-xl space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">
                   Validity Window
@@ -202,12 +202,12 @@ export const CouponDetailsModal = ({
                 </p>
               </div>
 
-              <div className="p-3 bg-white border border-slate-200/80 rounded-xl space-y-1">
+              {/* <div className="p-3 bg-white border border-slate-200/80 rounded-xl space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">
                   Per-User Redemption Limit
                 </span>
                 <p className="font-bold text-slate-900">{c.perUserLimit || 1} time(s) per account</p>
-              </div>
+              </div> */}
             </div>
 
             <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">

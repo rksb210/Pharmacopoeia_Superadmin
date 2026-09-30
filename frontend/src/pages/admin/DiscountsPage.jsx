@@ -66,6 +66,7 @@ export const DiscountsPage = () => {
   const [stats, setStats] = useState({
     totalCoupons: 0,
     activeCoupons: 0,
+    expiringSoon: 0,
     expiredOrInactive: 0,
     totalRedemptions: 0,
     totalDiscountSavedINR: 0,
@@ -218,11 +219,11 @@ export const DiscountsPage = () => {
           ? val.join(', ')
           : 'All',
     },
-    {
-      header: 'Usage Progress',
-      key: 'usageCount',
-      format: (val, item) => `${val || 0} / ${item.usageLimit > 0 ? item.usageLimit : 'Unlimited'}`,
-    },
+    // {
+    //   header: 'Usage Progress',
+    //   key: 'usageCount',
+    //   format: (val, item) => `${val || 0} / ${item.usageLimit > 0 ? item.usageLimit : 'Unlimited'}`,
+    // },
     {
       header: 'Valid From',
       key: 'startDate',
@@ -362,7 +363,7 @@ export const DiscountsPage = () => {
           {[
             { id: 'all', label: 'All Vouchers', count: stats.totalCoupons },
             { id: 'active', label: 'Active Codes', count: stats.activeCoupons },
-            { id: 'expiring_soon', label: 'Expiring Soon' },
+            { id: 'expiring_soon', label: 'Expiring Soon', count: stats.expiringSoon },
             { id: 'inactive', label: 'Inactive / Expired', count: stats.expiredOrInactive },
           ].map((tab) => (
             <button
@@ -511,7 +512,7 @@ export const DiscountsPage = () => {
                 <TableHead>Code &amp; Campaign</TableHead>
                 <TableHead>Discount Value</TableHead>
                 <TableHead>Target Users</TableHead>
-                <TableHead>Usage Progress</TableHead>
+                {/* <TableHead>Usage Progress</TableHead> */}
                 <TableHead>Expiration Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -547,11 +548,11 @@ export const DiscountsPage = () => {
                     </span>
                   </TableCell>
 
-                  <TableCell>
+                  {/* <TableCell>
                     <span className="text-xs text-slate-700 font-semibold">
                       {c.usageCount} / {c.usageLimit > 0 ? c.usageLimit : '∞'}
                     </span>
-                  </TableCell>
+                  </TableCell> */}
 
                   <TableCell>
                     <span className="text-xs text-slate-600">
@@ -564,22 +565,10 @@ export const DiscountsPage = () => {
                       <button
                         type="button"
                         onClick={() => handleToggleStatus(c)}
-                        className={`
-                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer
-                          ${
-                            c.isActive
-                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                              : 'bg-red-50 text-red-600 hover:bg-red-100'
-                          }
-                        `}
+                        className="cursor-pointer transition-transform hover:scale-105"
                         title="Click to toggle status"
                       >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            c.isActive ? 'bg-emerald-500' : 'bg-red-500'
-                          }`}
-                        />
-                        <span>{c.isActive ? 'Active' : 'Inactive'}</span>
+                        <CouponStatusBadge coupon={c} />
                       </button>
                     ) : (
                       <CouponStatusBadge coupon={c} />
