@@ -37,6 +37,14 @@ import AuditStatusBadge from '../../components/admin/audit/AuditStatusBadge';
 import AuditModuleBadge from '../../components/admin/audit/AuditModuleBadge';
 import AuditDetailsModal from '../../components/admin/audit/AuditDetailsModal';
 import ExportDropdown from '../../components/admin/common/ExportDropdown';
+import ReportDateRangePicker from '../../components/admin/reports/ReportDateRangePicker';
+
+const AUDIT_DATE_PRESETS = [
+  { id: 'all_time', label: 'All Time' },
+  { id: 'today', label: 'Today' },
+  { id: '7d', label: 'Last 7 Days' },
+  { id: '30d', label: 'Last 30 Days' },
+];
 
 const MODULES = [
   { id: 'all', label: 'All Modules' },
@@ -44,19 +52,14 @@ const MODULES = [
   { id: 'ADMINS', label: 'Staff & Admins' },
   { id: 'ROLES', label: 'Roles & Permissions' },
   { id: 'SUBSCRIBERS', label: 'Subscribers & Users' },
-  { id: 'SUBSCRIPTIONS', label: 'Subscriptions' },
-  { id: 'PLANS', label: 'Plans & Pricing' },
-  { id: 'COUPONS', label: 'Coupons & Discounts' },
+  { id: 'SUBSCRIPTIONS', label: 'Subscriptions & Passes' },
+  { id: 'BULK_SUBSCRIPTIONS', label: 'Bulk Institutional Rosters' },
   { id: 'ORDERS', label: 'Orders & Payments' },
-  { id: 'NOTIFICATIONS', label: 'Notifications' },
-  { id: 'FEEDBACK', label: 'Feedback & Comments' },
-  { id: 'CRM', label: 'CRM & Marquee Alerts' },
-  { id: 'DIKSHA', label: 'DIKSHA Portal' },
-  { id: 'DEPARTMENTS', label: 'Departments Master' },
-  { id: 'DESIGNATIONS', label: 'Designations Master' },
-  { id: 'BULK_SUBSCRIPTIONS', label: 'Bulk Subscriptions' },
+  { id: 'PLANS', label: 'Plans & Pricing' },
+  { id: 'COUPONS', label: 'Coupons & Concessions' },
   { id: 'CONTENT', label: 'Monographs & Content' },
-  { id: 'SYSTEM', label: 'System & Config' },
+  { id: 'CRM', label: 'CRM & Marquee Alerts' },
+  { id: 'SYSTEM', label: 'System Settings & Config' },
 ];
 
 export const AuditLogsPage = () => {
@@ -75,6 +78,7 @@ export const AuditLogsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModule, setSelectedModule] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [activePreset, setActivePreset] = useState('all_time');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -82,6 +86,29 @@ export const AuditLogsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+
+  // Handle Date Presets
+  const handlePresetSelect = (presetId) => {
+    setActivePreset(presetId);
+    setCurrentPage(1);
+    const now = new Date();
+    let start = new Date();
+
+    if (presetId === 'today') {
+      start.setHours(0, 0, 0, 0);
+    } else if (presetId === '7d') {
+      start.setDate(now.getDate() - 7);
+    } else if (presetId === '30d') {
+      start.setDate(now.getDate() - 30);
+    } else if (presetId === 'all_time') {
+      setStartDate('');
+      setEndDate('');
+      return;
+    }
+
+    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(now.toISOString().split('T')[0]);
+  };
 
   // Modals
   const [selectedLog, setSelectedLog] = useState(null);
@@ -251,9 +278,28 @@ export const AuditLogsPage = () => {
         />
       </div>
 
+      {/* Date Presets & Custom Filter */}
+      <ReportDateRangePicker
+        presets={AUDIT_DATE_PRESETS}
+        activePreset={activePreset}
+        onSelectPreset={handlePresetSelect}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={(val) => {
+          setActivePreset('custom');
+          setStartDate(val);
+          setCurrentPage(1);
+        }}
+        onEndDateChange={(val) => {
+          setActivePreset('custom');
+          setEndDate(val);
+          setCurrentPage(1);
+        }}
+      />
+
       {/* Audit Logs Table with Full Pagination & Filters */}
       <AdminTableWrapper
-        title="System Events & Operations Ledger"
+        title="System Events &amp; Operations Ledger"
         subtitle={`Showing page ${currentPage} of ${totalPages} (${totalItems} total events)`}
         searchQuery={searchQuery}
         onSearchChange={(val) => {
@@ -262,7 +308,7 @@ export const AuditLogsPage = () => {
         }}
         searchPlaceholder="Search action, email, entity ID, IP..."
         filters={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             {/* Module Filter */}
             <select
               value={selectedModule}
@@ -293,31 +339,6 @@ export const AuditLogsPage = () => {
               <option value="FAILURE">Failures / Errors</option>
               <option value="WARNING">Warnings</option>
             </select>
-
-            {/* Date Range Inputs */}
-            <div className="flex items-center gap-1">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="h-9 px-2 bg-slate-50/80 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120]"
-                title="Start Date"
-              />
-              <span className="text-slate-400 text-xs">-</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="h-9 px-2 bg-slate-50/80 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120]"
-                title="End Date"
-              />
-            </div>
           </div>
         }
         loading={loading}

@@ -2,14 +2,15 @@ import React from 'react';
 import { Calendar } from 'lucide-react';
 
 const PRESETS = [
+  { id: 'all_time', label: 'All Time' },
   { id: '7d', label: 'Last 7 Days' },
   { id: '30d', label: 'Last 30 Days' },
   { id: '90d', label: 'Last 90 Days' },
   { id: 'this_year', label: 'This Year' },
-  { id: 'all_time', label: 'All Time' },
 ];
 
 export const ReportDateRangePicker = ({
+  presets = PRESETS,
   activePreset,
   onSelectPreset,
   startDate,
@@ -21,7 +22,7 @@ export const ReportDateRangePicker = ({
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 bg-white border border-slate-200/80 rounded-2xl shadow-2xs">
       {/* Preset Pills */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
-        {PRESETS.map((p) => (
+        {presets.map((p) => (
           <button
             key={p.id}
             type="button"

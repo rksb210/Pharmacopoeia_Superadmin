@@ -48,6 +48,7 @@ export const configService = {
       announcementActive: config.maintenanceAndGeneral?.announcementActive,
       supportEmail: config.notificationsAndComms?.supportEmail,
       supportHotline: config.notificationsAndComms?.supportHotline,
+      sessionTimeoutMinutes: config.securityAndSessions?.sessionTimeoutMinutes || 120,
     };
   },
 

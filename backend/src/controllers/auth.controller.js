@@ -3,6 +3,7 @@ import User from '../models/user.model.js';
 import Subscriber from '../models/subscriber.model.js';
 import UserType from '../models/userType.model.js';
 import SignupSession from '../models/signupSession.model.js';
+import SystemConfig from '../models/systemConfig.model.js';
 import { verificationService } from '../services/verification.service.js';
 import {
   USER_TYPES,
@@ -133,12 +134,17 @@ export const login = async (req, res, next) => {
     const isMatch = await user.comparePassword(rawPassword);
     if (!isMatch) {
       if (!isSubscriber) {
+        // Fetch dynamic security configuration
+        const config = await SystemConfig.findOne({ key: 'NFI_SYSTEM_CONFIG' }).lean();
+        const maxAttempts = config?.securityAndSessions?.maxLoginAttempts || 5;
+        const lockoutMinutes = config?.securityAndSessions?.lockoutDurationMinutes || 15;
+
         // Increment failed attempts for security
         user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
         
-        // Lock account for 15 minutes after 5 consecutive failed attempts
-        if (user.failedLoginAttempts >= 5) {
-          user.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
+        // Lock account if failed attempts exceed configured threshold
+        if (user.failedLoginAttempts >= maxAttempts) {
+          user.lockUntil = new Date(Date.now() + lockoutMinutes * 60 * 1000);
           await user.save({ validateBeforeSave: false });
           await auditService.log(req, {
             action: 'ACCOUNT_LOCKED',
@@ -147,12 +153,12 @@ export const login = async (req, res, next) => {
             entityId: user._id,
             user: { _id: user._id, name: user.name, email: user.email, role: user.role },
             status: 'FAILURE',
-            details: `Account temporarily locked for 15 minutes after 5 consecutive failed login attempts (${user.email}).`,
+            details: `Account temporarily locked for ${lockoutMinutes} minutes after ${user.failedLoginAttempts} consecutive failed login attempts (${user.email}).`,
             errorMessage: 'Too many failed login attempts.',
           });
           return res.status(423).json({
             success: false,
-            message: 'Too many failed login attempts. Account temporarily locked for 15 minutes.',
+            message: `Too many failed login attempts. Account temporarily locked for ${lockoutMinutes} minutes.`,
           });
         }
 
@@ -238,10 +244,14 @@ export const login = async (req, res, next) => {
       details: `${targetEntity} ${user.name} (${user.email}) logged in successfully as ${role}.`,
     });
 
+    const config = await SystemConfig.findOne({ key: 'NFI_SYSTEM_CONFIG' }).lean();
+    const sessionTimeoutMinutes = config?.securityAndSessions?.sessionTimeoutMinutes || 120;
+
     return res.status(200).json({
       success: true,
       message: 'Login successful',
       token,
+      sessionTimeoutMinutes,
       user: {
         id: user._id,
         name: user.name,
@@ -812,9 +822,12 @@ export const getMe = async (req, res, next) => {
     }
 
     const role = isSubscriber ? 'subscriber' : user.role;
+    const config = await SystemConfig.findOne({ key: 'NFI_SYSTEM_CONFIG' }).lean();
+    const sessionTimeoutMinutes = config?.securityAndSessions?.sessionTimeoutMinutes || 120;
 
     return res.status(200).json({
       success: true,
+      sessionTimeoutMinutes,
       user: {
         id: user._id,
         name: user.name,

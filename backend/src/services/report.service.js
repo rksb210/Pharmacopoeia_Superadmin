@@ -33,8 +33,6 @@ export const reportService = {
       activeSubs,
       totalOrders,
       grossRevenueAgg,
-      totalTickets,
-      resolvedTickets,
     ] = await Promise.all([
       Subscriber.countDocuments(dateQuery),
       Subscription.countDocuments({ status: 'active' }),
@@ -43,27 +41,25 @@ export const reportService = {
         { $match: { ...dateQuery, orderStatus: 'completed' } },
         { $group: { _id: null, total: { $sum: '$pricing.totalAmount' } } },
       ]),
-      Feedback.countDocuments(dateQuery),
-      Feedback.countDocuments({ ...dateQuery, status: 'completed' }),
     ]);
 
     const grossRevenueINR = grossRevenueAgg[0]?.total || 0;
-    const ticketResolutionRate =
-      totalTickets > 0 ? Math.round((resolvedTickets / totalTickets) * 100) : 100;
+    const unsubscribedUsers = Math.max(0, totalUsers - activeSubs);
 
     return {
       totalUsers,
       activeSubscriptions: activeSubs,
+      unsubscribedUsers,
       totalOrders,
       grossRevenueINR,
-      totalTickets,
-      resolvedTickets,
-      ticketResolutionRate,
+      totalTickets: 0,
+      resolvedTickets: 0,
+      ticketResolutionRate: 100,
     };
   },
 
   /**
-   * 2. User & Subscriber Analytics (100% Dynamic Aggregations)
+   * 2. User & Stakeholder Analytics (100% Dynamic Aggregations)
    */
   getUserAnalytics: async ({ startDate, endDate } = {}) => {
     const dateQuery = reportService.buildDateQuery(startDate, endDate);
@@ -71,7 +67,6 @@ export const reportService = {
     const [
       totalUsers,
       activePaidSubscribers,
-      trialSubscribers,
       activeAccounts,
       inactiveAccounts,
       userTypeBreakdown,
@@ -81,11 +76,6 @@ export const reportService = {
       Subscriber.countDocuments({
         ...dateQuery,
         'subscription.status': 'active',
-        'subscription.isTrial': { $ne: true },
-      }),
-      Subscriber.countDocuments({
-        ...dateQuery,
-        $or: [{ 'subscription.status': 'trial' }, { 'subscription.isTrial': true }],
       }),
       Subscriber.countDocuments({ ...dateQuery, isActive: true }),
       Subscriber.countDocuments({ ...dateQuery, isActive: false }),
@@ -104,6 +94,8 @@ export const reportService = {
         { $sort: { _id: 1 } },
       ]),
     ]);
+
+    const unsubscribedUsers = Math.max(0, totalUsers - activePaidSubscribers);
 
     // Build real timeseries trend map from database
     const trendsMap = new Map();
@@ -152,16 +144,17 @@ export const reportService = {
     return {
       totalUsers,
       activePaidSubscribers,
-      trialSubscribers,
+      unsubscribedUsers,
       activeAccounts,
       inactiveAccounts,
       typeDistribution,
       trends,
+      trialSubscribers: 0,
     };
   },
 
   /**
-   * 3. Subscription & Pass Analytics (100% Dynamic Aggregations)
+   * 3. Subscription & Pass Analytics (NFI Format Breakdown: Online, Physical, Institutional)
    */
   getSubscriptionAnalytics: async ({ startDate, endDate } = {}) => {
     const dateQuery = reportService.buildDateQuery(startDate, endDate);
@@ -169,28 +162,39 @@ export const reportService = {
     const [
       totalSubs,
       activeSubs,
-      trialSubs,
-      discountedSubs,
-      cancelledSubs,
-      typeBreakdown,
+      onlineSubs,
+      physicalSubs,
+      institutionalSubs,
       planBreakdown,
       issuanceTrendsAgg,
     ] = await Promise.all([
       Subscription.countDocuments(dateQuery),
       Subscription.countDocuments({ ...dateQuery, status: 'active' }),
-      Subscription.countDocuments({ ...dateQuery, type: 'trial' }),
       Subscription.countDocuments({
         ...dateQuery,
-        $or: [{ type: 'discounted' }, { discountPercent: { $gt: 0 } }],
+        status: 'active',
+        $or: [
+          { planName: { $regex: /online|digital/i } },
+          { planCode: { $regex: /online|individual/i } },
+        ],
       }),
       Subscription.countDocuments({
         ...dateQuery,
-        $or: [{ status: 'cancelled' }, { status: 'expired' }],
+        status: 'active',
+        $or: [
+          { planName: { $regex: /physical|printed|book/i } },
+          { planCode: 'NFI-2026' },
+        ],
       }),
-      Subscription.aggregate([
-        { $match: dateQuery },
-        { $group: { _id: '$type', count: { $sum: 1 } } },
-      ]),
+      Subscription.countDocuments({
+        ...dateQuery,
+        status: 'active',
+        $or: [
+          { tier: 'INSTITUTIONAL' },
+          { type: 'bulk' },
+          { planName: { $regex: /bulk|institutional|campus/i } },
+        ],
+      }),
       Subscription.aggregate([
         { $match: dateQuery },
         { $group: { _id: '$planName', count: { $sum: 1 } } },
@@ -235,31 +239,33 @@ export const reportService = {
       trends.push({ label: 'Today', count: totalSubs });
     }
 
-    const typeDistribution = {
-      paid: 0,
-      trial: 0,
-      discounted: 0,
-      cancelled: cancelledSubs,
+    const formatDistribution = {
+      digitalOnline: onlineSubs,
+      physicalBook: physicalSubs,
+      institutionalRoster: institutionalSubs,
     };
-    typeBreakdown.forEach((t) => {
-      const key = (t._id || '').toLowerCase();
-      if (typeDistribution[key] !== undefined) {
-        typeDistribution[key] = t.count;
-      }
-    });
 
     return {
       totalSubscriptions: totalSubs,
       activeSubscriptions: activeSubs,
-      trialSubscriptions: trialSubs,
-      discountedSubscriptions: discountedSubs,
-      cancelledSubscriptions: cancelledSubs,
-      typeDistribution,
+      onlineSubscriptions: onlineSubs,
+      physicalSubscriptions: physicalSubs,
+      institutionalSubscriptions: institutionalSubs,
+      formatDistribution,
       planBreakdown: planBreakdown.map((p) => ({
-        label: p._id || 'Individual Plan',
+        label: p._id || 'Universal Access Pass',
         count: p.count,
       })),
       trends,
+      trialSubscriptions: 0,
+      discountedSubscriptions: 0,
+      cancelledSubscriptions: 0,
+      typeDistribution: {
+        paid: activeSubs,
+        trial: 0,
+        discounted: 0,
+        cancelled: 0,
+      },
     };
   },
 
@@ -319,7 +325,7 @@ export const reportService = {
       ]),
       BulkImport.find(dateQuery)
         .sort({ createdAt: -1 })
-        .limit(10)
+        .limit(200)
         .select('jobId institutionName planName totalRows validCount invalidCount status createdAt')
         .lean(),
     ]);
@@ -512,16 +518,15 @@ export const reportService = {
         [],
         ['Metric', 'Value'],
         ['Total Subscriptions Issued', data.totalSubscriptions],
-        ['Active Valid Passes', data.activeSubscriptions],
-        ['Free Trial Passes', data.trialSubscriptions],
-        ['Discounted Concession Passes', data.discountedSubscriptions],
-        ['Cancelled / Expired Passes', data.cancelledSubscriptions],
+        ['Active Valid Passes (till 2031)', data.activeSubscriptions],
+        ['Digital / Online Passes', data.onlineSubscriptions || 0],
+        ['Physical Book Orders', data.physicalSubscriptions || 0],
+        ['Institutional / Bulk Passes', data.institutionalSubscriptions || 0],
         [],
-        ['Subscription Type Breakdown', 'Count'],
-        ['Paid', data.typeDistribution.paid || 0],
-        ['Free Trial', data.typeDistribution.trial || 0],
-        ['Discounted', data.typeDistribution.discounted || 0],
-        ['Cancelled', data.typeDistribution.cancelled || 0],
+        ['Pass Format Breakdown', 'Count'],
+        ['Digital Online Access', data.formatDistribution?.digitalOnline || 0],
+        ['Printed Physical Book', data.formatDistribution?.physicalBook || 0],
+        ['Institutional / Bulk Roster', data.formatDistribution?.institutionalRoster || 0],
         [],
         ['--- ISSUED PASSES & SUBSCRIPTIONS REGISTER ---'],
         ['Subscription ID', 'Subscriber Name', 'Email Address', 'Plan Name', 'Tier', 'Type', 'Amount (INR)', 'Final Amount (INR)', 'Status', 'Start Date', 'Expiry Date'],
@@ -674,11 +679,10 @@ export const reportService = {
         [],
         ['Metric', 'Value'],
         ['Total Registered Users', data.totalUsers],
-        ['Active Subscriptions', data.activeSubscriptions],
+        ['Active Subscriptions (till 2031)', data.activeSubscriptions],
+        ['Unsubscribed Users (Prospects)', data.unsubscribedUsers || 0],
+        ['Completed Orders', data.totalOrders],
         ['Gross Revenue Realized (INR)', data.grossRevenueINR],
-        ['Total Orders', data.totalOrders],
-        ['Feedback Tickets', data.totalTickets],
-        ['Ticket Resolution Rate', `${data.ticketResolutionRate}%`],
       ]);
       XLSX.utils.book_append_sheet(workbook, sheet, 'Executive Overview');
     }

@@ -28,26 +28,11 @@ import configService from '../../services/config.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
 
 const TABS = [
-  { id: 'subscription', label: '1. Subscriptions & BRD', icon: CreditCard },
-  // { id: 'userRegistration', label: '2. User Registration', icon: Users },
-  { id: 'trial', label: '2. Trial Licenses', icon: Sparkles },
-  // { id: 'contentAndSearch', label: '3. Content & Search', icon: Search },
-  { id: 'securityAndSessions', label: '3. Security & Sessions', icon: Lock },
-  { id: 'notificationsAndComms', label: '4. Notifications & Comms', icon: Bell },
-  { id: 'maintenanceAndGeneral', label: '5. Maintenance & Banners', icon: AlertTriangle },
-  { id: 'history', label: '6. Version History & Rollback', icon: History },
-];
-
-const ALL_USER_TYPES = [
-  'DOCTOR',
-  'STUDENT',
-  'NURSE',
-  'PHARMACIST',
-  'OTHERS',
-  'INDUSTRY',
-  'HOSPITALS',
-  'UNIVERSITIES_COLLEGES',
-  'RETAIL_PHARMACIST',
+  { id: 'subscription', label: '1. Edition & Expiry Horizon', icon: CreditCard },
+  { id: 'securityAndSessions', label: '2. Security & Sessions', icon: Lock },
+  { id: 'notificationsAndComms', label: '3. Support & Communications', icon: Bell },
+  { id: 'maintenanceAndGeneral', label: '4. Portal Maintenance', icon: AlertTriangle },
+  { id: 'history', label: '5. Version History & Rollback', icon: History },
 ];
 
 export const SettingsPage = () => {
@@ -63,47 +48,21 @@ export const SettingsPage = () => {
   const [formData, setFormData] = useState({
     subscription: {
       fixedExpiryDate: '2031-12-31',
-      renewalWindowDays: 90,
-      gracePeriodDays: 15,
-      allowEarlyRenewals: true,
-    },
-    trial: {
-      defaultTrialDays: 14,
-      maxTrialsPerUser: 1,
-      allowTrialExtension: false,
-    },
-    userRegistration: {
-      allowPublicRegistration: true,
-      requireCredentialVerification: true,
-      allowedUserTypes: ['DOCTOR', 'PHARMACIST', 'STUDENT', 'NURSE', 'INDUSTRY', 'OTHERS'],
-      autoApproveStudents: false,
-    },
-    contentAndSearch: {
-      enablePublicFeedback: true,
-      enableMonographWatermarking: true,
-      enableFuzzySearch: true,
-      maxSearchResults: 50,
-      monographReviewStages: 2,
     },
     securityAndSessions: {
       maxLoginAttempts: 5,
       lockoutDurationMinutes: 15,
       sessionTimeoutMinutes: 120,
-      requireMFAForAdmins: true,
-      passwordExpiryDays: 90,
     },
     notificationsAndComms: {
       enableInAppNotifications: true,
       enableEmailDispatches: true,
-      enableSmsAlerts: false,
       supportEmail: 'support@nfi.gov.in',
       supportHotline: '+91-120-2783400',
     },
     maintenanceAndGeneral: {
       maintenanceMode: false,
       maintenanceMessage: 'Formulary portal is undergoing scheduled maintenance.',
-      announcementBanner: 'National Formulary of India (NFI) 7th Edition 2026 digital monographs are now active.',
-      announcementActive: true,
     },
   });
 
@@ -120,49 +79,31 @@ export const SettingsPage = () => {
             fixedExpiryDate: c.subscription?.fixedExpiryDate
               ? new Date(c.subscription.fixedExpiryDate).toISOString().split('T')[0]
               : '2031-12-31',
-            renewalWindowDays: c.subscription?.renewalWindowDays ?? 90,
-            gracePeriodDays: c.subscription?.gracePeriodDays ?? 15,
-            allowEarlyRenewals: c.subscription?.allowEarlyRenewals ?? true,
-          },
-          trial: {
-            defaultTrialDays: c.trial?.defaultTrialDays ?? 14,
-            maxTrialsPerUser: c.trial?.maxTrialsPerUser ?? 1,
-            allowTrialExtension: c.trial?.allowTrialExtension ?? false,
-          },
-          userRegistration: {
-            allowPublicRegistration: c.userRegistration?.allowPublicRegistration ?? true,
-            requireCredentialVerification: c.userRegistration?.requireCredentialVerification ?? true,
-            allowedUserTypes: c.userRegistration?.allowedUserTypes || ALL_USER_TYPES,
-            autoApproveStudents: c.userRegistration?.autoApproveStudents ?? false,
-          },
-          contentAndSearch: {
-            enablePublicFeedback: c.contentAndSearch?.enablePublicFeedback ?? true,
-            enableMonographWatermarking: c.contentAndSearch?.enableMonographWatermarking ?? true,
-            enableFuzzySearch: c.contentAndSearch?.enableFuzzySearch ?? true,
-            maxSearchResults: c.contentAndSearch?.maxSearchResults ?? 50,
-            monographReviewStages: c.contentAndSearch?.monographReviewStages ?? 2,
           },
           securityAndSessions: {
             maxLoginAttempts: c.securityAndSessions?.maxLoginAttempts ?? 5,
             lockoutDurationMinutes: c.securityAndSessions?.lockoutDurationMinutes ?? 15,
             sessionTimeoutMinutes: c.securityAndSessions?.sessionTimeoutMinutes ?? 120,
-            requireMFAForAdmins: c.securityAndSessions?.requireMFAForAdmins ?? true,
-            passwordExpiryDays: c.securityAndSessions?.passwordExpiryDays ?? 90,
           },
           notificationsAndComms: {
             enableInAppNotifications: c.notificationsAndComms?.enableInAppNotifications ?? true,
             enableEmailDispatches: c.notificationsAndComms?.enableEmailDispatches ?? true,
-            enableSmsAlerts: c.notificationsAndComms?.enableSmsAlerts ?? false,
             supportEmail: c.notificationsAndComms?.supportEmail || 'support@nfi.gov.in',
             supportHotline: c.notificationsAndComms?.supportHotline || '+91-120-2783400',
           },
           maintenanceAndGeneral: {
             maintenanceMode: c.maintenanceAndGeneral?.maintenanceMode ?? false,
-            maintenanceMessage: c.maintenanceAndGeneral?.maintenanceMessage || '',
-            announcementBanner: c.maintenanceAndGeneral?.announcementBanner || '',
-            announcementActive: c.maintenanceAndGeneral?.announcementActive ?? false,
+            maintenanceMessage: c.maintenanceAndGeneral?.maintenanceMessage || 'Formulary portal is undergoing scheduled maintenance.',
           },
         });
+        if (c.securityAndSessions?.sessionTimeoutMinutes) {
+          localStorage.setItem('nfi_session_timeout_minutes', String(c.securityAndSessions.sessionTimeoutMinutes));
+          window.dispatchEvent(
+            new CustomEvent('nfi_config_updated', {
+              detail: { sessionTimeoutMinutes: c.securityAndSessions.sessionTimeoutMinutes },
+            })
+          );
+        }
       }
     } catch (err) {
       setError(err.message || 'Failed to load application configuration.');
@@ -191,6 +132,14 @@ export const SettingsPage = () => {
       if (res && res.config) {
         setConfig(res.config);
         setChangeNote('');
+        if (res.config.securityAndSessions?.sessionTimeoutMinutes) {
+          localStorage.setItem('nfi_session_timeout_minutes', String(res.config.securityAndSessions.sessionTimeoutMinutes));
+          window.dispatchEvent(
+            new CustomEvent('nfi_config_updated', {
+              detail: { sessionTimeoutMinutes: res.config.securityAndSessions.sessionTimeoutMinutes },
+            })
+          );
+        }
         showFeedback(`Configuration saved successfully (Version v${res.config.version}).`);
       }
     } catch (err) {
@@ -218,34 +167,12 @@ export const SettingsPage = () => {
     }
   };
 
-  const handleUserTypeToggle = (type) => {
-    const current = formData.userRegistration.allowedUserTypes || [];
-    if (current.includes(type)) {
-      if (current.length === 1) return; // Maintain at least 1
-      setFormData({
-        ...formData,
-        userRegistration: {
-          ...formData.userRegistration,
-          allowedUserTypes: current.filter((t) => t !== type),
-        },
-      });
-    } else {
-      setFormData({
-        ...formData,
-        userRegistration: {
-          ...formData.userRegistration,
-          allowedUserTypes: [...current, type],
-        },
-      });
-    }
-  };
-
   return (
     <PageContainer>
       {/* Header */}
       <PageHeader
         title="Application Configuration &amp; Settings"
-        subtitle="Centralized management of dynamic BRD subscription rules, user cohorts, trial parameters, search indexing, security sessions, and maintenance banners."
+        subtitle="Centralized management of NFI edition sunset horizon, staff session security, support channels, and portal maintenance."
       >
         {config && (
           <Badge variant="outline" className="bg-[#284661] text-white border-transparent text-xs font-bold py-1 px-3">
@@ -326,14 +253,14 @@ export const SettingsPage = () => {
       ) : (
         <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-2xs font-sans text-xs select-none space-y-6">
           {/* ========================================================= */}
-          {/* TAB 1: SUBSCRIPTIONS & BRD VALIDITY */}
+          {/* TAB 1: EDITION HORIZON & EXPIRY */}
           {/* ========================================================= */}
           {activeTab === 'subscription' && (
             <div className="space-y-4 max-w-2xl animate-in fade-in-0 duration-150">
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 space-y-1">
-                <span className="font-bold block">BRD Fixed Subscription Validity Policy</span>
+                <span className="font-bold block">NFI 7th Edition Fixed Validity Horizon Standard</span>
                 <p className="text-[11px] text-amber-800 leading-relaxed">
-                  As per Indian Pharmacopoeia platform rules, all standard commercial subscriptions remain valid until{' '}
+                  As per Indian Pharmacopoeia platform rules, all standard commercial subscriptions remain valid until the edition sunset horizon of{' '}
                   <strong className="font-bold text-amber-950 underline decoration-amber-400">
                     {formData.subscription.fixedExpiryDate
                       ? new Date(formData.subscription.fixedExpiryDate).toLocaleDateString('en-GB', {
@@ -343,13 +270,13 @@ export const SettingsPage = () => {
                         })
                       : '31 December 2031'}
                   </strong>{' '}
-                  irrespective of purchase date.
+                  irrespective of purchase or activation date.
                 </p>
               </div>
 
               <InputField
                 id="fixedExpiryDate"
-                label="BRD Fixed Expiration Date"
+                label="Fixed Expiration Date"
                 type="date"
                 value={formData.subscription.fixedExpiryDate}
                 onChange={(e) =>
@@ -358,291 +285,14 @@ export const SettingsPage = () => {
                     subscription: { ...formData.subscription, fixedExpiryDate: e.target.value },
                   })
                 }
-                helperText="Applies to all newly purchased formulary passes."
+                helperText="Standard edition horizon applied to all public and institutional subscribers."
                 required
               />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InputField
-                  id="renewalWindowDays"
-                  label="Renewal Window (Days before Expiry)"
-                  type="number"
-                  value={formData.subscription.renewalWindowDays}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      subscription: { ...formData.subscription, renewalWindowDays: Number(e.target.value) },
-                    })
-                  }
-                  required
-                />
-
-                <InputField
-                  id="gracePeriodDays"
-                  label="Grace Period (Days after Expiry)"
-                  type="number"
-                  value={formData.subscription.gracePeriodDays}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      subscription: { ...formData.subscription, gracePeriodDays: Number(e.target.value) },
-                    })
-                  }
-                  required
-                />
-              </div>
-
-              <label className="flex items-center gap-2 pt-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.subscription.allowEarlyRenewals}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      subscription: { ...formData.subscription, allowEarlyRenewals: e.target.checked },
-                    })
-                  }
-                  className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                />
-                <span className="font-bold text-slate-800">Allow Early Pass Renewals</span>
-              </label>
             </div>
           )}
 
           {/* ========================================================= */}
-          {/* TAB 2: USER REGISTRATION & COHORTS (Commented out) */}
-          {/* ========================================================= */}
-          {/* {activeTab === 'userRegistration' && (
-            <div className="space-y-4 max-w-2xl animate-in fade-in-0 duration-150">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.userRegistration.allowPublicRegistration}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      userRegistration: {
-                        ...formData.userRegistration,
-                        allowPublicRegistration: e.target.checked,
-                      },
-                    })
-                  }
-                  className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                />
-                <span className="font-bold text-slate-800">Allow Public Self-Registration</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.userRegistration.requireCredentialVerification}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      userRegistration: {
-                        ...formData.userRegistration,
-                        requireCredentialVerification: e.target.checked,
-                      },
-                    })
-                  }
-                  className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                />
-                <span className="font-bold text-slate-800">
-                  Enforce Mandatory Professional Credentials (Medical Reg No, APAAR ID, GSTIN)
-                </span>
-              </label>
-
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <span className="font-bold text-slate-900 block">Allowed Healthcare Categories</span>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {ALL_USER_TYPES.map((type) => {
-                    const isChecked = (formData.userRegistration.allowedUserTypes || []).includes(type);
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => handleUserTypeToggle(type)}
-                        className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all ${
-                          isChecked
-                            ? 'bg-blue-50 border-[#284661] text-[#284661]'
-                            : 'bg-slate-50 border-slate-200 text-slate-400'
-                        }`}
-                      >
-                        <span>
-                          {type === 'UNIVERSITIES_COLLEGES'
-                            ? 'UNIVERSITIES / COLLEGES'
-                            : type === 'OTHERS'
-                            ? 'OTHER HEALTH CARE PROFESSIONAL'
-                            : type.replace(/_/g, ' ')}
-                        </span>
-                        {isChecked && <CheckCircle2 className="w-3.5 h-3.5 text-[#284661]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )} */}
-
-          {/* ========================================================= */}
-          {/* TAB 3: TRIAL LICENSES */}
-          {/* ========================================================= */}
-          {activeTab === 'trial' && (
-            <div className="space-y-4 max-w-2xl animate-in fade-in-0 duration-150">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InputField
-                  id="defaultTrialDays"
-                  label="Default Trial Period (Days)"
-                  type="number"
-                  value={formData.trial.defaultTrialDays}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      trial: { ...formData.trial, defaultTrialDays: Number(e.target.value) },
-                    })
-                  }
-                  required
-                />
-
-                <InputField
-                  id="maxTrialsPerUser"
-                  label="Max Trials per Account"
-                  type="number"
-                  value={formData.trial.maxTrialsPerUser}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      trial: { ...formData.trial, maxTrialsPerUser: Number(e.target.value) },
-                    })
-                  }
-                  required
-                />
-              </div>
-
-              {/* <label className="flex items-center gap-2 pt-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.trial.allowTrialExtension}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      trial: { ...formData.trial, allowTrialExtension: e.target.checked },
-                    })
-                  }
-                  className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                />
-                <span className="font-bold text-slate-800">
-                  Allow Manual Trial Extensions by Administrative Reviewers
-                </span>
-              </label> */}
-            </div>
-          )}
-
-          {/* ========================================================= */}
-          {/* TAB 4: CONTENT & SEARCH (Commented out) */}
-          {/* ========================================================= */}
-          {/* {activeTab === 'contentAndSearch' && (
-            <div className="space-y-4 max-w-2xl animate-in fade-in-0 duration-150">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.contentAndSearch.enablePublicFeedback}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contentAndSearch: {
-                        ...formData.contentAndSearch,
-                        enablePublicFeedback: e.target.checked,
-                      },
-                    })
-                  }
-                  className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                />
-                <span className="font-bold text-slate-800">
-                  Enable Public Feedback &amp; Comments against Monographs
-                </span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.contentAndSearch.enableMonographWatermarking}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contentAndSearch: {
-                        ...formData.contentAndSearch,
-                        enableMonographWatermarking: e.target.checked,
-                      },
-                    })
-                  }
-                  className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                />
-                <span className="font-bold text-slate-800">
-                  Enforce Dynamic User Watermarking on PDF Exports &amp; Prints
-                </span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.contentAndSearch.enableFuzzySearch}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contentAndSearch: {
-                        ...formData.contentAndSearch,
-                        enableFuzzySearch: e.target.checked,
-                      },
-                    })
-                  }
-                  className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                />
-                <span className="font-bold text-slate-800">
-                  Enable Fuzzy Synonym Matching in Formulary Search
-                </span>
-              </label>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <InputField
-                  id="maxSearchResults"
-                  label="Max Search Results per Query"
-                  type="number"
-                  value={formData.contentAndSearch.maxSearchResults}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contentAndSearch: {
-                        ...formData.contentAndSearch,
-                        maxSearchResults: Number(e.target.value),
-                      },
-                    })
-                  }
-                  required
-                />
-
-                <InputField
-                  id="monographReviewStages"
-                  label="Mandatory Editorial Review Stages"
-                  type="number"
-                  value={formData.contentAndSearch.monographReviewStages}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contentAndSearch: {
-                        ...formData.contentAndSearch,
-                        monographReviewStages: Number(e.target.value),
-                      },
-                    })
-                  }
-                  required
-                />
-              </div>
-            </div>
-          )} */}
-
-          {/* ========================================================= */}
-          {/* TAB 5: SECURITY & SESSIONS */}
+          {/* TAB 2: SECURITY & SESSIONS */}
           {/* ========================================================= */}
           {activeTab === 'securityAndSessions' && (
             <div className="space-y-4 max-w-2xl animate-in fade-in-0 duration-150">
@@ -661,6 +311,7 @@ export const SettingsPage = () => {
                       },
                     })
                   }
+                  helperText="Protects against brute-force attacks."
                   required
                 />
 
@@ -678,6 +329,7 @@ export const SettingsPage = () => {
                       },
                     })
                   }
+                  helperText="Temporary lock period after failed attempts."
                   required
                 />
               </div>
@@ -697,51 +349,15 @@ export const SettingsPage = () => {
                       },
                     })
                   }
-                  required
-                />
-
-                <InputField
-                  id="passwordExpiryDays"
-                  label="Staff Password Expiry (Days)"
-                  type="number"
-                  value={formData.securityAndSessions.passwordExpiryDays}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      securityAndSessions: {
-                        ...formData.securityAndSessions,
-                        passwordExpiryDays: Number(e.target.value),
-                      },
-                    })
-                  }
+                  helperText="Automatic logout period for inactive staff sessions."
                   required
                 />
               </div>
-
-              <label className="flex items-center gap-2 pt-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.securityAndSessions.requireMFAForAdmins}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      securityAndSessions: {
-                        ...formData.securityAndSessions,
-                        requireMFAForAdmins: e.target.checked,
-                      },
-                    })
-                  }
-                  className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                />
-                <span className="font-bold text-slate-800">
-                  Enforce Mandatory Two-Factor Authentication (2FA) for Administrative Staff
-                </span>
-              </label>
             </div>
           )}
 
           {/* ========================================================= */}
-          {/* TAB 6: NOTIFICATIONS & COMMS */}
+          {/* TAB 3: SUPPORT & COMMUNICATIONS */}
           {/* ========================================================= */}
           {activeTab === 'notificationsAndComms' && (
             <div className="space-y-4 max-w-2xl animate-in fade-in-0 duration-150">
@@ -781,24 +397,6 @@ export const SettingsPage = () => {
                   />
                   <span className="font-bold text-slate-800">Enable Automated HTML Email Dispatches</span>
                 </label>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.notificationsAndComms.enableSmsAlerts}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        notificationsAndComms: {
-                          ...formData.notificationsAndComms,
-                          enableSmsAlerts: e.target.checked,
-                        },
-                      })
-                    }
-                    className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                  />
-                  <span className="font-bold text-slate-800">Enable SMS Gateway Alerts</span>
-                </label>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
@@ -816,12 +414,13 @@ export const SettingsPage = () => {
                       },
                     })
                   }
+                  helperText="Displayed to users on helpdesk &amp; invoices."
                   required
                 />
 
                 <InputField
                   id="supportHotline"
-                  label="Official Support Hotline"
+                  label="Official Support Helpline"
                   type="text"
                   value={formData.notificationsAndComms.supportHotline}
                   onChange={(e) =>
@@ -833,6 +432,7 @@ export const SettingsPage = () => {
                       },
                     })
                   }
+                  helperText="IPC helpline number for subscriber queries."
                   required
                 />
               </div>
@@ -840,7 +440,7 @@ export const SettingsPage = () => {
           )}
 
           {/* ========================================================= */}
-          {/* TAB 7: MAINTENANCE & BANNERS */}
+          {/* TAB 4: PORTAL MAINTENANCE */}
           {/* ========================================================= */}
           {activeTab === 'maintenanceAndGeneral' && (
             <div className="space-y-4 max-w-2xl animate-in fade-in-0 duration-150">
@@ -884,50 +484,20 @@ export const SettingsPage = () => {
                 )}
               </div>
 
-              <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-3">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.maintenanceAndGeneral.announcementActive}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        maintenanceAndGeneral: {
-                          ...formData.maintenanceAndGeneral,
-                          announcementActive: e.target.checked,
-                        },
-                      })
-                    }
-                    className="w-4 h-4 rounded border-slate-300 text-[#E76120] accent-[#E76120] cursor-pointer"
-                  />
-                  <span className="font-bold text-slate-800">Display Top Announcement Ticker Banner</span>
-                </label>
-
-                {formData.maintenanceAndGeneral.announcementActive && (
-                  <div className="space-y-1 pt-1">
-                    <label className="font-semibold text-slate-700 block">Banner Ticker Text</label>
-                    <textarea
-                      rows={2}
-                      value={formData.maintenanceAndGeneral.announcementBanner}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          maintenanceAndGeneral: {
-                            ...formData.maintenanceAndGeneral,
-                            announcementBanner: e.target.value,
-                          },
-                        })
-                      }
-                      className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#E76120]"
-                    />
-                  </div>
-                )}
+              <div className="p-4 bg-amber-50/70 border border-amber-200/70 rounded-2xl text-xs text-amber-900 space-y-1">
+                <span className="font-bold flex items-center gap-1.5 text-amber-950">
+                  <Sparkles className="w-3.5 h-3.5 text-[#E76120]" />
+                  Marquee Broadcast Tickers
+                </span>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  For announcements, public tickers, and alerts, please use the dedicated <strong>Marquee Broadcast Alerts</strong> manager in the <strong>CRM module</strong>.
+                </p>
               </div>
             </div>
           )}
 
           {/* ========================================================= */}
-          {/* TAB 8: VERSION HISTORY & ROLLBACK */}
+          {/* TAB 5: VERSION HISTORY & ROLLBACK */}
           {/* ========================================================= */}
           {activeTab === 'history' && (
             <div className="space-y-4 animate-in fade-in-0 duration-150">
