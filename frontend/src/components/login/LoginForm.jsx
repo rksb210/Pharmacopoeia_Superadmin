@@ -65,7 +65,7 @@ export const LoginForm = ({ onLoginSuccess }) => {
   const validate = () => {
     const newErrors = {};
     if (!formData.identifier.trim()) {
-      newErrors.identifier = 'Please enter your email or username';
+      newErrors.identifier = 'Please enter your email address';
     }
     if (!formData.password) {
       newErrors.password = 'Please enter your password';
@@ -105,7 +105,7 @@ export const LoginForm = ({ onLoginSuccess }) => {
   const handleForgotPasswordSubmit = async (e) => {
     e?.preventDefault();
     if (!forgotIdentifier.trim()) {
-      setForgotError('Please enter your email or username');
+      setForgotError('Please enter your email address');
       return;
     }
 
@@ -180,13 +180,13 @@ export const LoginForm = ({ onLoginSuccess }) => {
           noValidate 
           className="w-full flex flex-col gap-3.5 sm:gap-4"
         >
-          {/* Identifier (Email / Username) */}
+          {/* Identifier (Email) */}
           <InputField
             id="identifier"
             name="identifier"
-            label="Official Email address or Username"
+            label="Email address"
             type="text"
-            placeholder="Enter your official email or username"
+            placeholder="Enter email address"
             value={formData.identifier}
             onChange={handleChange}
             error={errors.identifier}
@@ -208,7 +208,8 @@ export const LoginForm = ({ onLoginSuccess }) => {
             autoComplete="current-password"
           />
 
-          {/* Options Row: Remember Me & Forgot Password */}
+          {/* Options Row: Remember Me & Forgot Password (Commented out as requested) */}
+          {/*
           <div className="flex items-center justify-between text-xs sm:text-sm pt-0.5 select-none">
             <label className="flex items-center gap-2 text-slate-600 cursor-pointer hover:text-slate-800 transition-colors">
               <input
@@ -233,6 +234,7 @@ export const LoginForm = ({ onLoginSuccess }) => {
               Forgot Password?
             </button>
           </div>
+          */}
 
           {/* Login Button */}
           <div className="pt-1">
@@ -245,7 +247,8 @@ export const LoginForm = ({ onLoginSuccess }) => {
             </Button>
           </div>
 
-          {/* Divider: "or" */}
+          {/* Divider & Create Account Link (Commented out as requested) */}
+          {/*
           <div className="relative flex items-center justify-center my-1.5">
             <div className="w-full border-t border-slate-200" />
             <span className="bg-white px-3 text-xs text-slate-400 font-medium absolute">
@@ -253,7 +256,6 @@ export const LoginForm = ({ onLoginSuccess }) => {
             </span>
           </div>
 
-          {/* Create Account Link */}
           <div className="text-center text-xs sm:text-sm text-slate-600 select-none">
             <span>New to NFI? </span>
             <a
@@ -265,6 +267,7 @@ export const LoginForm = ({ onLoginSuccess }) => {
               Create Account
             </a>
           </div>
+          */}
         </form>
       </div>
 
