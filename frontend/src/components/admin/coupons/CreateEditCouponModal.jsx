@@ -49,8 +49,8 @@ export const CreateEditCouponModal = ({
     minOrderAmountINR: 0,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    usageLimit: 500,
-    perUserLimit: 1,
+    // usageLimit: 500,
+    // perUserLimit: 1,
     applicablePlans: ['ALL'],
     applicableUserTypes: ['ALL'],
     specificEmails: '',
@@ -77,8 +77,8 @@ export const CreateEditCouponModal = ({
         endDate: coupon.endDate
           ? new Date(coupon.endDate).toISOString().split('T')[0]
           : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        usageLimit: coupon.usageLimit ?? 0,
-        perUserLimit: coupon.perUserLimit ?? 1,
+        // usageLimit: coupon.usageLimit ?? 0,
+        // perUserLimit: coupon.perUserLimit ?? 1,
         applicablePlans: coupon.applicablePlans || ['ALL'],
         applicableUserTypes: coupon.applicableUserTypes || ['ALL'],
         specificEmails: coupon.specificEmails?.join(', ') || '',
@@ -95,8 +95,8 @@ export const CreateEditCouponModal = ({
         minOrderAmountINR: 0,
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        usageLimit: 500,
-        perUserLimit: 1,
+        // usageLimit: 500,
+        // perUserLimit: 1,
         applicablePlans: ['ALL'],
         applicableUserTypes: ['ALL'],
         specificEmails: '',
@@ -192,8 +192,8 @@ export const CreateEditCouponModal = ({
       const numDiscountValue = formData.discountValue === '' ? 0 : Number(formData.discountValue);
       const numMaxDiscount = formData.maxDiscountINR === '' ? 0 : Number(formData.maxDiscountINR);
       const numMinOrder = formData.minOrderAmountINR === '' ? 0 : Number(formData.minOrderAmountINR);
-      const numUsageLimit = formData.usageLimit === '' ? 0 : Number(formData.usageLimit);
-      const numPerUserLimit = formData.perUserLimit === '' ? 1 : Number(formData.perUserLimit);
+      // const numUsageLimit = formData.usageLimit === '' ? 0 : Number(formData.usageLimit);
+      // const numPerUserLimit = formData.perUserLimit === '' ? 1 : Number(formData.perUserLimit);
 
       await onSuccess(
         {
@@ -201,8 +201,8 @@ export const CreateEditCouponModal = ({
           discountValue: numDiscountValue,
           maxDiscountINR: numMaxDiscount,
           minOrderAmountINR: numMinOrder,
-          usageLimit: numUsageLimit,
-          perUserLimit: numPerUserLimit,
+          // usageLimit: numUsageLimit,
+          // perUserLimit: numPerUserLimit,
           specificEmails: emailList,
         },
         isEditMode ? coupon._id : null
@@ -435,7 +435,7 @@ export const CreateEditCouponModal = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
               <InputField
                 id="usageLimit"
                 label="Global Total Redemption Limit"
@@ -463,7 +463,7 @@ export const CreateEditCouponModal = ({
                   handleNumberChange('perUserLimit', e.target.value, { min: 0 })
                 }
               />
-            </div>
+            </div> */}
           </div>
         )}
 

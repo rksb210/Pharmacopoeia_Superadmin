@@ -2,94 +2,17 @@ import Coupon from '../models/coupon.model.js';
 import Subscriber from '../models/subscriber.model.js';
 
 export const couponService = {
-  /**
-   * Seed default promotional and institutional coupons
-   */
-  seedDefaultCoupons: async () => {
-    const defaultCoupons = [
-      {
-        code: 'NFI-IMA2026',
-        title: 'Indian Medical Association 25% Concession',
-        description: 'National concession for verified clinical practitioners and IMA council members.',
-        discountType: 'percentage',
-        discountValue: 25,
-        maxDiscountINR: 2000,
-        minOrderAmountINR: 3000,
-        startDate: new Date(),
-        endDate: new Date('2028-12-31T23:59:59.999Z'),
-        usageLimit: 1000,
-        usageCount: 0,
-        perUserLimit: 1,
-        applicablePlans: ['ALL'],
-        applicableUserTypes: ['DOCTOR'],
-        isActive: true,
-      },
-      {
-        code: 'STUDENT-SPECIAL',
-        title: 'Academic Scholar 30% Concession',
-        description: 'Subsidized academic discount for medical and pharmacy undergraduate scholars.',
-        discountType: 'percentage',
-        discountValue: 30,
-        maxDiscountINR: 1000,
-        minOrderAmountINR: 1000,
-        startDate: new Date(),
-        endDate: new Date('2029-12-31T23:59:59.999Z'),
-        usageLimit: 5000,
-        usageCount: 0,
-        perUserLimit: 1,
-        applicablePlans: ['NFI-STUDENT-SPECIAL', 'NFI-INDIVIDUAL'],
-        applicableUserTypes: ['STUDENT'],
-        isActive: true,
-      },
-      {
-        code: 'CAMPUS-FLAT5000',
-        title: 'Institutional Campus Flat ₹5,000 Grant',
-        description: 'Flat fee concession on multi-seat campus licenses for medical colleges.',
-        discountType: 'fixed_amount',
-        discountValue: 5000,
-        maxDiscountINR: 0,
-        minOrderAmountINR: 40000,
-        startDate: new Date(),
-        endDate: new Date('2027-12-31T23:59:59.999Z'),
-        usageLimit: 200,
-        usageCount: 0,
-        perUserLimit: 2,
-        applicablePlans: ['NFI-INSTITUTIONAL'],
-        applicableUserTypes: ['INDUSTRY', 'OTHERS'],
-        isActive: true,
-      },
-      {
-        code: 'PHARMA-WELCOME15',
-        title: 'Welcome Formulary 15% Pass',
-        description: 'Introductory concession for newly registered pharmacists and healthcare officers.',
-        discountType: 'percentage',
-        discountValue: 15,
-        maxDiscountINR: 1500,
-        minOrderAmountINR: 2000,
-        startDate: new Date(),
-        endDate: new Date('2028-06-30T23:59:59.999Z'),
-        usageLimit: 2500,
-        usageCount: 0,
-        perUserLimit: 1,
-        applicablePlans: ['ALL'],
-        applicableUserTypes: ['PHARMACIST', 'NURSE', 'OTHERS'],
-        isActive: true,
-      },
-    ];
-
-    for (const c of defaultCoupons) {
-      await Coupon.findOneAndUpdate({ code: c.code }, c, { upsert: true, new: true });
-    }
-  },
 
   /**
    * Aggregate KPI Statistics for Coupons & Discounts
    */
   getCouponStats: async () => {
     const now = new Date();
-    const [totalCount, activeCount, expiredCount, usageAgg] = await Promise.all([
+    const expiringThreshold = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const [totalCount, activeCount, expiringSoonCount, expiredCount, usageAgg] = await Promise.all([
       Coupon.countDocuments(),
       Coupon.countDocuments({ isActive: true, endDate: { $gt: now } }),
+      Coupon.countDocuments({ isActive: true, endDate: { $gt: now, $lte: expiringThreshold } }),
       Coupon.countDocuments({ $or: [{ isActive: false }, { endDate: { $lte: now } }] }),
       Coupon.aggregate([
         { $unwind: { path: '$redemptionHistory', preserveNullAndEmptyArrays: true } },
@@ -109,6 +32,7 @@ export const couponService = {
     return {
       totalCoupons: totalCount,
       activeCoupons: activeCount,
+      expiringSoon: expiringSoonCount,
       expiredOrInactive: expiredCount,
       totalRedemptions,
       totalDiscountSavedINR: totalDiscountSaved,
@@ -129,11 +53,19 @@ export const couponService = {
     sortOrder = 'desc',
   }) => {
     const query = {};
+    const andConditions = [];
     const now = new Date();
 
     if (search && search.trim()) {
       const searchRegex = new RegExp(search.trim(), 'i');
-      query.$or = [{ code: searchRegex }, { title: searchRegex }, { description: searchRegex }];
+      andConditions.push({
+        $or: [
+          { code: searchRegex },
+          { title: searchRegex },
+          { description: searchRegex },
+          { specificEmails: searchRegex },
+        ],
+      });
     }
 
     if (discountType && discountType !== 'all') {
@@ -141,20 +73,37 @@ export const couponService = {
     }
 
     if (userType && userType !== 'all') {
-      query.applicableUserTypes = { $in: [userType.toUpperCase(), 'ALL'] };
+      const normalizedUserType = userType.toUpperCase();
+      const matchingSubscribers = await Subscriber.find({
+        userType: new RegExp(`^${normalizedUserType}$`, 'i'),
+      })
+        .select('_id')
+        .lean();
+      const matchingUserIds = matchingSubscribers.map((s) => s._id);
+
+      andConditions.push({
+        $or: [
+          { applicableUserTypes: normalizedUserType },
+          ...(matchingUserIds.length > 0 ? [{ specificUsers: { $in: matchingUserIds } }] : []),
+        ],
+      });
     }
 
     if (status === 'active') {
       query.isActive = true;
       query.endDate = { $gt: now };
-    } else if (status === 'expired') {
-      query.endDate = { $lte: now };
-    } else if (status === 'inactive') {
-      query.isActive = false;
+    } else if (status === 'expired' || status === 'inactive') {
+      andConditions.push({
+        $or: [{ isActive: false }, { endDate: { $lte: now } }],
+      });
     } else if (status === 'expiring_soon') {
       const threshold = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
       query.isActive = true;
-      query.endDate = { $gte: now, $lte: threshold };
+      query.endDate = { $gt: now, $lte: threshold };
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
     }
 
     const sortOptions = {};
@@ -164,7 +113,7 @@ export const couponService = {
     const pageSize = Math.max(1, Math.min(100, parseInt(limit, 10)));
     const skip = (pageNumber - 1) * pageSize;
 
-    let [coupons, total] = await Promise.all([
+    const [coupons, total] = await Promise.all([
       Coupon.find(query)
         .sort(sortOptions)
         .skip(skip)
@@ -173,19 +122,6 @@ export const couponService = {
         .lean(),
       Coupon.countDocuments(query),
     ]);
-
-    if (coupons.length === 0 && !search && discountType === 'all' && status === 'all') {
-      await couponService.seedDefaultCoupons();
-      [coupons, total] = await Promise.all([
-        Coupon.find(query)
-          .sort(sortOptions)
-          .skip(skip)
-          .limit(pageSize)
-          .populate('specificUsers', 'name email username userType')
-          .lean(),
-        Coupon.countDocuments(query),
-      ]);
-    }
 
     const totalPages = Math.ceil(total / pageSize) || 1;
 
@@ -226,8 +162,8 @@ export const couponService = {
       minOrderAmountINR = 0,
       startDate = new Date(),
       endDate,
-      usageLimit = 0,
-      perUserLimit = 1,
+      // usageLimit = 0,
+      // perUserLimit = 1,
       applicablePlans = ['ALL'],
       applicableUserTypes = ['ALL'],
       specificUsers = [],
@@ -249,9 +185,9 @@ export const couponService = {
       minOrderAmountINR: Number(minOrderAmountINR),
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      usageLimit: Number(usageLimit),
+      // usageLimit: Number(usageLimit),
       usageCount: 0,
-      perUserLimit: Number(perUserLimit),
+      // perUserLimit: Number(perUserLimit),
       applicablePlans,
       applicableUserTypes,
       specificUsers,
@@ -279,8 +215,8 @@ export const couponService = {
       minOrderAmountINR,
       startDate,
       endDate,
-      usageLimit,
-      perUserLimit,
+      // usageLimit,
+      // perUserLimit,
       applicablePlans,
       applicableUserTypes,
       specificUsers,
@@ -295,8 +231,8 @@ export const couponService = {
     if (minOrderAmountINR !== undefined) coupon.minOrderAmountINR = Number(minOrderAmountINR);
     if (startDate) coupon.startDate = new Date(startDate);
     if (endDate) coupon.endDate = new Date(endDate);
-    if (usageLimit !== undefined) coupon.usageLimit = Number(usageLimit);
-    if (perUserLimit !== undefined) coupon.perUserLimit = Number(perUserLimit);
+    // if (usageLimit !== undefined) coupon.usageLimit = Number(usageLimit);
+    // if (perUserLimit !== undefined) coupon.perUserLimit = Number(perUserLimit);
     if (applicablePlans) coupon.applicablePlans = applicablePlans;
     if (applicableUserTypes) coupon.applicableUserTypes = applicableUserTypes;
     if (specificUsers) coupon.specificUsers = specificUsers;
@@ -351,9 +287,9 @@ export const couponService = {
     }
 
     // Check Global Usage Limit
-    if (coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit) {
-      throw new Error(`Voucher '${cleanCode}' has reached its maximum allowable redemption limit.`);
-    }
+    // if (coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit) {
+    //   throw new Error(`Voucher '${cleanCode}' has reached its maximum allowable redemption limit.`);
+    // }
 
     // Check Minimum Order Amount
     const amount = Number(orderAmount);
@@ -403,15 +339,15 @@ export const couponService = {
     }
 
     // Check Per-User Redemption Limit
-    if (userId && coupon.redemptionHistory && coupon.redemptionHistory.length > 0) {
-      const userRedemptions = coupon.redemptionHistory.filter(
-        (r) => r.user?.toString() === userId.toString()
-      ).length;
-
-      if (userRedemptions >= coupon.perUserLimit) {
-        throw new Error(`You have already redeemed voucher '${cleanCode}' the maximum permitted ${coupon.perUserLimit} time(s).`);
-      }
-    }
+    // if (userId && coupon.redemptionHistory && coupon.redemptionHistory.length > 0) {
+    //   const userRedemptions = coupon.redemptionHistory.filter(
+    //     (r) => r.user?.toString() === userId.toString()
+    //   ).length;
+    //
+    //   if (userRedemptions >= coupon.perUserLimit) {
+    //     throw new Error(`You have already redeemed voucher '${cleanCode}' the maximum permitted ${coupon.perUserLimit} time(s).`);
+    //   }
+    // }
 
     // Calculate Discount Amount
     let discountApplied = 0;
@@ -485,8 +421,8 @@ export const couponService = {
         discountValue: Number(discountValue),
         startDate: new Date(),
         endDate: new Date(endDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)),
-        usageLimit: 1,
-        perUserLimit: 1,
+        // usageLimit: 1,
+        // perUserLimit: 1,
         applicablePlans: ['ALL'],
         applicableUserTypes: ['ALL'],
         specificUsers: [subscriber._id],

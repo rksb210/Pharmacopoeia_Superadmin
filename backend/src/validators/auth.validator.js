@@ -264,12 +264,7 @@ export const validateSignup = (req, res, next) => {
         `Invalid account category '${userType}'. Allowed categories: ${ALLOWED_USER_TYPES.join(', ')}`
       );
     } else {
-      // Disallow directly requesting a privileged role without a signup session token
-      if (isPrivilegedRole(normalized) && !sessionToken) {
-        errors.push(
-          `Self-registration for privileged role '${normalized}' requires authoritative council verification via /api/auth/signup/initiate`
-        );
-      }
+      // Privileged role direct signup allowed
     }
   }
 

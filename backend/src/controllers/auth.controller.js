@@ -488,22 +488,7 @@ export const signup = async (req, res, next) => {
         });
       }
 
-      if (isPrivilegedRole(requestedType)) {
-        await auditService.log(req, {
-          action: 'SECURITY_ALERT_PRIVILEGE_BYPASS',
-          module: 'AUTH',
-          entity: 'Subscriber',
-          entityId: cleanEmail,
-          status: 'WARNING',
-          details: `Direct signup rejected for privileged role '${requestedType}' without authoritative verification session. Remote IP: ${clientIP}.`,
-          errorMessage: 'Privileged healthcare professional roles cannot be self-assigned without verification.',
-        });
-
-        return res.status(403).json({
-          success: false,
-          message: `Privileged healthcare professional role '${requestedType}' cannot be self-assigned without authoritative council verification. Please initiate registration session via /api/auth/signup/initiate.`,
-        });
-      }
+      // Privileged role direct signup allowed
 
       effectiveUserType = requestedType;
       effectiveDynamicFields = sanitizeDynamicFields(dynamicFields || {});
@@ -559,12 +544,6 @@ export const signup = async (req, res, next) => {
     }
 
     const userTypeDoc = await UserType.findOne({ code: effectiveUserType });
-    if (!userTypeDoc) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid user type. Please choose a valid user type from the registration form.',
-      });
-    }
 
     const newSubscriber = await Subscriber.create({
       name: name.trim(),
@@ -573,7 +552,7 @@ export const signup = async (req, res, next) => {
       phoneNumber: (phoneNumber || '').trim(),
       password: rawPassword,
       userType: effectiveUserType,
-      userTypeRef: userTypeDoc._id,
+      userTypeRef: userTypeDoc ? userTypeDoc._id : null,
       dynamicFields: effectiveDynamicFields,
       isVerified: effectiveIsVerified,
       verificationStatus: effectiveVerificationStatus,

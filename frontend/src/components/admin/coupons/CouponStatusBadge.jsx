@@ -7,7 +7,7 @@ export const CouponStatusBadge = ({ coupon }) => {
 
   const now = new Date();
   const isExpired = new Date(coupon.endDate) <= now;
-  const isDepleted = coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit;
+  // const isDepleted = coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit;
   const isExpiringSoon =
     coupon.isActive &&
     !isExpired &&
@@ -31,14 +31,14 @@ export const CouponStatusBadge = ({ coupon }) => {
     );
   }
 
-  if (isDepleted) {
-    return (
-      <Badge variant="secondary" className="text-[9px] font-bold bg-amber-100 text-amber-800 border-amber-200">
-        <AlertTriangle className="w-2.5 h-2.5 mr-1" />
-        <span>Limit Reached</span>
-      </Badge>
-    );
-  }
+  // if (isDepleted) {
+  //   return (
+  //     <Badge variant="secondary" className="text-[9px] font-bold bg-amber-100 text-amber-800 border-amber-200">
+  //       <AlertTriangle className="w-2.5 h-2.5 mr-1" />
+  //       <span>Limit Reached</span>
+  //     </Badge>
+  //   );
+  // }
 
   if (isExpiringSoon) {
     return (

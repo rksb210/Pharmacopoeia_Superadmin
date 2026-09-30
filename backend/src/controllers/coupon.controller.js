@@ -93,7 +93,7 @@ export const updateCoupon = async (req, res) => {
       newValues: {
         discountType: updated.discountType,
         discountValue: updated.discountValue,
-        usageLimit: updated.usageLimit,
+        // usageLimit: updated.usageLimit,
         validUntil: updated.validUntil,
       },
     });
