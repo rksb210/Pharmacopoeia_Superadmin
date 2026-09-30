@@ -3,7 +3,8 @@ import { auditService } from '../services/audit.service.js';
 
 export const downloadTemplate = async (req, res, next) => {
   try {
-    const buffer = bulkImportService.generateTemplate();
+    const { userType = 'UNIVERSITIES_COLLEGES' } = req.query;
+    const buffer = bulkImportService.generateTemplate(userType);
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -27,13 +28,33 @@ export const uploadAndValidate = async (req, res, next) => {
       });
     }
 
-    const { institutionName, billingContact, defaultPlanCode } = req.body;
+    const {
+      institutionName,
+      institutionId,
+      userType,
+      billingContact,
+      coordinator: rawCoordinator,
+      defaultPlanCode,
+    } = req.body;
+
+    let coordinator = {};
+    if (rawCoordinator) {
+      try {
+        coordinator =
+          typeof rawCoordinator === 'string' ? JSON.parse(rawCoordinator) : rawCoordinator;
+      } catch {
+        coordinator = {};
+      }
+    }
 
     const result = await bulkImportService.parseAndValidateFile(req.file.buffer, {
       fileName: req.file.originalname,
       institutionName,
+      institutionId,
+      userType: userType || 'UNIVERSITIES_COLLEGES',
       billingContact,
-      defaultPlanCode: defaultPlanCode || 'NFI-INDIVIDUAL',
+      coordinator,
+      defaultPlanCode: defaultPlanCode || '',
       adminUser: req.user,
     });
 
@@ -64,9 +85,66 @@ export const uploadAndValidate = async (req, res, next) => {
   }
 };
 
+export const validateDirectRows = async (req, res) => {
+  try {
+    const {
+      rows,
+      institutionName,
+      institutionId,
+      userType,
+      billingContact,
+      coordinator,
+      defaultPlanCode,
+    } = req.body;
+
+    const result = await bulkImportService.validateDirectRows({
+      rows,
+      institutionName,
+      institutionId,
+      userType: userType || 'UNIVERSITIES_COLLEGES',
+      billingContact,
+      coordinator: coordinator || {},
+      defaultPlanCode: defaultPlanCode || '',
+      adminUser: req.user,
+    });
+
+    await auditService.log(req, {
+      action: 'BULK_BATCH_VALIDATED',
+      module: 'BULK_SUBSCRIPTIONS',
+      entity: 'BulkImportJob',
+      entityId: result.jobId,
+      status: result.invalidCount > 0 ? 'WARNING' : 'SUCCESS',
+      details: `Validated direct manual roster (${institutionName || 'Institutional'}). Valid: ${result.validCount}, Invalid: ${result.invalidCount}.`,
+      newValues: {
+        totalRows: result.totalRows,
+        validCount: result.validCount,
+        invalidCount: result.invalidCount,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Roster validated successfully. ${result.validCount} valid records, ${result.invalidCount} invalid records found.`,
+      preview: result,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const confirmImport = async (req, res, next) => {
   try {
-    const { jobId } = req.body;
+    const {
+      jobId,
+      couponCode,
+      paymentMethod,
+      paymentStatus,
+      paymentReference,
+      transactionId,
+    } = req.body;
     if (!jobId) {
       return res.status(400).json({
         success: false,
@@ -74,7 +152,22 @@ export const confirmImport = async (req, res, next) => {
       });
     }
 
-    const completedJob = await bulkImportService.confirmAndExecuteImport(jobId, req.user);
+    const refId = (paymentReference || transactionId || '').trim();
+    if (!refId) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Transaction / Reference ID is mandatory. Please enter a UTR, receipt, cheque number, or reference note.',
+      });
+    }
+
+    const completedJob = await bulkImportService.confirmAndExecuteImport(jobId, req.user, {
+      couponCode,
+      paymentMethod,
+      paymentStatus,
+      paymentReference: refId,
+      transactionId: refId,
+    });
 
     await auditService.log(req, {
       action: 'BULK_BATCH_EXECUTED',
@@ -82,7 +175,7 @@ export const confirmImport = async (req, res, next) => {
       entity: 'BulkImportJob',
       entityId: completedJob._id,
       status: 'SUCCESS',
-      details: `Executed bulk import job for "${completedJob.institutionName}". Provisioned ${completedJob.validCount} subscribers with plan ${completedJob.defaultPlanCode}.`,
+      details: `Executed bulk import job for "${completedJob.institutionName}". Provisioned ${completedJob.validCount} subscribers with plan ${completedJob.planCode}.`,
       newValues: {
         status: completedJob.status,
         validCount: completedJob.validCount,

@@ -1,8 +1,9 @@
 import api from './api';
 
 export const bulkImportService = {
-  downloadTemplate: async () => {
+  downloadTemplate: async (userType = 'UNIVERSITIES_COLLEGES') => {
     const response = await api.get('/bulk-subscriptions/template', {
+      params: { userType },
       responseType: 'blob',
     });
     return response;
@@ -16,8 +17,14 @@ export const bulkImportService = {
     });
   },
 
-  confirmImport: async (jobId) => {
-    return api.post('/bulk-subscriptions/confirm', { jobId });
+  validateDirectRows: async (payload) => {
+    return api.post('/bulk-subscriptions/validate-direct', payload);
+  },
+
+  confirmImport: async (payloadOrJobId) => {
+    const body =
+      typeof payloadOrJobId === 'string' ? { jobId: payloadOrJobId } : payloadOrJobId;
+    return api.post('/bulk-subscriptions/confirm', body);
   },
 
   getHistory: async (params = {}) => {

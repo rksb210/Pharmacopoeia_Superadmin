@@ -3,12 +3,8 @@ import AdminModal from '../common/AdminModal';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
 import {
-  FileText,
   Printer,
   CheckCircle2,
-  Building2,
-  Calendar,
-  CreditCard,
   Download,
 } from 'lucide-react';
 
@@ -30,17 +26,21 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
   };
 
   const invoiceNumber = inv.invoiceNumber || 'INV-NFI-PENDING';
-  const finalAmount = inv.totalAmount || inv.finalAmountINR || 0;
-  const subtotal = inv.subtotal || inv.subtotalINR || 0;
-  const taxAmount = inv.taxAmount || inv.taxAmountINR || 0;
-  const unitPrice = inv.unitPriceINR || (subtotal && batch?.validSeats ? Math.round(subtotal / batch.validSeats) : 660);
+  const finalAmount = inv.totalAmount ?? inv.finalAmountINR ?? 0;
+  const subtotal = inv.subtotal ?? inv.subtotalINR ?? 0;
+  const slabDiscount = inv.slabDiscountINR ?? 0;
+  const couponDiscount = inv.couponDiscountINR ?? 0;
+  const taxAmount = inv.taxAmount ?? inv.taxAmountINR ?? 0;
+  const unitPrice =
+    inv.unitPriceINR ||
+    (subtotal && batch?.validSeats ? Math.round(subtotal / batch.validSeats) : 660);
 
   return (
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Consolidated Tax Invoice: ${invoiceNumber}`}
-      description="Official institutional license receipt and tax statement issued by Indian Pharmacopoeia Commission."
+      title={`Consolidated Invoice: ${invoiceNumber}`}
+      description="Official institutional license receipt and billing statement issued by Indian Pharmacopoeia Commission."
       confirmLabel="Close"
       onConfirm={onClose}
       size="lg"
@@ -71,7 +71,7 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
             </span>
             <Badge variant="nfiNavy" className="text-[9px] font-bold">
               <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
-              <span>{inv.status || 'PAID'}</span>
+              <span>{(inv.status || 'PAID').toUpperCase()}</span>
             </Badge>
           </div>
         </div>
@@ -94,7 +94,7 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
 
           <div className="sm:text-right">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              Billing &amp; Tax Reference:
+              Billing Reference:
             </span>
             <p className="font-mono font-bold text-slate-700 text-xs mt-0.5">
               Batch Ref: {batch?.batchRef || batch?.jobId || 'BATCH-COHORT'}
@@ -105,6 +105,11 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
             <p className="text-slate-500 text-[11px] font-mono">
               Stakeholder: {batch?.stakeholderLabel || 'Corporate/Academic'}
             </p>
+            {(inv.paymentReference || inv.transactionId) && (
+              <p className="text-[#284661] text-[11px] font-mono font-bold">
+                Ref / Txn ID: {inv.paymentReference || inv.transactionId}
+              </p>
+            )}
           </div>
         </div>
 
@@ -116,7 +121,7 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
                 <th className="p-3 font-bold">Description</th>
                 <th className="p-3 font-bold text-center">Enrolled Seats</th>
                 <th className="p-3 font-bold text-right">Unit Rate (INR)</th>
-                <th className="p-3 font-bold text-right">Net Total (INR)</th>
+                <th className="p-3 font-bold text-right">Line Subtotal (INR)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -126,7 +131,7 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
                     {batch?.plan?.name || 'NFI 7th Edition Institutional Formulary Access Pass'}
                   </span>
                   <span className="text-[10px] text-slate-400">
-                    Comprehensive digital monograph access, interactions engine, and search suite.
+                    Comprehensive digital monograph access, interactions engine, and clinical search suite.
                   </span>
                 </td>
                 <td className="p-3 text-center font-black text-slate-900">
@@ -146,23 +151,41 @@ export const BatchTaxInvoiceModal = ({ isOpen, onClose, invoice, batch }) => {
         {/* Calculation Totals */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div className="text-[11px] text-slate-400 max-w-sm">
-            <p className="font-semibold text-slate-600">Statutory Tax Note:</p>
+            <p className="font-semibold text-slate-600">Institutional License Note:</p>
             <p>
-              Standard 18% GST applicable on digital information database subscriptions under SAC 998431.
+              Consolidated receipt for bulk subscriber enrollment under National Formulary of India (IPC).
             </p>
           </div>
 
-          <div className="w-full sm:w-64 space-y-2 font-mono">
+          <div className="w-full sm:w-72 space-y-2 font-mono">
             <div className="flex justify-between text-slate-500 text-xs">
-              <span>Subtotal:</span>
+              <span>Base Subtotal:</span>
               <span>₹{subtotal.toLocaleString('en-IN')}</span>
             </div>
-            <div className="flex justify-between text-slate-500 text-xs">
-              <span>GST (18%):</span>
-              <span>₹{taxAmount.toLocaleString('en-IN')}</span>
-            </div>
+
+            {slabDiscount > 0 && (
+              <div className="flex justify-between text-emerald-700 text-xs">
+                <span>Volume Slab Discount ({inv.slabDiscountPercent || 0}%):</span>
+                <span>-₹{slabDiscount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+
+            {couponDiscount > 0 && (
+              <div className="flex justify-between text-emerald-700 text-xs">
+                <span>Promo Coupon {inv.couponCode ? `(${inv.couponCode})` : ''}:</span>
+                <span>-₹{couponDiscount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+
+            {taxAmount > 0 && (
+              <div className="flex justify-between text-slate-500 text-xs">
+                <span>Tax:</span>
+                <span>₹{taxAmount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+
             <div className="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-slate-200">
-              <span>Total Payable:</span>
+              <span>Net Total Payable:</span>
               <span className="text-[#284661]">₹{finalAmount.toLocaleString('en-IN')}</span>
             </div>
           </div>
