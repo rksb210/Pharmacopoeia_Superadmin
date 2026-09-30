@@ -38,7 +38,10 @@ export const LoginForm = ({ onLoginSuccess }) => {
   useEffect(() => {
     const reason = searchParams.get('reason');
     if (reason === 'inactivity') {
-      setInactivityNotice('Your session expired due to 45 minutes of inactivity. Please sign in again.');
+      const timeoutParam = searchParams.get('timeout') || localStorage.getItem('nfi_session_timeout_minutes');
+      const mins = Number(timeoutParam) || 120;
+      const unit = mins === 1 ? 'minute' : 'minutes';
+      setInactivityNotice(`Your session expired due to ${mins} ${unit} of inactivity. Please sign in again.`);
     } else if (reason === 'session_expired') {
       setInactivityNotice('Your session has expired. Please sign in again.');
     }

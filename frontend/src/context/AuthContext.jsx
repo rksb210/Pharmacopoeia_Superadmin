@@ -1,10 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import authService from '../services/auth.service';
+import configService from '../services/config.service';
 
 const AuthContext = createContext(null);
-
-// 45 minutes idle inactivity timeout (in milliseconds)
-const IDLE_TIMEOUT_MS = 45 * 60 * 1000;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -13,6 +11,10 @@ export const AuthProvider = ({ children }) => {
   });
   const [token, setToken] = useState(() => localStorage.getItem('nfi_token') || null);
   const [loading, setLoading] = useState(true);
+  const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(() => {
+    const saved = localStorage.getItem('nfi_session_timeout_minutes');
+    return saved ? Number(saved) : 120;
+  });
 
   const idleTimerRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
@@ -35,11 +37,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('nfi_user');
 
     if (reason === 'inactivity') {
-      window.location.href = '/login?reason=inactivity';
+      const minutes = sessionTimeoutMinutes || localStorage.getItem('nfi_session_timeout_minutes') || 120;
+      window.location.href = `/login?reason=inactivity&timeout=${minutes}`;
     }
-  }, []);
+  }, [sessionTimeoutMinutes]);
 
-  // Reset idle inactivity timer
+  // Reset idle inactivity timer based on dynamic sessionTimeoutMinutes
   const resetIdleTimer = useCallback(() => {
     lastActivityRef.current = Date.now();
 
@@ -48,12 +51,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (token) {
+      const minutes = sessionTimeoutMinutes || 120;
+      const timeoutMs = Math.max(1, minutes) * 60 * 1000;
       idleTimerRef.current = setTimeout(() => {
-        console.warn('[Auth] Inactivity timeout reached (45 min). Auto-logging out.');
+        console.warn(`[Auth] Inactivity timeout reached (${minutes} min). Auto-logging out.`);
         logout('inactivity');
-      }, IDLE_TIMEOUT_MS);
+      }, timeoutMs);
     }
-  }, [token, logout]);
+  }, [token, sessionTimeoutMinutes, logout]);
 
   // Attach global user activity listeners for idle timeout tracking
   useEffect(() => {
@@ -91,6 +96,31 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, resetIdleTimer]);
 
+  // Listen for config changes from Settings page or other tabs
+  useEffect(() => {
+    const handleConfigUpdate = (e) => {
+      const minutes = e.detail?.sessionTimeoutMinutes;
+      if (minutes) {
+        setSessionTimeoutMinutes(Number(minutes));
+        localStorage.setItem('nfi_session_timeout_minutes', String(minutes));
+      }
+    };
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'nfi_session_timeout_minutes' && e.newValue) {
+        setSessionTimeoutMinutes(Number(e.newValue));
+      }
+    };
+
+    window.addEventListener('nfi_config_updated', handleConfigUpdate);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('nfi_config_updated', handleConfigUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   // Validate token on mount
   useEffect(() => {
     const initAuth = async () => {
@@ -101,6 +131,20 @@ export const AuthProvider = ({ children }) => {
           if (res && res.user) {
             setUser(res.user);
             localStorage.setItem('nfi_user', JSON.stringify(res.user));
+          }
+          if (res && res.sessionTimeoutMinutes) {
+            setSessionTimeoutMinutes(res.sessionTimeoutMinutes);
+            localStorage.setItem('nfi_session_timeout_minutes', String(res.sessionTimeoutMinutes));
+          } else {
+            try {
+              const pubConfig = await configService.getPublicConfig();
+              if (pubConfig && pubConfig.sessionTimeoutMinutes) {
+                setSessionTimeoutMinutes(pubConfig.sessionTimeoutMinutes);
+                localStorage.setItem('nfi_session_timeout_minutes', String(pubConfig.sessionTimeoutMinutes));
+              }
+            } catch (e) {
+              // Ignore public config load error
+            }
           }
         } catch (err) {
           console.warn('Session expired or invalid:', err.message);
@@ -120,6 +164,10 @@ export const AuthProvider = ({ children }) => {
       setUser(res.user);
       localStorage.setItem('nfi_token', res.token);
       localStorage.setItem('nfi_user', JSON.stringify(res.user));
+      if (res.sessionTimeoutMinutes) {
+        setSessionTimeoutMinutes(res.sessionTimeoutMinutes);
+        localStorage.setItem('nfi_session_timeout_minutes', String(res.sessionTimeoutMinutes));
+      }
       resetIdleTimer();
       return res;
     }
