@@ -407,7 +407,7 @@ function App() {
   return (
     <AuthProvider>
       <PermissionProvider>
-        <BrowserRouter>
+        <BrowserRouter basename="/admin-fe">
           <AppRoutes />
         </BrowserRouter>
       </PermissionProvider>
