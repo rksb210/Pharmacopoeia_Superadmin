@@ -10,6 +10,7 @@ import {
   updateChapter,
   deleteChapter,
   toggleChapterStatus,
+  reviewChapter,
   // Sub-Chapters
   getSubChapters,
   getActiveSubChapters,
@@ -18,6 +19,7 @@ import {
   updateSubChapter,
   deleteSubChapter,
   toggleSubChapterStatus,
+  reviewSubChapter,
   // Tables
   getTables,
   getActiveTables,
@@ -33,6 +35,7 @@ import {
   updateMedicine,
   deleteMedicine,
   toggleMedicineStatus,
+  reviewMedicine,
   // Sections
   getMedicineSections,
   addMedicineSection,
@@ -41,7 +44,7 @@ import {
   reorderMedicineSections,
 } from '../controllers/content.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
-import { requirePermission } from '../middlewares/rbac.middleware.js';
+import { requirePermission, requireAnyPermission } from '../middlewares/rbac.middleware.js';
 
 const router = Router();
 
@@ -60,6 +63,15 @@ router.get('/chapters/:id', requirePermission('CONTENT', 'MONOGRAPHS', 'VIEW'), 
 router.post('/chapters', requirePermission('CONTENT', 'MONOGRAPHS', 'ADD'), createChapter);
 router.put('/chapters/:id', requirePermission('CONTENT', 'MONOGRAPHS', 'EDIT'), updateChapter);
 router.patch('/chapters/:id/status', requirePermission('CONTENT', 'MONOGRAPHS', 'EDIT'), toggleChapterStatus);
+router.post(
+  '/chapters/:id/review',
+  requireAnyPermission([
+    { module: 'CONTENT', section: 'MONOGRAPHS', action: 'APPROVE' },
+    { module: 'CONTENT', section: 'WORKFLOW', action: 'APPROVE' },
+    { module: 'CONTENT', section: 'MONOGRAPHS', action: 'EDIT' },
+  ]),
+  reviewChapter
+);
 router.delete('/chapters/:id', requirePermission('CONTENT', 'MONOGRAPHS', 'DELETE'), deleteChapter);
 
 // ==========================================
@@ -71,6 +83,15 @@ router.get('/sub-chapters/:id', requirePermission('CONTENT', 'MONOGRAPHS', 'VIEW
 router.post('/sub-chapters', requirePermission('CONTENT', 'MONOGRAPHS', 'ADD'), createSubChapter);
 router.put('/sub-chapters/:id', requirePermission('CONTENT', 'MONOGRAPHS', 'EDIT'), updateSubChapter);
 router.patch('/sub-chapters/:id/status', requirePermission('CONTENT', 'MONOGRAPHS', 'EDIT'), toggleSubChapterStatus);
+router.post(
+  '/sub-chapters/:id/review',
+  requireAnyPermission([
+    { module: 'CONTENT', section: 'MONOGRAPHS', action: 'APPROVE' },
+    { module: 'CONTENT', section: 'WORKFLOW', action: 'APPROVE' },
+    { module: 'CONTENT', section: 'MONOGRAPHS', action: 'EDIT' },
+  ]),
+  reviewSubChapter
+);
 router.delete('/sub-chapters/:id', requirePermission('CONTENT', 'MONOGRAPHS', 'DELETE'), deleteSubChapter);
 
 // ==========================================
@@ -92,6 +113,15 @@ router.get('/medicines/:id', requirePermission('CONTENT', 'MONOGRAPHS', 'VIEW'),
 router.post('/medicines', requirePermission('CONTENT', 'MONOGRAPHS', 'ADD'), createMedicine);
 router.put('/medicines/:id', requirePermission('CONTENT', 'MONOGRAPHS', 'EDIT'), updateMedicine);
 router.patch('/medicines/:id/status', requirePermission('CONTENT', 'MONOGRAPHS', 'EDIT'), toggleMedicineStatus);
+router.post(
+  '/medicines/:id/review',
+  requireAnyPermission([
+    { module: 'CONTENT', section: 'MONOGRAPHS', action: 'APPROVE' },
+    { module: 'CONTENT', section: 'WORKFLOW', action: 'APPROVE' },
+    { module: 'CONTENT', section: 'MONOGRAPHS', action: 'EDIT' },
+  ]),
+  reviewMedicine
+);
 router.delete('/medicines/:id', requirePermission('CONTENT', 'MONOGRAPHS', 'DELETE'), deleteMedicine);
 
 // ==========================================

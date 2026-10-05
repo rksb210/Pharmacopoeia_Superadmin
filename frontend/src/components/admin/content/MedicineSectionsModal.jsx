@@ -35,6 +35,8 @@ export const MedicineSectionsModal = ({
   isOpen,
   onClose,
   medicine = null,
+  initialSectionId = null,
+  initialAddMode = false,
   onSectionsUpdated,
 }) => {
   const [sections, setSections] = useState([]);
@@ -68,9 +70,8 @@ export const MedicineSectionsModal = ({
   useEffect(() => {
     if (!medicine || !isOpen) return;
 
-    setSections(Array.isArray(medicine.sections) ? medicine.sections : []);
-    setEditingSectionId(null);
-    setIsAddingNew(false);
+    const currentSections = Array.isArray(medicine.sections) ? medicine.sections : [];
+    setSections(currentSections);
     setApiError('');
     setSuccessMsg('');
 
@@ -81,7 +82,64 @@ export const MedicineSectionsModal = ({
         if (res?.tables) setActiveTables(res.tables);
       })
       .catch(() => {});
-  }, [medicine, isOpen]);
+
+    if (initialAddMode) {
+      setEditingSectionId(null);
+      setIsAddingNew(true);
+      setSecForm({
+        title: '',
+        content: '',
+        order: currentSections.length + 1,
+        pageNumber: medicine?.source?.[0]?.pageNumber || '',
+        key: '',
+        includeTable: false,
+        tableMode: 'custom',
+        tableId: '',
+        customTable: {
+          headers: ['Condition / Group', 'Dosage', 'Duration'],
+          rows: [['Standard Adult', '1 tablet', '5-7 days']],
+          caption: '',
+          footnotes: '',
+        },
+      });
+    } else if (initialSectionId) {
+      const target = currentSections.find(
+        (s) => s._id?.toString() === initialSectionId?.toString() || s.key === initialSectionId
+      );
+      if (target) {
+        setIsAddingNew(false);
+        setEditingSectionId(target._id || target.key);
+        const hasLinkedTable = Boolean(target.tableId);
+        const hasCustomTable = Boolean(
+          target.customTable &&
+            Array.isArray(target.customTable.headers) &&
+            target.customTable.headers.length > 0
+        );
+        setSecForm({
+          title: target.title || target.label || '',
+          content: target.content || target.text || '',
+          order: target.order ?? currentSections.length + 1,
+          pageNumber: target.pageNumber ?? '',
+          key: target.key || '',
+          includeTable: hasLinkedTable || hasCustomTable,
+          tableMode: hasLinkedTable ? 'link' : 'custom',
+          tableId: typeof target.tableId === 'object' && target.tableId ? target.tableId._id : target.tableId || '',
+          customTable: {
+            headers: hasCustomTable ? target.customTable.headers : ['Column 1', 'Column 2'],
+            rows: hasCustomTable && target.customTable.rows?.length > 0 ? target.customTable.rows : [['', '']],
+            caption: target.customTable?.caption || '',
+            footnotes: target.customTable?.footnotes || '',
+          },
+        });
+      } else {
+        setEditingSectionId(null);
+        setIsAddingNew(false);
+      }
+    } else {
+      setEditingSectionId(null);
+      setIsAddingNew(false);
+    }
+  }, [medicine, isOpen, initialSectionId, initialAddMode]);
 
   const showSuccess = (msg) => {
     setSuccessMsg(msg);
@@ -95,6 +153,8 @@ export const MedicineSectionsModal = ({
       title: '',
       content: '',
       order: sections.length + 1,
+      pageNumber: medicine?.source?.[0]?.pageNumber || '',
+      key: '',
       includeTable: false,
       tableMode: 'custom',
       tableId: '',
@@ -110,7 +170,7 @@ export const MedicineSectionsModal = ({
 
   const handleStartEdit = (sec) => {
     setIsAddingNew(false);
-    setEditingSectionId(sec._id);
+    setEditingSectionId(sec._id || sec.key);
 
     const hasLinkedTable = Boolean(sec.tableId);
     const hasCustomTable = Boolean(
@@ -120,9 +180,11 @@ export const MedicineSectionsModal = ({
     );
 
     setSecForm({
-      title: sec.title || '',
-      content: sec.content || '',
+      title: sec.title || sec.label || '',
+      content: sec.content || sec.text || '',
       order: sec.order ?? sections.length + 1,
+      pageNumber: sec.pageNumber ?? '',
+      key: sec.key || '',
       includeTable: hasLinkedTable || hasCustomTable,
       tableMode: hasLinkedTable ? 'link' : 'custom',
       tableId: typeof sec.tableId === 'object' && sec.tableId ? sec.tableId._id : sec.tableId || '',
@@ -237,8 +299,12 @@ export const MedicineSectionsModal = ({
     try {
       const payload = {
         title: secForm.title.trim(),
+        label: secForm.title.trim(),
         content: secForm.content,
+        text: secForm.content,
         order: Number(secForm.order) || 1,
+        pageNumber: secForm.pageNumber ? Number(secForm.pageNumber) : null,
+        key: secForm.key ? secForm.key.trim() : secForm.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_'),
         tableId: secForm.includeTable && secForm.tableMode === 'link' && secForm.tableId ? secForm.tableId : null,
         customTable:
           secForm.includeTable && secForm.tableMode === 'custom'
@@ -275,15 +341,17 @@ export const MedicineSectionsModal = ({
 
   // Delete Section
   const handleDeleteSection = async (sec) => {
-    if (!confirm(`Delete section "${sec.title}" from this monograph?`)) return;
+    const secTitle = sec.title || sec.label || 'Section';
+    const targetId = sec._id || sec.key;
+    if (!confirm(`Delete section "${secTitle}" from this monograph?`)) return;
     setLoading(true);
     setApiError('');
     try {
-      await contentService.deleteMedicineSection(medicine._id, sec._id);
-      const remaining = sections.filter((s) => s._id !== sec._id);
+      await contentService.deleteMedicineSection(medicine._id, targetId);
+      const remaining = sections.filter((s) => (s._id || s.key) !== targetId);
       setSections(remaining);
-      showSuccess(`Section "${sec.title}" deleted.`);
-      if (editingSectionId === sec._id) {
+      showSuccess(`Section "${secTitle}" deleted.`);
+      if (editingSectionId === targetId) {
         setEditingSectionId(null);
       }
       if (onSectionsUpdated) onSectionsUpdated(remaining);
@@ -386,16 +454,23 @@ export const MedicineSectionsModal = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div className="sm:col-span-2">
                 <InputField
-                  label="Section Title *"
+                  label="Section Title / Heading *"
                   value={secForm.title}
                   onChange={(e) => setSecForm((prev) => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Dosage & Administration"
                   required
                 />
               </div>
+              <InputField
+                label="Page Number"
+                type="number"
+                value={secForm.pageNumber}
+                onChange={(e) => setSecForm((prev) => ({ ...prev, pageNumber: e.target.value }))}
+                placeholder="e.g. 84"
+              />
               <InputField
                 label="Display Order"
                 type="number"
@@ -659,8 +734,20 @@ export const MedicineSectionsModal = ({
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-bold text-slate-800">
-                            {sec.order ?? idx + 1}. {sec.title}
+                            {sec.order ?? idx + 1}. {sec.title || sec.label || 'Untitled Section'}
                           </span>
+
+                          {sec.pageNumber && (
+                            <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] font-medium">
+                              Page {sec.pageNumber}
+                            </Badge>
+                          )}
+
+                          {sec.key && (
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] font-mono">
+                              {sec.key}
+                            </Badge>
+                          )}
 
                           {hasLinkedTable && (
                             <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 text-[10px] font-semibold gap-1">
@@ -677,9 +764,9 @@ export const MedicineSectionsModal = ({
                           )}
                         </div>
 
-                        {sec.content ? (
+                        {(sec.content || sec.text) ? (
                           <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                            {sec.content}
+                            {sec.content || sec.text}
                           </p>
                         ) : (
                           <p className="text-xs text-slate-400 italic">No text content entered.</p>

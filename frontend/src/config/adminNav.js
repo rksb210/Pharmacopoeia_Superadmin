@@ -21,6 +21,7 @@ import {
   History,
   Settings,
   Award,
+  BookOpen,
 } from 'lucide-react';
 
 /**
@@ -110,6 +111,14 @@ export const ADMIN_NAV_SECTIONS = [
         path: '/admin/content',
         icon: FileText,
         permission: { module: 'CONTENT', section: 'MONOGRAPHS', action: 'VIEW' },
+        roles: ['superadmin', 'admin', 'maker', 'reviewer', 'approver', 'editor'],
+      },
+      {
+        id: 'appendices',
+        title: 'Appendices',
+        path: '/admin/appendices',
+        icon: BookOpen,
+        permission: { module: 'CONTENT', section: 'APPENDICES', action: 'VIEW' },
         roles: ['superadmin', 'admin', 'maker', 'reviewer', 'approver', 'editor'],
       },
       {
@@ -268,6 +277,9 @@ export const getFilteredAdminNav = (user, can = null) => {
         const { module, section: sec, action } = item.permission;
         if (item.id === 'coupons') {
           return can(action || 'VIEW', 'COMMERCIAL', 'COUPONS') || can(action || 'VIEW', 'COMMERCIAL', 'DISCOUNTS');
+        }
+        if (item.id === 'appendices') {
+          return can(action || 'VIEW', 'CONTENT', 'APPENDICES') || can(action || 'VIEW', 'CONTENT', 'MONOGRAPHS');
         }
         return can(action || 'VIEW', module, sec);
       }

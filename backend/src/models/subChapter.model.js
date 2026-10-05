@@ -32,9 +32,18 @@ const subChapterSchema = new mongoose.Schema(
       default: '',
       maxlength: [2000, 'Description cannot exceed 2000 characters'],
     },
+    pageRange: {
+      start: { type: Number },
+      end: { type: Number },
+    },
     order: {
       type: Number,
       default: 0,
+    },
+    status: {
+      type: String,
+      enum: ['draft', 'in_review', 'published', 'archived'],
+      default: 'published',
     },
     isActive: {
       type: Boolean,
@@ -45,6 +54,40 @@ const subChapterSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    submittedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    submittedAt: {
+      type: Date,
+      default: null,
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+    reviewNotes: {
+      type: String,
+      default: '',
+    },
+    workflowHistory: [
+      {
+        action: { type: String, required: true },
+        performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+        performerName: { type: String, default: 'Admin' },
+        roleName: { type: String, default: 'Admin' },
+        previousStatus: { type: String },
+        newStatus: { type: String },
+        comments: { type: String, default: '' },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,
@@ -53,6 +96,7 @@ const subChapterSchema = new mongoose.Schema(
 
 subChapterSchema.index({ chapterId: 1, code: 1 }, { unique: true });
 subChapterSchema.index({ chapterId: 1, order: 1 });
+subChapterSchema.index({ status: 1 });
 subChapterSchema.index({ isActive: 1 });
 
 export const SubChapter = mongoose.model('SubChapter', subChapterSchema);

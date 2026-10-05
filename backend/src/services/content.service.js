@@ -9,15 +9,23 @@ class ContentService {
   // ==========================================
 
   async getChapters({ page = 1, limit = 10, search = '', status = 'all', sortBy = 'order', sortOrder = 'asc' }) {
-    const query = {};
+    const rootCondition = {
+      $or: [{ level: 1 }, { level: { $exists: false } }, { parentChapterId: null }],
+    };
+    const andConditions = [rootCondition];
 
     if (search && search.trim()) {
       const regex = new RegExp(search.trim(), 'i');
-      query.$or = [{ title: regex }, { code: regex }, { chapterNumber: regex }, { description: regex }];
+      andConditions.push({
+        $or: [{ title: regex }, { code: regex }, { chapterNumber: regex }, { description: regex }],
+      });
     }
 
-    if (status === 'active') query.isActive = true;
-    else if (status === 'inactive') query.isActive = false;
+    if (status === 'active') andConditions.push({ isActive: true });
+    else if (status === 'inactive') andConditions.push({ isActive: false });
+    else if (status && status !== 'all') andConditions.push({ status });
+
+    const query = andConditions.length > 1 ? { $and: andConditions } : andConditions[0];
 
     const pageNum = Math.max(1, parseInt(page, 10));
     const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10)));
@@ -25,7 +33,14 @@ class ContentService {
     const sort = { [sortBy]: sortOrder === 'desc' ? -1 : 1 };
 
     const [chapters, total] = await Promise.all([
-      Chapter.find(query).sort(sort).skip(skip).limit(limitNum).lean(),
+      Chapter.find(query)
+        .populate('submittedBy', 'name email username role')
+        .populate('reviewedBy', 'name email username role')
+        .populate('createdBy', 'name email username role')
+        .sort(sort)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
       Chapter.countDocuments(query),
     ]);
 
@@ -63,11 +78,20 @@ class ContentService {
   }
 
   async getActiveChapters() {
-    return Chapter.find({ isActive: true }).sort({ order: 1, chapterNumber: 1, title: 1 }).lean();
+    return Chapter.find({
+      isActive: true,
+      $or: [{ level: 1 }, { level: { $exists: false } }, { parentChapterId: null }],
+    })
+      .sort({ order: 1, chapterNumber: 1, title: 1 })
+      .lean();
   }
 
   async getChapterById(id) {
-    const chapter = await Chapter.findById(id).lean();
+    const chapter = await Chapter.findById(id)
+      .populate('submittedBy', 'name email username role')
+      .populate('reviewedBy', 'name email username role')
+      .populate('createdBy', 'name email username role')
+      .lean();
     if (!chapter) throw new Error('Chapter not found');
     return chapter;
   }
@@ -80,19 +104,44 @@ class ContentService {
     if (existing) throw new Error(`Chapter code "${code}" already exists.`);
 
     const count = await Chapter.countDocuments();
+    const isSuperAdmin = user?.role === 'superadmin';
+    // Admin creates: if status specified as draft, keep draft; otherwise in_review (or published if superadmin)
+    const status = data.status || (isSuperAdmin ? 'published' : 'in_review');
+
+    const performerName = user?.name || user?.fullName || user?.username || 'Admin';
+    const roleName = user?.role || 'Admin';
+
     const chapter = new Chapter({
       ...data,
       code,
+      status,
       order: data.order !== undefined && data.order !== '' ? Number(data.order) : count + 1,
       createdBy: user?._id || null,
+      submittedBy: user?._id || null,
+      submittedAt: new Date(),
+      workflowHistory: [
+        {
+          action: status === 'in_review' ? 'SUBMITTED_FOR_REVIEW' : status === 'published' ? 'CREATED_AND_PUBLISHED' : 'DRAFT_CREATED',
+          performedBy: user?._id || null,
+          performerName,
+          roleName,
+          previousStatus: null,
+          newStatus: status,
+          comments: data.workflowComments || `Chapter created with status "${status}".`,
+          timestamp: new Date(),
+        },
+      ],
     });
 
     return chapter.save();
   }
 
-  async updateChapter(id, data) {
+  async updateChapter(id, data, user) {
     const chapter = await Chapter.findById(id);
     if (!chapter) throw new Error('Chapter not found');
+
+    const prevStatus = chapter.status;
+    const isSuperAdmin = user?.role === 'superadmin';
 
     if (data.code && data.code.trim().toUpperCase() !== chapter.code) {
       const code = data.code.trim().toUpperCase();
@@ -107,7 +156,70 @@ class ContentService {
     if (data.order !== undefined) chapter.order = Number(data.order);
     if (data.isActive !== undefined) chapter.isActive = Boolean(data.isActive);
 
+    // Review flow: If an admin updates content, it must be reviewed and approved before publishing
+    let nextStatus = chapter.status;
+    if (data.status === 'draft') {
+      nextStatus = 'draft';
+    } else if (isSuperAdmin && data.status) {
+      nextStatus = data.status;
+    } else {
+      // Admin update always transitions to in_review awaiting reviewer approval
+      nextStatus = 'in_review';
+    }
+
+    chapter.status = nextStatus;
+    chapter.submittedBy = user?._id || chapter.submittedBy;
+    chapter.submittedAt = new Date();
+
+    const performerName = user?.name || user?.fullName || user?.username || 'Admin';
+    const roleName = user?.role || 'Admin';
+
+    chapter.workflowHistory.push({
+      action: nextStatus === 'in_review' ? 'UPDATE_SUBMITTED_FOR_REVIEW' : 'CHAPTER_UPDATED',
+      performedBy: user?._id || null,
+      performerName,
+      roleName,
+      previousStatus: prevStatus,
+      newStatus: nextStatus,
+      comments: data.workflowComments || `Chapter updated by ${roleName} and submitted for review.`,
+      timestamp: new Date(),
+    });
+
     return chapter.save();
+  }
+
+  async reviewChapter(id, { decision, comments }, user) {
+    const chapter = await Chapter.findById(id);
+    if (!chapter) throw new Error('Chapter not found');
+
+    const prevStatus = chapter.status;
+    const isApproved = decision === 'APPROVE';
+    const nextStatus = isApproved ? 'published' : 'draft';
+    const actionLabel = isApproved ? 'APPROVED_AND_PUBLISHED' : 'REVISION_REQUESTED';
+
+    chapter.status = nextStatus;
+    chapter.reviewedBy = user?._id || null;
+    chapter.reviewedAt = new Date();
+    chapter.reviewNotes = comments || (isApproved ? 'Approved by Reviewer.' : 'Revision requested.');
+
+    const performerName = user?.name || user?.fullName || user?.username || 'Reviewer';
+    const roleName = user?.role || 'Reviewer';
+
+    chapter.workflowHistory.push({
+      action: actionLabel,
+      performedBy: user?._id || null,
+      performerName,
+      roleName,
+      previousStatus: prevStatus,
+      newStatus: nextStatus,
+      comments: comments || (isApproved ? 'Chapter approved and published to formulary.' : 'Revision requested by reviewer.'),
+      timestamp: new Date(),
+    });
+
+    return (await chapter.save()).populate([
+      { path: 'submittedBy', select: 'name email username role' },
+      { path: 'reviewedBy', select: 'name email username role' },
+    ]);
   }
 
   async deleteChapter(id) {
@@ -154,6 +266,7 @@ class ContentService {
 
     if (status === 'active') query.isActive = true;
     else if (status === 'inactive') query.isActive = false;
+    else if (status && status !== 'all') query.status = status;
 
     const pageNum = Math.max(1, parseInt(page, 10));
     const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10)));
@@ -162,7 +275,10 @@ class ContentService {
 
     const [subChapters, total] = await Promise.all([
       SubChapter.find(query)
-        .populate('chapterId', 'title code chapterNumber')
+        .populate('chapterId', 'title code chapterNumber status')
+        .populate('submittedBy', 'name email username role')
+        .populate('reviewedBy', 'name email username role')
+        .populate('createdBy', 'name email username role')
         .sort(sort)
         .skip(skip)
         .limit(limitNum)
@@ -202,7 +318,12 @@ class ContentService {
   }
 
   async getSubChapterById(id) {
-    const sub = await SubChapter.findById(id).populate('chapterId', 'title code chapterNumber').lean();
+    const sub = await SubChapter.findById(id)
+      .populate('chapterId', 'title code chapterNumber status')
+      .populate('submittedBy', 'name email username role')
+      .populate('reviewedBy', 'name email username role')
+      .populate('createdBy', 'name email username role')
+      .lean();
     if (!sub) throw new Error('Sub-Chapter not found');
     return sub;
   }
@@ -219,20 +340,46 @@ class ContentService {
     if (existing) throw new Error(`Sub-Chapter code "${code}" already exists in chapter "${chapter.title}".`);
 
     const count = await SubChapter.countDocuments({ chapterId: data.chapterId });
+    const isSuperAdmin = user?.role === 'superadmin';
+    const status = data.status || (isSuperAdmin ? 'published' : 'in_review');
+
+    const performerName = user?.name || user?.fullName || user?.username || 'Admin';
+    const roleName = user?.role || 'Admin';
+
     const subChapter = new SubChapter({
       ...data,
       code,
+      status,
       order: data.order !== undefined && data.order !== '' ? Number(data.order) : count + 1,
       createdBy: user?._id || null,
+      submittedBy: user?._id || null,
+      submittedAt: new Date(),
+      workflowHistory: [
+        {
+          action: status === 'in_review' ? 'SUBMITTED_FOR_REVIEW' : status === 'published' ? 'CREATED_AND_PUBLISHED' : 'DRAFT_CREATED',
+          performedBy: user?._id || null,
+          performerName,
+          roleName,
+          previousStatus: null,
+          newStatus: status,
+          comments: data.workflowComments || `Sub-Chapter created with status "${status}".`,
+          timestamp: new Date(),
+        },
+      ],
     });
 
-    return (await subChapter.save()).populate('chapterId', 'title code chapterNumber');
+    return (await subChapter.save()).populate([
+      { path: 'chapterId', select: 'title code chapterNumber' },
+      { path: 'submittedBy', select: 'name email username role' },
+    ]);
   }
 
-  async updateSubChapter(id, data) {
+  async updateSubChapter(id, data, user) {
     const sub = await SubChapter.findById(id);
     if (!sub) throw new Error('Sub-Chapter not found');
 
+    const prevStatus = sub.status;
+    const isSuperAdmin = user?.role === 'superadmin';
     const targetChapterId = data.chapterId || sub.chapterId;
 
     if (data.code) {
@@ -253,7 +400,74 @@ class ContentService {
     if (data.order !== undefined) sub.order = Number(data.order);
     if (data.isActive !== undefined) sub.isActive = Boolean(data.isActive);
 
-    return (await sub.save()).populate('chapterId', 'title code chapterNumber');
+    // Review flow: Admin update triggers reviewer approval requirement
+    let nextStatus = sub.status;
+    if (data.status === 'draft') {
+      nextStatus = 'draft';
+    } else if (isSuperAdmin && data.status) {
+      nextStatus = data.status;
+    } else {
+      nextStatus = 'in_review';
+    }
+
+    sub.status = nextStatus;
+    sub.submittedBy = user?._id || sub.submittedBy;
+    sub.submittedAt = new Date();
+
+    const performerName = user?.name || user?.fullName || user?.username || 'Admin';
+    const roleName = user?.role || 'Admin';
+
+    sub.workflowHistory.push({
+      action: nextStatus === 'in_review' ? 'UPDATE_SUBMITTED_FOR_REVIEW' : 'SUBCHAPTER_UPDATED',
+      performedBy: user?._id || null,
+      performerName,
+      roleName,
+      previousStatus: prevStatus,
+      newStatus: nextStatus,
+      comments: data.workflowComments || `Sub-Chapter updated by ${roleName} and submitted for review.`,
+      timestamp: new Date(),
+    });
+
+    return (await sub.save()).populate([
+      { path: 'chapterId', select: 'title code chapterNumber' },
+      { path: 'submittedBy', select: 'name email username role' },
+      { path: 'reviewedBy', select: 'name email username role' },
+    ]);
+  }
+
+  async reviewSubChapter(id, { decision, comments }, user) {
+    const sub = await SubChapter.findById(id);
+    if (!sub) throw new Error('Sub-Chapter not found');
+
+    const prevStatus = sub.status;
+    const isApproved = decision === 'APPROVE';
+    const nextStatus = isApproved ? 'published' : 'draft';
+    const actionLabel = isApproved ? 'APPROVED_AND_PUBLISHED' : 'REVISION_REQUESTED';
+
+    sub.status = nextStatus;
+    sub.reviewedBy = user?._id || null;
+    sub.reviewedAt = new Date();
+    sub.reviewNotes = comments || (isApproved ? 'Approved by Reviewer.' : 'Revision requested.');
+
+    const performerName = user?.name || user?.fullName || user?.username || 'Reviewer';
+    const roleName = user?.role || 'Reviewer';
+
+    sub.workflowHistory.push({
+      action: actionLabel,
+      performedBy: user?._id || null,
+      performerName,
+      roleName,
+      previousStatus: prevStatus,
+      newStatus: nextStatus,
+      comments: comments || (isApproved ? 'Sub-Chapter approved and published to formulary.' : 'Revision requested by reviewer.'),
+      timestamp: new Date(),
+    });
+
+    return (await sub.save()).populate([
+      { path: 'chapterId', select: 'title code chapterNumber' },
+      { path: 'submittedBy', select: 'name email username role' },
+      { path: 'reviewedBy', select: 'name email username role' },
+    ]);
   }
 
   async deleteSubChapter(id) {
@@ -438,9 +652,12 @@ class ContentService {
 
     const [medicines, total] = await Promise.all([
       Medicine.find(query)
-        .populate('chapterId', 'title code chapterNumber')
-        .populate('subChapterId', 'title code subChapterNumber')
+        .populate('chapterId', 'title code chapterNumber status')
+        .populate('subChapterId', 'title code subChapterNumber status')
         .populate('sections.tableId', 'title tableCode headers rows caption footnotes')
+        .populate('submittedBy', 'name email username role')
+        .populate('reviewedBy', 'name email username role')
+        .populate('createdBy', 'name email username role')
         .sort(sort)
         .skip(skip)
         .limit(limitNum)
@@ -448,15 +665,29 @@ class ContentService {
       Medicine.countDocuments(query),
     ]);
 
-    const enriched = medicines.map((m) => ({
-      ...m,
-      chapter: m.chapterId,
-      subChapter: m.subChapterId,
-      sectionsCount: Array.isArray(m.sections) ? m.sections.length : 0,
-      tablesCount: Array.isArray(m.sections)
-        ? m.sections.filter((s) => s.tableId || (s.customTable && s.customTable.headers?.length > 0)).length
-        : 0,
-    }));
+    const enriched = medicines.map((m) => {
+      const normalizedSections = Array.isArray(m.sections)
+        ? m.sections.map((s, idx) => ({
+            ...s,
+            _id: s._id || `sec-${idx}`,
+            title: s.title || s.label || `Section ${idx + 1}`,
+            label: s.label || s.title || `Section ${idx + 1}`,
+            content: s.content !== undefined && s.content !== '' ? s.content : (s.text || ''),
+            text: s.text !== undefined && s.text !== '' ? s.text : (s.content || ''),
+            order: s.order ?? idx + 1,
+          }))
+        : [];
+      return {
+        ...m,
+        chapter: m.chapterId,
+        subChapter: m.subChapterId,
+        sections: normalizedSections,
+        sectionsCount: normalizedSections.length,
+        tablesCount: normalizedSections.filter(
+          (s) => s.tableId || (s.customTable && s.customTable.headers?.length > 0)
+        ).length,
+      };
+    });
 
     return {
       medicines: enriched,
@@ -471,12 +702,31 @@ class ContentService {
 
   async getMedicineById(id) {
     const medicine = await Medicine.findById(id)
-      .populate('chapterId', 'title code chapterNumber')
-      .populate('subChapterId', 'title code subChapterNumber')
+      .populate('chapterId', 'title code chapterNumber status')
+      .populate('subChapterId', 'title code subChapterNumber status')
       .populate('sections.tableId', 'title tableCode headers rows caption footnotes')
+      .populate('submittedBy', 'name email username role')
+      .populate('reviewedBy', 'name email username role')
+      .populate('createdBy', 'name email username role')
       .lean();
     if (!medicine) throw new Error('Medicine monograph not found');
-    return medicine;
+
+    const normalizedSections = Array.isArray(medicine.sections)
+      ? medicine.sections.map((s, idx) => ({
+          ...s,
+          _id: s._id || `sec-${idx}`,
+          title: s.title || s.label || `Section ${idx + 1}`,
+          label: s.label || s.title || `Section ${idx + 1}`,
+          content: s.content !== undefined && s.content !== '' ? s.content : (s.text || ''),
+          text: s.text !== undefined && s.text !== '' ? s.text : (s.content || ''),
+          order: s.order ?? idx + 1,
+        }))
+      : [];
+
+    return {
+      ...medicine,
+      sections: normalizedSections,
+    };
   }
 
   async createMedicine(data, user) {
@@ -512,23 +762,48 @@ class ContentService {
       { title: 'Storage & Stability', content: '', order: 7 },
     ];
 
+    const isSuperAdmin = user?.role === 'superadmin';
+    const status = data.status || (isSuperAdmin ? 'published' : 'in_review');
+
+    const performerName = user?.name || user?.fullName || user?.username || 'Admin';
+    const roleName = user?.role || 'Admin';
+
     const medicine = new Medicine({
       ...data,
       brandNames,
+      status,
       sections: Array.isArray(data.sections) && data.sections.length > 0 ? data.sections : defaultSections,
       createdBy: user?._id || null,
+      submittedBy: user?._id || null,
+      submittedAt: new Date(),
+      workflowHistory: [
+        {
+          action: status === 'in_review' ? 'SUBMITTED_FOR_REVIEW' : status === 'published' ? 'CREATED_AND_PUBLISHED' : 'DRAFT_CREATED',
+          performedBy: user?._id || null,
+          performerName,
+          roleName,
+          previousStatus: null,
+          newStatus: status,
+          comments: data.workflowComments || `Medicine monograph created with status "${status}".`,
+          timestamp: new Date(),
+        },
+      ],
     });
 
     return (await medicine.save()).populate([
       { path: 'chapterId', select: 'title code chapterNumber' },
       { path: 'subChapterId', select: 'title code subChapterNumber' },
       { path: 'sections.tableId', select: 'title tableCode headers rows caption footnotes' },
+      { path: 'submittedBy', select: 'name email username role' },
     ]);
   }
 
-  async updateMedicine(id, data) {
+  async updateMedicine(id, data, user) {
     const medicine = await Medicine.findById(id);
     if (!medicine) throw new Error('Medicine monograph not found');
+
+    const prevStatus = medicine.status;
+    const isSuperAdmin = user?.role === 'superadmin';
 
     if (data.name !== undefined) medicine.name = data.name.trim();
     if (data.chapterId !== undefined) medicine.chapterId = data.chapterId;
@@ -538,8 +813,21 @@ class ContentService {
     if (data.strength !== undefined) medicine.strength = data.strength.trim();
     if (data.atcCode !== undefined) medicine.atcCode = data.atcCode.trim().toUpperCase();
     if (data.schedule !== undefined) medicine.schedule = data.schedule.trim();
-    if (data.status !== undefined) medicine.status = data.status;
     if (data.isActive !== undefined) medicine.isActive = Boolean(data.isActive);
+
+    // Review flow: Admin updates must be approved by reviewer before publishing
+    let nextStatus = medicine.status;
+    if (data.status === 'draft') {
+      nextStatus = 'draft';
+    } else if (isSuperAdmin && data.status) {
+      nextStatus = data.status;
+    } else {
+      nextStatus = 'in_review';
+    }
+
+    medicine.status = nextStatus;
+    medicine.submittedBy = user?._id || medicine.submittedBy;
+    medicine.submittedAt = new Date();
 
     if (data.brandNames !== undefined) {
       if (Array.isArray(data.brandNames)) {
@@ -556,10 +844,63 @@ class ContentService {
       medicine.sections = data.sections;
     }
 
+    const performerName = user?.name || user?.fullName || user?.username || 'Admin';
+    const roleName = user?.role || 'Admin';
+
+    medicine.workflowHistory.push({
+      action: nextStatus === 'in_review' ? 'UPDATE_SUBMITTED_FOR_REVIEW' : 'MEDICINE_UPDATED',
+      performedBy: user?._id || null,
+      performerName,
+      roleName,
+      previousStatus: prevStatus,
+      newStatus: nextStatus,
+      comments: data.workflowComments || `Medicine monograph updated by ${roleName} and submitted for review.`,
+      timestamp: new Date(),
+    });
+
     return (await medicine.save()).populate([
       { path: 'chapterId', select: 'title code chapterNumber' },
       { path: 'subChapterId', select: 'title code subChapterNumber' },
       { path: 'sections.tableId', select: 'title tableCode headers rows caption footnotes' },
+      { path: 'submittedBy', select: 'name email username role' },
+      { path: 'reviewedBy', select: 'name email username role' },
+    ]);
+  }
+
+  async reviewMedicine(id, { decision, comments }, user) {
+    const medicine = await Medicine.findById(id);
+    if (!medicine) throw new Error('Medicine monograph not found');
+
+    const prevStatus = medicine.status;
+    const isApproved = decision === 'APPROVE';
+    const nextStatus = isApproved ? 'published' : 'draft';
+    const actionLabel = isApproved ? 'APPROVED_AND_PUBLISHED' : 'REVISION_REQUESTED';
+
+    medicine.status = nextStatus;
+    medicine.reviewedBy = user?._id || null;
+    medicine.reviewedAt = new Date();
+    medicine.reviewNotes = comments || (isApproved ? 'Approved by Reviewer.' : 'Revision requested.');
+
+    const performerName = user?.name || user?.fullName || user?.username || 'Reviewer';
+    const roleName = user?.role || 'Reviewer';
+
+    medicine.workflowHistory.push({
+      action: actionLabel,
+      performedBy: user?._id || null,
+      performerName,
+      roleName,
+      previousStatus: prevStatus,
+      newStatus: nextStatus,
+      comments: comments || (isApproved ? 'Medicine monograph approved and published to formulary.' : 'Revision requested by reviewer.'),
+      timestamp: new Date(),
+    });
+
+    return (await medicine.save()).populate([
+      { path: 'chapterId', select: 'title code chapterNumber' },
+      { path: 'subChapterId', select: 'title code subChapterNumber' },
+      { path: 'sections.tableId', select: 'title tableCode headers rows caption footnotes' },
+      { path: 'submittedBy', select: 'name email username role' },
+      { path: 'reviewedBy', select: 'name email username role' },
     ]);
   }
 
@@ -587,14 +928,22 @@ class ContentService {
       .populate('sections.tableId', 'title tableCode headers rows caption footnotes')
       .lean();
     if (!medicine) throw new Error('Medicine monograph not found');
-    return medicine.sections || [];
+    return (medicine.sections || []).map((s, idx) => ({
+      ...s,
+      title: s.title || s.label || `Section ${idx + 1}`,
+      label: s.label || s.title || `Section ${idx + 1}`,
+      content: s.content !== undefined && s.content !== '' ? s.content : (s.text || ''),
+      text: s.text !== undefined && s.text !== '' ? s.text : (s.content || ''),
+      order: s.order ?? idx + 1,
+    }));
   }
 
   async addMedicineSection(medicineId, sectionData) {
     const medicine = await Medicine.findById(medicineId);
     if (!medicine) throw new Error('Medicine monograph not found');
 
-    if (!sectionData.title || !sectionData.title.trim()) {
+    const title = (sectionData.title || sectionData.label || '').trim();
+    if (!title) {
       throw new Error('Section title is required');
     }
 
@@ -603,10 +952,17 @@ class ContentService {
         ? Number(sectionData.order)
         : medicine.sections.length + 1;
 
+    const content = sectionData.content !== undefined ? sectionData.content : (sectionData.text || '');
+    const key = sectionData.key || title.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
     const newSection = {
-      title: sectionData.title.trim(),
-      content: sectionData.content || '',
+      title,
+      label: title,
+      content,
+      text: content,
+      key,
       order,
+      pageNumber: sectionData.pageNumber ? Number(sectionData.pageNumber) : null,
       tableId: sectionData.tableId || null,
       customTable: sectionData.customTable || { headers: [], rows: [], caption: '', footnotes: '' },
     };
@@ -618,18 +974,39 @@ class ContentService {
       .populate('sections.tableId', 'title tableCode headers rows caption footnotes')
       .lean();
 
-    return populated.sections;
+    return (populated.sections || []).map((s, idx) => ({
+      ...s,
+      title: s.title || s.label || `Section ${idx + 1}`,
+      label: s.label || s.title || `Section ${idx + 1}`,
+      content: s.content !== undefined && s.content !== '' ? s.content : (s.text || ''),
+      text: s.text !== undefined && s.text !== '' ? s.text : (s.content || ''),
+      order: s.order ?? idx + 1,
+    }));
   }
 
   async updateMedicineSection(medicineId, sectionId, sectionData) {
     const medicine = await Medicine.findById(medicineId);
     if (!medicine) throw new Error('Medicine monograph not found');
 
-    const section = medicine.sections.id(sectionId);
+    const section =
+      medicine.sections.id(sectionId) ||
+      medicine.sections.find((s) => s._id?.toString() === sectionId?.toString() || s.key === sectionId);
     if (!section) throw new Error('Section not found in this monograph');
 
-    if (sectionData.title !== undefined) section.title = sectionData.title.trim();
-    if (sectionData.content !== undefined) section.content = sectionData.content;
+    if (sectionData.title !== undefined || sectionData.label !== undefined) {
+      const val = (sectionData.title || sectionData.label || '').trim();
+      section.title = val;
+      section.label = val;
+    }
+    if (sectionData.content !== undefined || sectionData.text !== undefined) {
+      const val = sectionData.content !== undefined ? sectionData.content : sectionData.text;
+      section.content = val;
+      section.text = val;
+    }
+    if (sectionData.key !== undefined) section.key = sectionData.key.trim();
+    if (sectionData.pageNumber !== undefined) {
+      section.pageNumber = sectionData.pageNumber ? Number(sectionData.pageNumber) : null;
+    }
     if (sectionData.order !== undefined) section.order = Number(sectionData.order);
     if (sectionData.tableId !== undefined) section.tableId = sectionData.tableId || null;
 
@@ -648,20 +1025,47 @@ class ContentService {
       .populate('sections.tableId', 'title tableCode headers rows caption footnotes')
       .lean();
 
-    return populated.sections;
+    return (populated.sections || []).map((s, idx) => ({
+      ...s,
+      title: s.title || s.label || `Section ${idx + 1}`,
+      label: s.label || s.title || `Section ${idx + 1}`,
+      content: s.content !== undefined && s.content !== '' ? s.content : (s.text || ''),
+      text: s.text !== undefined && s.text !== '' ? s.text : (s.content || ''),
+      order: s.order ?? idx + 1,
+    }));
   }
 
   async deleteMedicineSection(medicineId, sectionId) {
     const medicine = await Medicine.findById(medicineId);
     if (!medicine) throw new Error('Medicine monograph not found');
 
-    const section = medicine.sections.id(sectionId);
-    if (!section) throw new Error('Section not found in this monograph');
+    const sectionIndex = medicine.sections.findIndex(
+      (s) => s._id?.toString() === sectionId?.toString() || s.key === sectionId
+    );
+    if (sectionIndex === -1) throw new Error('Section not found in this monograph');
 
-    medicine.sections.pull(sectionId);
+    const removedTitle = medicine.sections[sectionIndex].title || medicine.sections[sectionIndex].label || 'Section';
+    medicine.sections.splice(sectionIndex, 1);
     await medicine.save();
 
-    return { success: true, message: `Section "${section.title}" removed successfully.` };
+    const populated = await Medicine.findById(medicineId)
+      .populate('sections.tableId', 'title tableCode headers rows caption footnotes')
+      .lean();
+
+    const normalizedSections = (populated?.sections || []).map((s, idx) => ({
+      ...s,
+      title: s.title || s.label || `Section ${idx + 1}`,
+      label: s.label || s.title || `Section ${idx + 1}`,
+      content: s.content !== undefined && s.content !== '' ? s.content : (s.text || ''),
+      text: s.text !== undefined && s.text !== '' ? s.text : (s.content || ''),
+      order: s.order ?? idx + 1,
+    }));
+
+    return {
+      success: true,
+      message: `Section "${removedTitle}" removed successfully.`,
+      sections: normalizedSections,
+    };
   }
 
   async reorderMedicineSections(medicineId, orderedSectionIds) {
@@ -685,22 +1089,41 @@ class ContentService {
   // ==========================================
 
   async getContentStats() {
-    const [totalChapters, activeChapters, totalSubChapters, totalMedicines, publishedMedicines, totalTables] =
-      await Promise.all([
-        Chapter.countDocuments(),
-        Chapter.countDocuments({ isActive: true }),
-        SubChapter.countDocuments(),
-        Medicine.countDocuments(),
-        Medicine.countDocuments({ status: 'published' }),
-        ContentTable.countDocuments(),
-      ]);
+    const rootChapterQuery = {
+      $or: [{ level: 1 }, { level: { $exists: false } }, { parentChapterId: null }],
+    };
+    const [
+      totalChapters,
+      activeChapters,
+      inReviewChapters,
+      totalSubChapters,
+      inReviewSubChapters,
+      totalMedicines,
+      publishedMedicines,
+      inReviewMedicines,
+      totalTables,
+    ] = await Promise.all([
+      Chapter.countDocuments(rootChapterQuery),
+      Chapter.countDocuments({ ...rootChapterQuery, isActive: true }),
+      Chapter.countDocuments({ ...rootChapterQuery, status: 'in_review' }),
+      SubChapter.countDocuments(),
+      SubChapter.countDocuments({ status: 'in_review' }),
+      Medicine.countDocuments(),
+      Medicine.countDocuments({ status: 'published' }),
+      Medicine.countDocuments({ status: 'in_review' }),
+      ContentTable.countDocuments(),
+    ]);
 
     return {
       totalChapters,
       activeChapters,
+      inReviewChapters,
       totalSubChapters,
+      inReviewSubChapters,
       totalMedicines,
       publishedMedicines,
+      inReviewMedicines,
+      totalPendingReview: inReviewChapters + inReviewSubChapters + inReviewMedicines,
       totalTables,
     };
   }

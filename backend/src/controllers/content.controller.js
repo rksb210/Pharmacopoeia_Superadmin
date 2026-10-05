@@ -66,7 +66,7 @@ export const createChapter = async (req, res, next) => {
 
 export const updateChapter = async (req, res, next) => {
   try {
-    const chapter = await contentService.updateChapter(req.params.id, req.body);
+    const chapter = await contentService.updateChapter(req.params.id, req.body, req.user);
 
     await auditService.log(req, {
       action: 'CHAPTER_UPDATED',
@@ -79,6 +79,31 @@ export const updateChapter = async (req, res, next) => {
     });
 
     return res.status(200).json({ success: true, message: 'Chapter updated successfully.', chapter });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const reviewChapter = async (req, res, next) => {
+  try {
+    const { decision, comments } = req.body;
+    const chapter = await contentService.reviewChapter(req.params.id, { decision, comments }, req.user);
+
+    await auditService.log(req, {
+      action: decision === 'APPROVE' ? 'CHAPTER_APPROVED' : 'CHAPTER_REVISION_REQUESTED',
+      module: 'CONTENT',
+      entity: 'Chapter',
+      entityId: chapter._id,
+      status: 'SUCCESS',
+      details: `${decision === 'APPROVE' ? 'Approved and published' : 'Requested revision on'} chapter "${chapter.title}".`,
+      newValues: { decision, comments, status: chapter.status },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: decision === 'APPROVE' ? 'Chapter approved and published successfully.' : 'Revision requested successfully.',
+      chapter,
+    });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
   }
@@ -177,7 +202,7 @@ export const createSubChapter = async (req, res, next) => {
 
 export const updateSubChapter = async (req, res, next) => {
   try {
-    const subChapter = await contentService.updateSubChapter(req.params.id, req.body);
+    const subChapter = await contentService.updateSubChapter(req.params.id, req.body, req.user);
 
     await auditService.log(req, {
       action: 'SUBCHAPTER_UPDATED',
@@ -190,6 +215,31 @@ export const updateSubChapter = async (req, res, next) => {
     });
 
     return res.status(200).json({ success: true, message: 'Sub-Chapter updated successfully.', subChapter });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const reviewSubChapter = async (req, res, next) => {
+  try {
+    const { decision, comments } = req.body;
+    const subChapter = await contentService.reviewSubChapter(req.params.id, { decision, comments }, req.user);
+
+    await auditService.log(req, {
+      action: decision === 'APPROVE' ? 'SUBCHAPTER_APPROVED' : 'SUBCHAPTER_REVISION_REQUESTED',
+      module: 'CONTENT',
+      entity: 'SubChapter',
+      entityId: subChapter._id,
+      status: 'SUCCESS',
+      details: `${decision === 'APPROVE' ? 'Approved and published' : 'Requested revision on'} sub-chapter "${subChapter.title}".`,
+      newValues: { decision, comments, status: subChapter.status },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: decision === 'APPROVE' ? 'Sub-Chapter approved and published successfully.' : 'Revision requested successfully.',
+      subChapter,
+    });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
   }
@@ -398,7 +448,7 @@ export const createMedicine = async (req, res, next) => {
 
 export const updateMedicine = async (req, res, next) => {
   try {
-    const medicine = await contentService.updateMedicine(req.params.id, req.body);
+    const medicine = await contentService.updateMedicine(req.params.id, req.body, req.user);
 
     await auditService.log(req, {
       action: 'MEDICINE_UPDATED',
@@ -411,6 +461,31 @@ export const updateMedicine = async (req, res, next) => {
     });
 
     return res.status(200).json({ success: true, message: 'Medicine monograph updated successfully.', medicine });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const reviewMedicine = async (req, res, next) => {
+  try {
+    const { decision, comments } = req.body;
+    const medicine = await contentService.reviewMedicine(req.params.id, { decision, comments }, req.user);
+
+    await auditService.log(req, {
+      action: decision === 'APPROVE' ? 'MEDICINE_APPROVED' : 'MEDICINE_REVISION_REQUESTED',
+      module: 'CONTENT',
+      entity: 'Medicine',
+      entityId: medicine._id,
+      status: 'SUCCESS',
+      details: `${decision === 'APPROVE' ? 'Approved and published' : 'Requested revision on'} medicine monograph "${medicine.name}".`,
+      newValues: { decision, comments, status: medicine.status },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: decision === 'APPROVE' ? 'Medicine monograph approved and published successfully.' : 'Revision requested successfully.',
+      medicine,
+    });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
   }
@@ -518,7 +593,11 @@ export const deleteMedicineSection = async (req, res, next) => {
       details: result.message,
     });
 
-    return res.status(200).json({ success: true, message: result.message });
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      sections: result.sections,
+    });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
   }

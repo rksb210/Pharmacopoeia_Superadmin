@@ -2,19 +2,36 @@ import mongoose from 'mongoose';
 
 const sectionSchema = new mongoose.Schema(
   {
+    key: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     title: {
       type: String,
-      required: [true, 'Section title is required'],
       trim: true,
-      maxlength: [200, 'Section title cannot exceed 200 characters'],
+      default: '',
+    },
+    label: {
+      type: String,
+      trim: true,
+      default: '',
     },
     content: {
+      type: String,
+      default: '',
+    },
+    text: {
       type: String,
       default: '',
     },
     order: {
       type: Number,
       default: 0,
+    },
+    pageNumber: {
+      type: Number,
+      default: null,
     },
     // Optional reference to a reusable ContentTable
     tableId: {
@@ -110,6 +127,40 @@ const medicineSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    submittedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    submittedAt: {
+      type: Date,
+      default: null,
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+    reviewNotes: {
+      type: String,
+      default: '',
+    },
+    workflowHistory: [
+      {
+        action: { type: String, required: true },
+        performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+        performerName: { type: String, default: 'Admin' },
+        roleName: { type: String, default: 'Admin' },
+        previousStatus: { type: String },
+        newStatus: { type: String },
+        comments: { type: String, default: '' },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

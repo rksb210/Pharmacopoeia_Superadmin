@@ -125,10 +125,22 @@ export const MedicineDetailsModal = ({ isOpen, onClose, medicine = null }) => {
                     key={sec._id || idx}
                     className="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-3"
                   >
-                    <div className="flex items-center justify-between">
-                      <h5 className="text-xs font-bold text-amber-950 uppercase tracking-wider border-l-3 border-orange-500 pl-2">
-                        {sec.order ? `${sec.order}. ` : ''}{sec.title}
-                      </h5>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <h5 className="text-xs font-bold text-amber-950 uppercase tracking-wider border-l-3 border-orange-500 pl-2">
+                          {sec.order ? `${sec.order}. ` : ''}{sec.title || sec.label || 'Section'}
+                        </h5>
+                        {sec.pageNumber && (
+                          <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] font-medium">
+                            p. {sec.pageNumber}
+                          </Badge>
+                        )}
+                        {sec.key && (
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] font-mono">
+                            {sec.key}
+                          </Badge>
+                        )}
+                      </div>
 
                       {activeTable && (
                         <Badge
@@ -141,9 +153,9 @@ export const MedicineDetailsModal = ({ isOpen, onClose, medicine = null }) => {
                       )}
                     </div>
 
-                    {sec.content && (
+                    {(sec.content || sec.text) && (
                       <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap pl-2 font-normal">
-                        {sec.content}
+                        {sec.content || sec.text}
                       </div>
                     )}
 

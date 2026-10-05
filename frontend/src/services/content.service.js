@@ -11,6 +11,7 @@ export const contentService = {
   createChapter: async (data) => api.post('/content/chapters', data),
   updateChapter: async (id, data) => api.put(`/content/chapters/${id}`, data),
   toggleChapterStatus: async (id, isActive) => api.patch(`/content/chapters/${id}/status`, { isActive }),
+  reviewChapter: async (id, data) => api.post(`/content/chapters/${id}/review`, data),
   deleteChapter: async (id) => api.delete(`/content/chapters/${id}`),
 
   // Sub-Chapters
@@ -20,6 +21,7 @@ export const contentService = {
   createSubChapter: async (data) => api.post('/content/sub-chapters', data),
   updateSubChapter: async (id, data) => api.put(`/content/sub-chapters/${id}`, data),
   toggleSubChapterStatus: async (id, isActive) => api.patch(`/content/sub-chapters/${id}/status`, { isActive }),
+  reviewSubChapter: async (id, data) => api.post(`/content/sub-chapters/${id}/review`, data),
   deleteSubChapter: async (id) => api.delete(`/content/sub-chapters/${id}`),
 
   // Tables
@@ -37,6 +39,7 @@ export const contentService = {
   createMedicine: async (data) => api.post('/content/medicines', data),
   updateMedicine: async (id, data) => api.put(`/content/medicines/${id}`, data),
   toggleMedicineStatus: async (id, isActive) => api.patch(`/content/medicines/${id}/status`, { isActive }),
+  reviewMedicine: async (id, data) => api.post(`/content/medicines/${id}/review`, data),
   deleteMedicine: async (id) => api.delete(`/content/medicines/${id}`),
 
   // Sections

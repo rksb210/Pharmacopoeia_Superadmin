@@ -29,6 +29,7 @@ import DepartmentsPage from './pages/admin/DepartmentsPage';
 import DesignationsPage from './pages/admin/DesignationsPage';
 import DikshaPage from './pages/admin/DikshaPage';
 import ContentPage from './pages/admin/ContentPage';
+import AppendixPage from './pages/admin/AppendixPage';
 import AdminModulePlaceholderPage from './pages/admin/AdminModulePlaceholderPage';
 
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -206,11 +207,15 @@ function AppRoutes() {
           path="content"
           element={
             <PermissionGuard module="CONTENT" section="MONOGRAPHS" action="VIEW" pageLevel>
-              <AdminModulePlaceholderPage
-                moduleId="content"
-                title="Content & Monographs"
-                description="Indian Pharmacopoeia drug monographs, dosage guidelines, and advisories."
-              />
+              <ContentPage />
+            </PermissionGuard>
+          }
+        />
+        <Route
+          path="appendices"
+          element={
+            <PermissionGuard module="CONTENT" section="APPENDICES" action="VIEW" pageLevel>
+              <AppendixPage />
             </PermissionGuard>
           }
         />

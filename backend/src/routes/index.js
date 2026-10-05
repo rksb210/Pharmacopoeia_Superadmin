@@ -22,6 +22,7 @@ import designationRoutes from './designation.routes.js';
 import dikshaRoutes from './diksha.routes.js';
 import institutionalSubscriptionRoutes from './institutionalSubscription.routes.js';
 import contentRoutes from './content.routes.js';
+import appendixRoutes from './appendix.routes.js';
 
 const router = Router();
 
@@ -100,5 +101,8 @@ router.use('/diksha', dikshaRoutes);
 
 // Content & Formulary (Chapters, Sub-Chapters, Medicines & Tables)
 router.use('/content', contentRoutes);
+
+// Formulary Appendices (Appendices 1-20)
+router.use('/appendices', appendixRoutes);
 
 export default router;

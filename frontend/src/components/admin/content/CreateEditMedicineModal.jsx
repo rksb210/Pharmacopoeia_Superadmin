@@ -78,7 +78,7 @@ export const CreateEditMedicineModal = ({
         strength: '',
         atcCode: '',
         schedule: 'Schedule H',
-        status: 'published',
+        status: 'in_review',
         isActive: true,
       });
       loadSubChapters(defaultChap);
@@ -130,7 +130,7 @@ export const CreateEditMedicineModal = ({
         strength: formData.strength.trim(),
         atcCode: formData.atcCode.trim().toUpperCase(),
         schedule: formData.schedule,
-        status: formData.status,
+        status: formData.status || 'in_review',
         isActive: formData.isActive,
       };
       if (onSuccess) await onSuccess(payload, isEditMode ? medicine._id : null);
@@ -147,13 +147,22 @@ export const CreateEditMedicineModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title={isEditMode ? `Edit Medicine: ${medicine?.name}` : 'Add New Medicine Monograph'}
-      description={isEditMode ? 'Update drug monograph metadata.' : 'Create a new drug monograph in the National Formulary of India.'}
-      confirmLabel={isEditMode ? 'Save Monograph' : 'Create Monograph'}
+      description={isEditMode ? 'Update drug monograph metadata. Edits require reviewer approval before publication.' : 'Create a new drug monograph in the National Formulary for editorial review.'}
+      confirmLabel={isEditMode ? 'Save & Submit for Review' : 'Create & Submit for Review'}
       isConfirming={isSubmitting}
       onConfirm={handleSubmit}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {isEditMode && medicine?.status === 'published' && (
+          <div className="p-2.5 bg-amber-50/80 border border-amber-200 text-amber-900 text-xs rounded-xl flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+            <span>
+              <strong>Review Workflow:</strong> Updating this published monograph will transition it to <em>In Committee Review</em>. Reviewer approval is required before changes go live.
+            </span>
+          </div>
+        )}
+
         {apiError && (
           <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
