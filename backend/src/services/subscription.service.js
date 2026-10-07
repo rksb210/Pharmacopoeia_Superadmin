@@ -93,6 +93,9 @@ export const subscriptionService = {
       complimentaryCount,
       discountedCount,
       expiringSoonCount,
+      physicalCount,
+      onlineCount,
+      hybridCount,
       revenueResult,
     ] = await Promise.all([
       Subscription.countDocuments(),
@@ -108,6 +111,31 @@ export const subscriptionService = {
       Subscription.countDocuments({
         status: 'active',
         endDate: { $gte: now, $lte: expiringThreshold },
+      }),
+      Subscription.countDocuments({
+        $or: [
+          { deliveryType: 'PHYSICAL' },
+          {
+            planName: { $regex: /physical/i },
+            deliveryType: { $ne: 'ONLINE_PHYSICAL' },
+            $nor: [{ planName: { $regex: /physical\s*\+\s*online|online\s*\+\s*physical|hybrid/i } }],
+          },
+        ],
+      }),
+      Subscription.countDocuments({
+        $or: [
+          { deliveryType: 'ONLINE' },
+          {
+            deliveryType: { $nin: ['PHYSICAL', 'ONLINE_PHYSICAL'] },
+            $nor: [{ planName: { $regex: /physical/i } }],
+          },
+        ],
+      }),
+      Subscription.countDocuments({
+        $or: [
+          { deliveryType: 'ONLINE_PHYSICAL' },
+          { planName: { $regex: /physical\s*\+\s*online|online\s*\+\s*physical|hybrid/i } },
+        ],
       }),
       Subscription.aggregate([
         { $match: { paymentStatus: 'success' } },
@@ -126,6 +154,9 @@ export const subscriptionService = {
       complimentarySubscriptions: complimentaryCount,
       discountedSubscriptions: discountedCount,
       expiringSoonSubscriptions: expiringSoonCount,
+      physicalSubscriptions: physicalCount,
+      onlineSubscriptions: onlineCount,
+      hybridSubscriptions: hybridCount,
       totalRevenueINR: totalRevenue,
     };
   },
@@ -139,6 +170,7 @@ export const subscriptionService = {
     search = '',
     type = 'all',
     status = 'all',
+    deliveryType = 'all',
     userType = 'all',
     dateFrom = '',
     dateTo = '',
@@ -146,6 +178,41 @@ export const subscriptionService = {
     sortOrder = 'desc',
   }) => {
     const query = {};
+
+    // Delivery Type Filter
+    if (deliveryType && deliveryType !== 'all') {
+      const dtNorm = deliveryType.toUpperCase().trim();
+      query.$and = query.$and || [];
+      if (dtNorm === 'PHYSICAL') {
+        query.$and.push({
+          $or: [
+            { deliveryType: 'PHYSICAL' },
+            {
+              planName: { $regex: /physical/i },
+              deliveryType: { $ne: 'ONLINE_PHYSICAL' },
+              $nor: [{ planName: { $regex: /physical\s*\+\s*online|online\s*\+\s*physical|hybrid/i } }],
+            },
+          ],
+        });
+      } else if (dtNorm === 'ONLINE_PHYSICAL' || dtNorm === 'HYBRID') {
+        query.$and.push({
+          $or: [
+            { deliveryType: 'ONLINE_PHYSICAL' },
+            { planName: { $regex: /physical\s*\+\s*online|online\s*\+\s*physical|hybrid/i } },
+          ],
+        });
+      } else if (dtNorm === 'ONLINE') {
+        query.$and.push({
+          $or: [
+            { deliveryType: 'ONLINE' },
+            {
+              deliveryType: { $nin: ['PHYSICAL', 'ONLINE_PHYSICAL'] },
+              $nor: [{ planName: { $regex: /physical/i } }],
+            },
+          ],
+        });
+      }
+    }
 
     // User Type Filter
     let userTypeSubscriberIds = null;

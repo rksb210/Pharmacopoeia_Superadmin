@@ -7,12 +7,15 @@ import {
   User,
   Calendar,
   Clock,
-  FileText,
-  ShieldCheck,
   RotateCw,
   XCircle,
   Receipt,
-  Building,
+  Truck,
+  Phone,
+  Mail,
+  Copy,
+  Check,
+  Package,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 
@@ -24,6 +27,7 @@ export const SubscriptionDetailsModal = ({
   onCancel,
 }) => {
   const [activeTab, setActiveTab] = useState('details'); // 'details' | 'timeline'
+  const [copied, setCopied] = useState(false);
 
   if (!subscription) return null;
 
@@ -37,6 +41,74 @@ export const SubscriptionDetailsModal = ({
     0,
     Math.ceil((new Date(subscription.endDate) - new Date()) / (1000 * 60 * 60 * 24))
   );
+
+  // Determine delivery format
+  const getDeliveryType = (sub) => {
+    if (sub?.deliveryType) {
+      const dt = sub.deliveryType.toUpperCase();
+      if (dt === 'PHYSICAL') return 'PHYSICAL';
+      if (dt === 'ONLINE_PHYSICAL' || dt === 'HYBRID') return 'ONLINE_PHYSICAL';
+      if (dt === 'ONLINE') return 'ONLINE';
+    }
+    const name = (sub?.planName || '').toLowerCase();
+    const code = (sub?.planCode || '').toLowerCase();
+    if (
+      name.includes('physical + online') ||
+      name.includes('online + physical') ||
+      name.includes('hybrid') ||
+      code.includes('hybrid') ||
+      code.includes('online_physical')
+    ) {
+      return 'ONLINE_PHYSICAL';
+    }
+    if (
+      name.includes('physical') ||
+      code.includes('physical') ||
+      sub?.shippingAddress?.street1 ||
+      sub?.shippingAddress?.formattedAddress
+    ) {
+      return 'PHYSICAL';
+    }
+    return 'ONLINE';
+  };
+
+  const deliveryType = getDeliveryType(subscription);
+  const isPhysical = deliveryType === 'PHYSICAL';
+  const isHybrid = deliveryType === 'ONLINE_PHYSICAL';
+  const addr = subscription.shippingAddress || {};
+  const hasAddressData = !!(addr.street1 || addr.formattedAddress || addr.fullName || addr.city);
+  const hasShipping = isPhysical || isHybrid || hasAddressData;
+
+  const handleCopyAddress = () => {
+    const textToCopy = [
+      `Recipient: ${addr.fullName || user.name || ''}`,
+      `Phone: ${addr.phoneNumber || user.phoneNumber || ''}`,
+      `Email: ${addr.email || user.email || ''}`,
+      `Address: ${
+        addr.formattedAddress ||
+        [
+          addr.street1,
+          addr.street2,
+          addr.landmark ? `Landmark: ${addr.landmark}` : '',
+          addr.city,
+          addr.state,
+          addr.postalCode ? `PIN: ${addr.postalCode}` : '',
+          addr.country || 'India',
+        ]
+          .filter(Boolean)
+          .join(', ')
+      }`,
+      addr.deliveryInstructions ? `Delivery Instructions: ${addr.deliveryInstructions}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
+  };
 
   return (
     <AdminModal
@@ -59,8 +131,23 @@ export const SubscriptionDetailsModal = ({
               <SubscriptionStatusBadge
                 status={subscription.status}
                 type={subscription.type}
-                isExpiringSoon={isExpiringSoon}
+                isExpiringSoon={!isPhysical && isExpiringSoon}
               />
+              {isPhysical && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                  📦 Physical Copy
+                </span>
+              )}
+              {isHybrid && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-900 border border-purple-300">
+                  ⚡ Physical + Online
+                </span>
+              )}
+              {!isPhysical && !isHybrid && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-900 border border-sky-300">
+                  🌐 Online Pass
+                </span>
+              )}
             </div>
             <h4 className="font-bold text-slate-900 text-sm mt-0.5 break-words">{subscription.planName}</h4>
             <p className="text-slate-400 text-xs truncate">
@@ -69,36 +156,38 @@ export const SubscriptionDetailsModal = ({
             </p>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                onClose();
-                if (onRenew) onRenew(subscription);
-              }}
-              className="h-8 rounded-xl font-bold text-xs cursor-pointer"
-            >
-              <RotateCw className="w-3.5 h-3.5 mr-1" />
-              <span>{subscription.status === 'cancelled' ? 'Reactivate' : 'Renew'}</span>
-            </Button>
-
-            {subscription.status === 'active' && (
+          {/* Quick Actions (Renew & Cancel only for Online / Hybrid; NOT for Physical Only) */}
+          {!isPhysical && (
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
               <Button
-                variant="destructive"
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   onClose();
-                  if (onCancel) onCancel(subscription);
+                  if (onRenew) onRenew(subscription);
                 }}
                 className="h-8 rounded-xl font-bold text-xs cursor-pointer"
               >
-                <XCircle className="w-3.5 h-3.5 mr-1" />
-                <span>Cancel</span>
+                <RotateCw className="w-3.5 h-3.5 mr-1" />
+                <span>{subscription.status === 'cancelled' ? 'Reactivate' : 'Renew'}</span>
               </Button>
-            )}
-          </div>
+
+              {subscription.status === 'active' && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    onClose();
+                    if (onCancel) onCancel(subscription);
+                  }}
+                  className="h-8 rounded-xl font-bold text-xs cursor-pointer"
+                >
+                  <XCircle className="w-3.5 h-3.5 mr-1" />
+                  <span>Cancel</span>
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tab Switcher */}
@@ -154,42 +243,217 @@ export const SubscriptionDetailsModal = ({
               </div>
             </div>
 
-            {/* Validity & Expiry Countdown */}
-            <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-slate-800">
-                  <Calendar className="w-4 h-4 text-[#E76120]" />
-                  <span>Validity &amp; Expiration</span>
-                </div>
-                <Badge variant="nfiYellow" className="text-[10px] font-bold">
-                  {daysRemaining > 0 ? `${daysRemaining} Days Left` : 'Term Ended'}
-                </Badge>
-              </div>
+            {/* Hardcopy Shipping & Delivery Address Card (Shown for Physical or Hybrid plans, or if shipping address is recorded) */}
+            {hasShipping && (
+              <div className="p-3.5 bg-amber-50/40 border border-amber-200/90 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2 font-bold text-slate-900">
+                    <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 border border-amber-200">
+                      <Truck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900">
+                          Hardcopy Book Shipping &amp; Postal Address
+                        </span>
+                        <Badge variant="outline" className="text-[9px] font-bold bg-amber-100 text-amber-900 border-amber-300">
+                          {isPhysical ? 'Physical Book' : 'Hybrid Dispatch'}
+                        </Badge>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-normal">
+                        Courier address provided during subscription checkout
+                      </span>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] pt-1">
-                <div className="bg-white p-2.5 rounded-xl border border-slate-100 min-w-0">
-                  <span className="text-slate-400 block mb-0.5">Activation Date</span>
-                  <span className="font-bold text-slate-900 block truncate">
-                    {new Date(subscription.startDate).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </span>
+                  {hasAddressData && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyAddress}
+                      className="h-7 px-2.5 rounded-xl text-[11px] font-bold border-amber-300 text-amber-900 hover:bg-amber-100/60 cursor-pointer shadow-2xs"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                          <span className="text-emerald-700">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 mr-1 text-amber-700" />
+                          <span>Copy Address</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
 
-                <div className="bg-white p-2.5 rounded-xl border border-slate-100 min-w-0">
-                  <span className="text-slate-400 block mb-0.5">Expiry Date</span>
-                  <span className="font-bold text-[#284661] block truncate">
-                    {new Date(subscription.endDate).toLocaleDateString('en-IN', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </span>
+                {hasAddressData ? (
+                  <div className="space-y-2.5 pt-1 text-[11px]">
+                    {/* Recipient Contact Strip */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-white p-2.5 rounded-xl border border-amber-100">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Recipient Name</span>
+                        <span className="font-bold text-slate-900 truncate block">
+                          {addr.fullName || user.name || 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Mobile Number</span>
+                        {addr.phoneNumber || user.phoneNumber ? (
+                          <a
+                            href={`tel:${addr.phoneNumber || user.phoneNumber}`}
+                            className="font-bold text-[#284661] hover:underline flex items-center gap-1"
+                          >
+                            <Phone className="w-3 h-3 text-[#284661]" />
+                            <span>{addr.phoneNumber || user.phoneNumber}</span>
+                          </a>
+                        ) : (
+                          <span className="font-bold text-slate-900">N/A</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Email Address</span>
+                        {addr.email || user.email ? (
+                          <a
+                            href={`mailto:${addr.email || user.email}`}
+                            className="font-bold text-[#284661] hover:underline flex items-center gap-1 truncate"
+                          >
+                            <Mail className="w-3 h-3 text-[#284661] shrink-0" />
+                            <span className="truncate">{addr.email || user.email}</span>
+                          </a>
+                        ) : (
+                          <span className="font-bold text-slate-900">N/A</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Postal Address Breakdown */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="bg-white p-2.5 rounded-xl border border-slate-100 space-y-1">
+                        <span className="text-slate-400 block text-[10px] font-semibold">Street &amp; Premise</span>
+                        <p className="font-bold text-slate-900 leading-snug">
+                          {addr.street1 || 'No street specified'}
+                          {addr.street2 ? `, ${addr.street2}` : ''}
+                        </p>
+                        {addr.landmark && (
+                          <p className="text-[10px] text-slate-500">
+                            <strong className="text-slate-700">Landmark:</strong> {addr.landmark}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="bg-white p-2.5 rounded-xl border border-slate-100 space-y-1">
+                        <span className="text-slate-400 block text-[10px] font-semibold">City, State &amp; PIN</span>
+                        <p className="font-bold text-slate-900 leading-snug">
+                          {[addr.city, addr.state].filter(Boolean).join(', ')}
+                          {addr.postalCode ? ` - ${addr.postalCode}` : ''}
+                        </p>
+                        <p className="text-[10px] text-slate-500">
+                          <strong className="text-slate-700">Country:</strong> {addr.country || 'India'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Delivery Instructions */}
+                    {addr.deliveryInstructions && (
+                      <div className="p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl text-blue-900">
+                        <span className="font-bold block text-[10px] text-blue-800 uppercase tracking-wider mb-0.5">
+                          Delivery Instructions:
+                        </span>
+                        <p className="text-[11px]">{addr.deliveryInstructions}</p>
+                      </div>
+                    )}
+
+                    {/* Formatted Full Address Text */}
+                    {addr.formattedAddress && (
+                      <div className="p-2 bg-white border border-amber-200/60 rounded-xl text-slate-600 text-[10.5px]">
+                        <span className="text-slate-400 font-semibold block text-[9.5px] uppercase tracking-wider mb-0.5">
+                          Postal Address Label:
+                        </span>
+                        <span className="select-all font-mono text-[11px] text-slate-800">{addr.formattedAddress}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-800 text-[11px]">
+                    ⚠️ Postal shipping address has not been provided or recorded yet for this physical subscription.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Validity & Expiry Countdown (Only for Online / Hybrid; for Physical, no validity/expiry applies) */}
+            {isPhysical ? (
+              <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold text-slate-800">
+                    <Package className="w-4 h-4 text-amber-700" />
+                    <span>Physical Copy — Hardcopy Book Edition</span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] font-bold bg-amber-100/90 text-amber-900 border-amber-300">
+                    Perpetual (No Expiry Date)
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] pt-1">
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Order / Issue Date</span>
+                    <span className="font-bold text-slate-900 block truncate">
+                      {new Date(subscription.startDate || subscription.createdAt).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Validity Status</span>
+                    <span className="font-bold text-amber-800 block truncate">
+                      N/A · One-time Physical Shipment
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold text-slate-800">
+                    <Calendar className="w-4 h-4 text-[#E76120]" />
+                    <span>Validity &amp; Expiration</span>
+                  </div>
+                  <Badge variant="nfiYellow" className="text-[10px] font-bold">
+                    {daysRemaining > 0 ? `${daysRemaining} Days Left` : 'Term Ended'}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] pt-1">
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Activation Date</span>
+                    <span className="font-bold text-slate-900 block truncate">
+                      {new Date(subscription.startDate).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Expiry Date</span>
+                    <span className="font-bold text-[#284661] block truncate">
+                      {new Date(subscription.endDate).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Financials & Invoicing */}
             <div className="p-3.5 bg-white border border-slate-200/80 rounded-2xl space-y-2">
