@@ -126,6 +126,15 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
+    // Concurrent session enforcement (CWE-557)
+    if (user.currentSessionId && (!decoded.sessionId || decoded.sessionId !== user.currentSessionId)) {
+      return res.status(401).json({
+        success: false,
+        code: 'CONCURRENT_LOGIN_DETECTED',
+        message: 'Session expired: Your account was logged in from another device or browser.',
+      });
+    }
+
     // Attach user to request
     req.user = user;
     req.user._authSource = source;
@@ -183,8 +192,10 @@ export const optionalAuthenticate = async (req, res, next) => {
       if (decoded) {
         const resolved = await resolveUserFromDecoded(decoded);
         if (resolved && resolved.user && resolved.user.isActive !== false) {
-          req.user = resolved.user;
-          req.user._authSource = resolved.source;
+          if (!resolved.user.currentSessionId || (decoded.sessionId && decoded.sessionId === resolved.user.currentSessionId)) {
+            req.user = resolved.user;
+            req.user._authSource = resolved.source;
+          }
         }
       }
     }

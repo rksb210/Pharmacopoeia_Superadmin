@@ -108,6 +108,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    currentSessionId: {
+      type: String,
+      default: null,
+    },
     failedLoginAttempts: {
       type: Number,
       default: 0,

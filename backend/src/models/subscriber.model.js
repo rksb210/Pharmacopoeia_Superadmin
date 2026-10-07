@@ -211,6 +211,7 @@ const subscriberSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    currentSessionId: { type: String, default: null },
     lastLoginDevice: {
       type: String,
       default: null,

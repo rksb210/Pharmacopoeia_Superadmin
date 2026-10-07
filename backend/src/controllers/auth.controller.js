@@ -149,7 +149,7 @@ export const login = async (req, res, next) => {
           await auditService.log(req, {
             action: 'ACCOUNT_LOCKED',
             module: 'AUTH',
-            entity: user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : 'AdminUser'),
+            entity: isSubscriber ? 'Subscriber' : (user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : 'AdminUser')),
             entityId: user._id,
             user: { _id: user._id, name: user.name, email: user.email, role: user.role },
             status: 'FAILURE',
@@ -200,6 +200,11 @@ export const login = async (req, res, next) => {
     user.lastLogin = new Date();
     user.lastLoginIP = getClientIP(req);
     user.lastLoginDevice = getClientDevice(req);
+
+    // Single active session enforcement (CWE-557)
+    const sessionId = crypto.randomUUID();
+    user.currentSessionId = sessionId;
+
     await user.save({ validateBeforeSave: false });
 
     const role = isSubscriber ? 'subscriber' : user.role;
@@ -211,6 +216,7 @@ export const login = async (req, res, next) => {
       username: user.username,
       role,
       userType: isSubscriber ? user.userType : undefined,
+      sessionId,
     });
 
     // Cookie options
@@ -583,12 +589,17 @@ export const signup = async (req, res, next) => {
       res.clearCookie('signup_session');
     }
 
+    const sessionId = crypto.randomUUID();
+    newSubscriber.currentSessionId = sessionId;
+    await newSubscriber.save({ validateBeforeSave: false });
+
     const token = generateToken({
       id: newSubscriber._id,
       email: newSubscriber.email,
       username: newSubscriber.username,
       role: 'subscriber',
       userType: newSubscriber.userType,
+      sessionId,
     });
 
     const cookieOptions = {
@@ -652,12 +663,22 @@ export const signup = async (req, res, next) => {
 export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
+    const userId = req.user?._id || req.user?.id;
 
-    const user = await User.findById(req.user.id).select('+password');
+    let user = await User.findById(userId).select('+password');
+    let isSubscriber = false;
+
+    if (!user) {
+      user = await Subscriber.findById(userId).select('+password');
+      if (user) {
+        isSubscriber = true;
+      }
+    }
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found.',
+        message: 'User account not found.',
       });
     }
 
@@ -689,7 +710,7 @@ export const changePassword = async (req, res, next) => {
     user.password = newPassword;
     await user.save();
 
-    const entityType = user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : (user.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser'));
+    const entityType = isSubscriber ? 'Subscriber' : (user.role === 'admin' ? 'Admin' : (user.role === 'subadmin' ? 'SubAdmin' : (user.role === 'superadmin' ? 'SuperAdmin' : 'AdminUser')));
 
     await auditService.log(req, {
       action: 'PASSWORD_CHANGED',
@@ -859,6 +880,25 @@ export const logout = async (req, res) => {
     httpOnly: true,
     expires: new Date(0),
   });
+
+  try {
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && (req.cookies.token || req.cookies.nfi_token)) {
+      token = req.cookies.token || req.cookies.nfi_token;
+    }
+    if (token) {
+      const decoded = verifyToken(token);
+      const uid = decoded?.id || decoded?.sub;
+      if (uid) {
+        await Promise.all([
+          User.findByIdAndUpdate(uid, { currentSessionId: null }),
+          Subscriber.findByIdAndUpdate(uid, { currentSessionId: null }),
+        ]);
+      }
+    }
+  } catch (_) {}
 
   if (req.user) {
     await auditService.log(req, {
