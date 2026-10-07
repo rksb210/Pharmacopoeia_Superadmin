@@ -544,7 +544,7 @@ export const getMedicineSections = async (req, res, next) => {
 
 export const addMedicineSection = async (req, res, next) => {
   try {
-    const sections = await contentService.addMedicineSection(req.params.id, req.body);
+    const result = await contentService.addMedicineSection(req.params.id, req.body);
 
     await auditService.log(req, {
       action: 'SECTION_ADDED',
@@ -555,7 +555,12 @@ export const addMedicineSection = async (req, res, next) => {
       details: `Added section "${req.body.title}" to medicine ID ${req.params.id}.`,
     });
 
-    return res.status(201).json({ success: true, message: 'Section added successfully.', sections });
+    return res.status(201).json({
+      success: true,
+      message: 'Section added successfully. Monograph submitted for review.',
+      sections: result.sections,
+      medicine: result.medicine,
+    });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
   }
@@ -563,7 +568,7 @@ export const addMedicineSection = async (req, res, next) => {
 
 export const updateMedicineSection = async (req, res, next) => {
   try {
-    const sections = await contentService.updateMedicineSection(req.params.id, req.params.sectionId, req.body);
+    const result = await contentService.updateMedicineSection(req.params.id, req.params.sectionId, req.body);
 
     await auditService.log(req, {
       action: 'SECTION_UPDATED',
@@ -574,7 +579,12 @@ export const updateMedicineSection = async (req, res, next) => {
       details: `Updated section "${req.body.title || req.params.sectionId}" in medicine ID ${req.params.id}.`,
     });
 
-    return res.status(200).json({ success: true, message: 'Section updated successfully.', sections });
+    return res.status(200).json({
+      success: true,
+      message: 'Section updated successfully. Monograph submitted for review.',
+      sections: result.sections,
+      medicine: result.medicine,
+    });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
   }
@@ -597,6 +607,7 @@ export const deleteMedicineSection = async (req, res, next) => {
       success: true,
       message: result.message,
       sections: result.sections,
+      medicine: result.medicine,
     });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });

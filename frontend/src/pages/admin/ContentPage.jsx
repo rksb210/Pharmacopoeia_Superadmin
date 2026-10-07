@@ -50,6 +50,8 @@ import CreateEditMedicineModal from '../../components/admin/content/CreateEditMe
 import MedicineSectionsModal from '../../components/admin/content/MedicineSectionsModal';
 import MedicineDetailsModal from '../../components/admin/content/MedicineDetailsModal';
 import ReviewContentModal from '../../components/admin/content/ReviewContentModal';
+import { computeSectionDiffs } from '../../utils/diffUtils';
+import { WordDiffText } from '../../components/admin/content/ContentDiffViewer';
 
 export const ContentPage = () => {
   const { can, isSuperAdmin } = usePermission();
@@ -150,28 +152,41 @@ export const ContentPage = () => {
 
     try {
       const res = await contentService.deleteMedicineSection(medicine._id, section._id || section.key);
-      showFeedback(`Section "${secTitle}" deleted successfully.`);
+      showFeedback(`Section "${secTitle}" deleted successfully. Monograph is in review.`);
       const updatedSections = res?.sections || (medicine.sections || []).filter(
         (s) => (s._id || s.key) !== (section._id || section.key)
       );
-      setMedicines((prev) =>
-        prev.map((m) =>
-          m._id === medicine._id
-            ? {
-                ...m,
-                sections: updatedSections,
-                sectionsCount: updatedSections.length,
-              }
-            : m
-        )
-      );
-      if (sectionsMedicine && sectionsMedicine._id === medicine._id) {
-        setSectionsMedicine((prev) => ({
-          ...prev,
-          sections: updatedSections,
-          sectionsCount: updatedSections.length,
-        }));
+      if (res?.medicine) {
+        setMedicines((prev) =>
+          prev.map((m) => (m._id === medicine._id ? { ...m, ...res.medicine } : m))
+        );
+        if (sectionsMedicine && sectionsMedicine._id === medicine._id) {
+          setSectionsMedicine(res.medicine);
+        }
+      } else {
+        setMedicines((prev) =>
+          prev.map((m) =>
+            m._id === medicine._id
+              ? {
+                  ...m,
+                  status: 'in_review',
+                  sections: updatedSections,
+                  sectionsCount: updatedSections.length,
+                }
+              : m
+          )
+        );
+        if (sectionsMedicine && sectionsMedicine._id === medicine._id) {
+          setSectionsMedicine((prev) => ({
+            ...prev,
+            status: 'in_review',
+            sections: updatedSections,
+            sectionsCount: updatedSections.length,
+          }));
+        }
       }
+      fetchStats();
+      fetchData();
     } catch (err) {
       showFeedback(err.message || 'Failed to delete section', 'error');
     }
@@ -520,24 +535,38 @@ export const ContentPage = () => {
   };
 
   // Handle section update callback from MedicineSectionsModal
-  const handleSectionsUpdated = (updatedSections) => {
-    setMedicines((prev) =>
-      prev.map((m) =>
-        m._id === sectionsMedicine?._id
-          ? {
-              ...m,
-              sections: updatedSections,
-              sectionsCount: updatedSections.length,
-            }
-          : m
-      )
-    );
-    if (sectionsMedicine) {
-      setSectionsMedicine((prev) => ({
-        ...prev,
-        sections: updatedSections,
-      }));
+  const handleSectionsUpdated = (updatedSections, updatedMedicine = null) => {
+    if (updatedMedicine) {
+      setMedicines((prev) =>
+        prev.map((m) => (m._id === updatedMedicine._id ? { ...m, ...updatedMedicine } : m))
+      );
+      if (sectionsMedicine && sectionsMedicine._id === updatedMedicine._id) {
+        setSectionsMedicine(updatedMedicine);
+      }
+    } else {
+      setMedicines((prev) =>
+        prev.map((m) =>
+          m._id === sectionsMedicine?._id
+            ? {
+                ...m,
+                status: 'in_review',
+                sections: updatedSections,
+                sectionsCount: updatedSections.length,
+              }
+            : m
+        )
+      );
+      if (sectionsMedicine) {
+        setSectionsMedicine((prev) => ({
+          ...prev,
+          status: 'in_review',
+          sections: updatedSections,
+          sectionsCount: updatedSections.length,
+        }));
+      }
     }
+    fetchStats();
+    fetchData();
   };
 
   // Export Data Fetcher
@@ -636,21 +665,10 @@ export const ContentPage = () => {
 
   // Reusable Workflow Status Badge with Reviewer Action Button
   const renderWorkflowStatusBadge = (item, type) => {
-    const status = item.status || 'published';
-    if (status === 'published') {
+    const isInReview = item.status === 'in_review' || Boolean(item.lastPublishedSnapshot);
+    if (isInReview) {
       return (
-        <Badge
-          variant="outline"
-          className="text-[10px] font-bold uppercase gap-1 bg-emerald-50 text-emerald-800 border-emerald-300"
-        >
-          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-          Published
-        </Badge>
-      );
-    }
-    if (status === 'in_review') {
-      return (
-        <div className="inline-flex items-center gap-1.5">
+        <div className="inline-flex items-center gap-1.5 flex-wrap">
           <Badge
             variant="outline"
             className="text-[10px] font-bold uppercase gap-1 border-amber-300 bg-amber-50 text-amber-800"
@@ -658,6 +676,15 @@ export const ContentPage = () => {
             <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
             In Review
           </Badge>
+          {item.lastPublishedSnapshot && (
+            <Badge
+              variant="outline"
+              className="text-[9px] font-semibold bg-emerald-50 text-emerald-800 border-emerald-300"
+              title="Edits made relative to published baseline"
+            >
+              Edited
+            </Badge>
+          )}
           {canApprove && (
             <Button
               type="button"
@@ -675,6 +702,18 @@ export const ContentPage = () => {
             </Button>
           )}
         </div>
+      );
+    }
+    const status = item.status || 'published';
+    if (status === 'published' || status === 'ACTIVE') {
+      return (
+        <Badge
+          variant="outline"
+          className="text-[10px] font-bold uppercase gap-1 bg-emerald-50 text-emerald-800 border-emerald-300"
+        >
+          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+          Published
+        </Badge>
       );
     }
     if (status === 'draft') {
@@ -697,7 +736,16 @@ export const ContentPage = () => {
   const renderMedicineSectionsRow = (med, colSpan = 7) => {
     if (!expandedMedicineIds.has(med._id)) return null;
 
-    const medSections = Array.isArray(med.sections) ? med.sections : [];
+    const hasSnapshot = Boolean(med.lastPublishedSnapshot);
+    const diffData = hasSnapshot
+      ? computeSectionDiffs(med.lastPublishedSnapshot.sections, med.sections)
+      : null;
+
+    const medSections = diffData
+      ? diffData.sections
+      : Array.isArray(med.sections)
+      ? med.sections
+      : [];
 
     return (
       <TableRow key={`sections-${med._id}`} className="bg-amber-50/20 border-b-2 border-amber-200">
@@ -709,11 +757,30 @@ export const ContentPage = () => {
                   <Layers className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    Sections of {med.name}
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 flex-wrap">
+                    <span>Sections of {med.name}</span>
                     <Badge variant="outline" className="bg-amber-50 text-amber-900 border-amber-200 text-[10px] font-bold">
                       {medSections.length} Sections
                     </Badge>
+                    {diffData && diffData.hasChanges && (
+                      <div className="inline-flex items-center gap-1 ml-1">
+                        {diffData.addedCount > 0 && (
+                          <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300 text-[9px] font-bold">
+                            +{diffData.addedCount} Added
+                          </Badge>
+                        )}
+                        {diffData.modifiedCount > 0 && (
+                          <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-[9px] font-bold">
+                            ~{diffData.modifiedCount} Modified
+                          </Badge>
+                        )}
+                        {diffData.removedCount > 0 && (
+                          <Badge variant="outline" className="bg-rose-100 text-rose-800 border-rose-300 text-[9px] font-bold">
+                            -{diffData.removedCount} Removed
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </h4>
                   <p className="text-[11px] text-slate-500">
                     Structured clinical monograph sections, headings, dosage tables, and indications.
@@ -770,6 +837,11 @@ export const ContentPage = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {medSections.map((sec, secIdx) => {
+                  const diffType = sec.diffType || (med.status === 'in_review' && !hasSnapshot ? 'added' : 'unchanged');
+                  const isAdded = diffType === 'added';
+                  const isRemoved = diffType === 'removed';
+                  const isModified = diffType === 'modified';
+
                   const hasLinkedTable = Boolean(sec.tableId);
                   const hasCustomTable = Boolean(
                     sec.customTable &&
@@ -777,26 +849,39 @@ export const ContentPage = () => {
                       sec.customTable.headers.length > 0
                   );
 
+                  let cardStyle = 'border-slate-200/90 bg-white hover:border-amber-300';
+                  if (isAdded) {
+                    cardStyle = 'border-2 border-emerald-400 bg-emerald-50/60 shadow-xs';
+                  } else if (isRemoved) {
+                    cardStyle = 'border-2 border-dashed border-rose-400 bg-rose-50/60 shadow-xs opacity-85';
+                  } else if (isModified) {
+                    cardStyle = 'border-2 border-amber-400 bg-amber-50/30 shadow-xs';
+                  }
+
                   return (
                     <div
                       key={sec._id || sec.key || secIdx}
-                      className="group p-3 rounded-xl border border-slate-200/90 bg-white hover:border-amber-300 hover:shadow-xs transition-all flex flex-col justify-between space-y-2.5"
+                      className={`group p-3 rounded-xl border transition-all flex flex-col justify-between space-y-2.5 ${cardStyle}`}
                     >
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="w-5 h-5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-bold flex items-center justify-center shrink-0">
+                            <span className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0 ${
+                              isAdded ? 'bg-emerald-200 text-emerald-900' : isRemoved ? 'bg-rose-200 text-rose-900' : 'bg-amber-100 text-amber-900'
+                            }`}>
                               {sec.order ?? secIdx + 1}
                             </span>
                             <span
-                              className="text-xs font-bold text-slate-900 truncate"
+                              className={`text-xs font-bold truncate ${
+                                isRemoved ? 'line-through text-rose-950' : isAdded ? 'text-emerald-950 font-bold' : 'text-slate-900'
+                              }`}
                               title={sec.title || sec.label}
                             >
                               {sec.title || sec.label || 'Untitled Section'}
                             </span>
                           </div>
 
-                          {canEdit && (
+                          {canEdit && !isRemoved && (
                             <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100">
                               <button
                                 type="button"
@@ -819,6 +904,21 @@ export const ContentPage = () => {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-1.5">
+                          {isAdded && (
+                            <Badge variant="outline" className="text-[9px] font-bold px-1.5 py-0 bg-emerald-600 text-white border-emerald-700">
+                              + Added (In Review)
+                            </Badge>
+                          )}
+                          {isRemoved && (
+                            <Badge variant="outline" className="text-[9px] font-bold px-1.5 py-0 bg-rose-600 text-white border-rose-700">
+                              - Removed (In Review)
+                            </Badge>
+                          )}
+                          {isModified && (
+                            <Badge variant="outline" className="text-[9px] font-bold px-1.5 py-0 bg-amber-500 text-slate-950 border-amber-600">
+                              ~ Modified (In Review)
+                            </Badge>
+                          )}
                           {sec.pageNumber && (
                             <Badge
                               variant="outline"
@@ -845,30 +945,44 @@ export const ContentPage = () => {
                           )}
                         </div>
 
-                        <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
-                          {sec.content || sec.text || (
-                            <span className="italic text-slate-400">No content text entered.</span>
-                          )}
-                        </p>
+                        {isModified && sec.contentWordDiff ? (
+                          <div className="text-[11px] leading-relaxed p-2 bg-white/90 rounded-lg border border-amber-200 line-clamp-4">
+                            <WordDiffText diffParts={sec.contentWordDiff} />
+                          </div>
+                        ) : (
+                          <p className={`text-[11px] leading-relaxed line-clamp-3 ${
+                            isRemoved ? 'line-through text-rose-800' : isAdded ? 'text-emerald-950 font-medium' : 'text-slate-600'
+                          }`}>
+                            {sec.content || sec.text || (
+                              <span className="italic text-slate-400">No content text entered.</span>
+                            )}
+                          </p>
+                        )}
                       </div>
 
-                      {canEdit && (
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenSectionsModal(med, sec._id || sec.key, false)}
-                            className="text-orange-700 hover:text-orange-800 font-semibold inline-flex items-center gap-1 cursor-pointer"
-                          >
-                            <Edit2 className="w-3 h-3" /> Edit Section
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteSectionDirect(med, sec)}
-                            className="text-slate-400 hover:text-red-600 font-medium inline-flex items-center gap-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-3 h-3" /> Delete
-                          </button>
+                      {isRemoved ? (
+                        <div className="pt-2 border-t border-rose-200/80 text-[10px] text-rose-700 italic font-semibold">
+                          Scheduled for deletion upon review approval
                         </div>
+                      ) : (
+                        canEdit && (
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenSectionsModal(med, sec._id || sec.key, false)}
+                              className="text-orange-700 hover:text-orange-800 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <Edit2 className="w-3 h-3" /> Edit Section
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSectionDirect(med, sec)}
+                              className="text-slate-400 hover:text-red-600 font-medium inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <Trash2 className="w-3 h-3" /> Delete
+                            </button>
+                          </div>
+                        )
                       )}
                     </div>
                   );

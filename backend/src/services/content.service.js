@@ -1,7 +1,119 @@
+import mongoose from 'mongoose';
 import Chapter from '../models/chapter.model.js';
 import SubChapter from '../models/subChapter.model.js';
 import Medicine from '../models/medicine.model.js';
 import ContentTable from '../models/contentTable.model.js';
+
+function findSectionIndex(sections, sectionId, sectionData = {}) {
+  if (!Array.isArray(sections) || sections.length === 0) return -1;
+  const secIdStr = sectionId ? String(sectionId).trim() : '';
+
+  // 1. Direct _id matching
+  if (secIdStr) {
+    const idx = sections.findIndex((s) => s._id && String(s._id) === secIdStr);
+    if (idx !== -1) return idx;
+  }
+
+  // 2. Direct key matching
+  if (secIdStr) {
+    const idx = sections.findIndex((s) => s.key && s.key === secIdStr);
+    if (idx !== -1) return idx;
+  }
+  if (sectionData?.key) {
+    const idx = sections.findIndex((s) => s.key && s.key === sectionData.key);
+    if (idx !== -1) return idx;
+  }
+
+  // 3. Match by "sec-INDEX" (e.g. sec-0, sec-1, etc.)
+  if (secIdStr.startsWith('sec-')) {
+    const parsedIdx = parseInt(secIdStr.replace('sec-', ''), 10);
+    if (!isNaN(parsedIdx) && parsedIdx >= 0 && parsedIdx < sections.length) {
+      return parsedIdx;
+    }
+  }
+
+  // 4. Match by raw integer index if valid
+  if (!isNaN(parseInt(secIdStr, 10)) && Number(secIdStr) >= 0 && Number(secIdStr) < sections.length) {
+    const parsedIdx = parseInt(secIdStr, 10);
+    if (sections[parsedIdx]) return parsedIdx;
+  }
+
+  // 5. Match by order
+  if (sectionData?.order !== undefined) {
+    const targetOrder = Number(sectionData.order);
+    const idx = sections.findIndex((s) => s.order === targetOrder);
+    if (idx !== -1) return idx;
+  }
+
+  // 6. Match by title or label
+  const targetTitle = (sectionData?.title || sectionData?.label || secIdStr || '').trim().toLowerCase();
+  if (targetTitle) {
+    const idx = sections.findIndex(
+      (s) => (s.title || s.label || '').trim().toLowerCase() === targetTitle
+    );
+    if (idx !== -1) return idx;
+  }
+
+  return -1;
+}
+
+function captureMedicineSnapshot(medicine) {
+  if (!medicine) return null;
+  return {
+    name: medicine.name,
+    chapterId: medicine.chapterId,
+    subChapterId: medicine.subChapterId,
+    therapeuticClass: medicine.therapeuticClass || '',
+    dosageForm: medicine.dosageForm || '',
+    strength: medicine.strength || '',
+    atcCode: medicine.atcCode || '',
+    schedule: medicine.schedule || '',
+    brandNames: Array.isArray(medicine.brandNames) ? [...medicine.brandNames] : [],
+    sections: Array.isArray(medicine.sections)
+      ? medicine.sections.map((s, idx) => ({
+          _id: s._id ? s._id.toString() : `sec-${idx}`,
+          key: s.key || '',
+          title: s.title || s.label || `Section ${idx + 1}`,
+          label: s.label || s.title || `Section ${idx + 1}`,
+          content: s.content !== undefined ? s.content : (s.text || ''),
+          text: s.text !== undefined ? s.text : (s.content || ''),
+          order: s.order ?? idx + 1,
+          pageNumber: s.pageNumber ?? null,
+          tableId: s.tableId || null,
+          customTable: s.customTable || null,
+        }))
+      : [],
+    status: medicine.status,
+    snapshotDate: new Date(),
+  };
+}
+
+function captureChapterSnapshot(chapter) {
+  if (!chapter) return null;
+  return {
+    title: chapter.title,
+    code: chapter.code,
+    chapterNumber: chapter.chapterNumber || '',
+    description: chapter.description || '',
+    order: chapter.order,
+    status: chapter.status,
+    snapshotDate: new Date(),
+  };
+}
+
+function captureSubChapterSnapshot(subChapter) {
+  if (!subChapter) return null;
+  return {
+    title: subChapter.title,
+    code: subChapter.code,
+    subChapterNumber: subChapter.subChapterNumber || '',
+    description: subChapter.description || '',
+    order: subChapter.order,
+    pageRange: subChapter.pageRange || null,
+    status: subChapter.status,
+    snapshotDate: new Date(),
+  };
+}
 
 class ContentService {
   // ==========================================
@@ -140,6 +252,11 @@ class ContentService {
     const chapter = await Chapter.findById(id);
     if (!chapter) throw new Error('Chapter not found');
 
+    // Baseline snapshot preservation for reviewer diff
+    if ((chapter.status === 'published' || chapter.status === 'ACTIVE') && !chapter.lastPublishedSnapshot) {
+      chapter.lastPublishedSnapshot = captureChapterSnapshot(chapter);
+    }
+
     const prevStatus = chapter.status;
     const isSuperAdmin = user?.role === 'superadmin';
 
@@ -198,6 +315,9 @@ class ContentService {
     const actionLabel = isApproved ? 'APPROVED_AND_PUBLISHED' : 'REVISION_REQUESTED';
 
     chapter.status = nextStatus;
+    if (isApproved) {
+      chapter.lastPublishedSnapshot = null;
+    }
     chapter.reviewedBy = user?._id || null;
     chapter.reviewedAt = new Date();
     chapter.reviewNotes = comments || (isApproved ? 'Approved by Reviewer.' : 'Revision requested.');
@@ -378,6 +498,11 @@ class ContentService {
     const sub = await SubChapter.findById(id);
     if (!sub) throw new Error('Sub-Chapter not found');
 
+    // Baseline snapshot preservation for reviewer diff
+    if ((sub.status === 'published' || sub.status === 'ACTIVE') && !sub.lastPublishedSnapshot) {
+      sub.lastPublishedSnapshot = captureSubChapterSnapshot(sub);
+    }
+
     const prevStatus = sub.status;
     const isSuperAdmin = user?.role === 'superadmin';
     const targetChapterId = data.chapterId || sub.chapterId;
@@ -445,6 +570,9 @@ class ContentService {
     const actionLabel = isApproved ? 'APPROVED_AND_PUBLISHED' : 'REVISION_REQUESTED';
 
     sub.status = nextStatus;
+    if (isApproved) {
+      sub.lastPublishedSnapshot = null;
+    }
     sub.reviewedBy = user?._id || null;
     sub.reviewedAt = new Date();
     sub.reviewNotes = comments || (isApproved ? 'Approved by Reviewer.' : 'Revision requested.');
@@ -642,7 +770,13 @@ class ContentService {
       ];
     }
 
-    if (status !== 'all') query.status = status;
+    if (status !== 'all') {
+      if (status === 'published' || status === 'active') {
+        query.status = { $in: ['published', 'ACTIVE'] };
+      } else {
+        query.status = status;
+      }
+    }
     if (schedule !== 'all') query.schedule = schedule;
 
     const pageNum = Math.max(1, parseInt(page, 10));
@@ -686,6 +820,7 @@ class ContentService {
         tablesCount: normalizedSections.filter(
           (s) => s.tableId || (s.customTable && s.customTable.headers?.length > 0)
         ).length,
+        lastPublishedSnapshot: m.lastPublishedSnapshot || null,
       };
     });
 
@@ -802,6 +937,11 @@ class ContentService {
     const medicine = await Medicine.findById(id);
     if (!medicine) throw new Error('Medicine monograph not found');
 
+    // Baseline snapshot preservation for reviewer diff
+    if ((medicine.status === 'published' || medicine.status === 'ACTIVE') && !medicine.lastPublishedSnapshot) {
+      medicine.lastPublishedSnapshot = captureMedicineSnapshot(medicine);
+    }
+
     const prevStatus = medicine.status;
     const isSuperAdmin = user?.role === 'superadmin';
 
@@ -877,6 +1017,9 @@ class ContentService {
     const actionLabel = isApproved ? 'APPROVED_AND_PUBLISHED' : 'REVISION_REQUESTED';
 
     medicine.status = nextStatus;
+    if (isApproved) {
+      medicine.lastPublishedSnapshot = null;
+    }
     medicine.reviewedBy = user?._id || null;
     medicine.reviewedAt = new Date();
     medicine.reviewNotes = comments || (isApproved ? 'Approved by Reviewer.' : 'Revision requested.');
@@ -942,6 +1085,13 @@ class ContentService {
     const medicine = await Medicine.findById(medicineId);
     if (!medicine) throw new Error('Medicine monograph not found');
 
+    // Baseline snapshot preservation for reviewer diff
+    if (!medicine.lastPublishedSnapshot && (medicine.status === 'published' || medicine.status === 'ACTIVE')) {
+      medicine.lastPublishedSnapshot = captureMedicineSnapshot(medicine);
+    }
+    medicine.status = 'in_review';
+    medicine.submittedAt = new Date();
+
     const title = (sectionData.title || sectionData.label || '').trim();
     if (!title) {
       throw new Error('Section title is required');
@@ -956,6 +1106,7 @@ class ContentService {
     const key = sectionData.key || title.toLowerCase().replace(/[^a-z0-9]+/g, '_');
 
     const newSection = {
+      _id: new mongoose.Types.ObjectId(),
       title,
       label: title,
       content,
@@ -968,30 +1119,67 @@ class ContentService {
     };
 
     medicine.sections.push(newSection);
+    medicine.markModified('sections');
+    medicine.markModified('lastPublishedSnapshot');
     await medicine.save();
 
     const populated = await Medicine.findById(medicineId)
+      .populate('chapterId', 'title code chapterNumber status')
+      .populate('subChapterId', 'title code subChapterNumber status')
       .populate('sections.tableId', 'title tableCode headers rows caption footnotes')
+      .populate('submittedBy', 'name email username role')
+      .populate('reviewedBy', 'name email username role')
+      .populate('createdBy', 'name email username role')
       .lean();
 
-    return (populated.sections || []).map((s, idx) => ({
+    const normalizedSections = (populated?.sections || []).map((s, idx) => ({
       ...s,
+      _id: s._id ? s._id.toString() : `sec-${idx}`,
       title: s.title || s.label || `Section ${idx + 1}`,
       label: s.label || s.title || `Section ${idx + 1}`,
       content: s.content !== undefined && s.content !== '' ? s.content : (s.text || ''),
       text: s.text !== undefined && s.text !== '' ? s.text : (s.content || ''),
       order: s.order ?? idx + 1,
     }));
+
+    const enrichedMedicine = populated ? {
+      ...populated,
+      chapter: populated.chapterId,
+      subChapter: populated.subChapterId,
+      sections: normalizedSections,
+      sectionsCount: normalizedSections.length,
+      tablesCount: normalizedSections.filter(
+        (s) => s.tableId || (s.customTable && s.customTable.headers?.length > 0)
+      ).length,
+      lastPublishedSnapshot: populated.lastPublishedSnapshot || null,
+    } : null;
+
+    return {
+      sections: normalizedSections,
+      medicine: enrichedMedicine,
+    };
   }
 
   async updateMedicineSection(medicineId, sectionId, sectionData) {
     const medicine = await Medicine.findById(medicineId);
     if (!medicine) throw new Error('Medicine monograph not found');
 
-    const section =
-      medicine.sections.id(sectionId) ||
-      medicine.sections.find((s) => s._id?.toString() === sectionId?.toString() || s.key === sectionId);
-    if (!section) throw new Error('Section not found in this monograph');
+    // Baseline snapshot preservation for reviewer diff
+    if (!medicine.lastPublishedSnapshot && (medicine.status === 'published' || medicine.status === 'ACTIVE')) {
+      medicine.lastPublishedSnapshot = captureMedicineSnapshot(medicine);
+    }
+    medicine.status = 'in_review';
+    medicine.submittedAt = new Date();
+
+    const sectionIndex = findSectionIndex(medicine.sections, sectionId, sectionData);
+    if (sectionIndex === -1) {
+      throw new Error(`Section "${sectionId}" not found in this monograph.`);
+    }
+
+    const section = medicine.sections[sectionIndex];
+    if (!section._id) {
+      section._id = new mongoose.Types.ObjectId();
+    }
 
     if (sectionData.title !== undefined || sectionData.label !== undefined) {
       const val = (sectionData.title || sectionData.label || '').trim();
@@ -1019,41 +1207,79 @@ class ContentService {
       };
     }
 
+    medicine.markModified('sections');
+    medicine.markModified('lastPublishedSnapshot');
     await medicine.save();
 
     const populated = await Medicine.findById(medicineId)
+      .populate('chapterId', 'title code chapterNumber status')
+      .populate('subChapterId', 'title code subChapterNumber status')
       .populate('sections.tableId', 'title tableCode headers rows caption footnotes')
+      .populate('submittedBy', 'name email username role')
+      .populate('reviewedBy', 'name email username role')
+      .populate('createdBy', 'name email username role')
       .lean();
 
-    return (populated.sections || []).map((s, idx) => ({
+    const normalizedSections = (populated?.sections || []).map((s, idx) => ({
       ...s,
+      _id: s._id ? s._id.toString() : `sec-${idx}`,
       title: s.title || s.label || `Section ${idx + 1}`,
       label: s.label || s.title || `Section ${idx + 1}`,
       content: s.content !== undefined && s.content !== '' ? s.content : (s.text || ''),
       text: s.text !== undefined && s.text !== '' ? s.text : (s.content || ''),
       order: s.order ?? idx + 1,
     }));
+
+    const enrichedMedicine = populated ? {
+      ...populated,
+      chapter: populated.chapterId,
+      subChapter: populated.subChapterId,
+      sections: normalizedSections,
+      sectionsCount: normalizedSections.length,
+      tablesCount: normalizedSections.filter(
+        (s) => s.tableId || (s.customTable && s.customTable.headers?.length > 0)
+      ).length,
+      lastPublishedSnapshot: populated.lastPublishedSnapshot || null,
+    } : null;
+
+    return {
+      sections: normalizedSections,
+      medicine: enrichedMedicine,
+    };
   }
 
   async deleteMedicineSection(medicineId, sectionId) {
     const medicine = await Medicine.findById(medicineId);
     if (!medicine) throw new Error('Medicine monograph not found');
 
-    const sectionIndex = medicine.sections.findIndex(
-      (s) => s._id?.toString() === sectionId?.toString() || s.key === sectionId
-    );
-    if (sectionIndex === -1) throw new Error('Section not found in this monograph');
+    // Baseline snapshot preservation for reviewer diff
+    if (!medicine.lastPublishedSnapshot && (medicine.status === 'published' || medicine.status === 'ACTIVE')) {
+      medicine.lastPublishedSnapshot = captureMedicineSnapshot(medicine);
+    }
+    medicine.status = 'in_review';
+    medicine.submittedAt = new Date();
+
+    const sectionIndex = findSectionIndex(medicine.sections, sectionId);
+    if (sectionIndex === -1) throw new Error(`Section "${sectionId}" not found in this monograph.`);
 
     const removedTitle = medicine.sections[sectionIndex].title || medicine.sections[sectionIndex].label || 'Section';
     medicine.sections.splice(sectionIndex, 1);
+    medicine.markModified('sections');
+    medicine.markModified('lastPublishedSnapshot');
     await medicine.save();
 
     const populated = await Medicine.findById(medicineId)
+      .populate('chapterId', 'title code chapterNumber status')
+      .populate('subChapterId', 'title code subChapterNumber status')
       .populate('sections.tableId', 'title tableCode headers rows caption footnotes')
+      .populate('submittedBy', 'name email username role')
+      .populate('reviewedBy', 'name email username role')
+      .populate('createdBy', 'name email username role')
       .lean();
 
     const normalizedSections = (populated?.sections || []).map((s, idx) => ({
       ...s,
+      _id: s._id ? s._id.toString() : `sec-${idx}`,
       title: s.title || s.label || `Section ${idx + 1}`,
       label: s.label || s.title || `Section ${idx + 1}`,
       content: s.content !== undefined && s.content !== '' ? s.content : (s.text || ''),
@@ -1061,16 +1287,34 @@ class ContentService {
       order: s.order ?? idx + 1,
     }));
 
+    const enrichedMedicine = populated ? {
+      ...populated,
+      chapter: populated.chapterId,
+      subChapter: populated.subChapterId,
+      sections: normalizedSections,
+      sectionsCount: normalizedSections.length,
+      tablesCount: normalizedSections.filter(
+        (s) => s.tableId || (s.customTable && s.customTable.headers?.length > 0)
+      ).length,
+      lastPublishedSnapshot: populated.lastPublishedSnapshot || null,
+    } : null;
+
     return {
       success: true,
-      message: `Section "${removedTitle}" removed successfully.`,
+      message: `Section "${removedTitle}" removed successfully. Monograph is in review.`,
       sections: normalizedSections,
+      medicine: enrichedMedicine,
     };
   }
 
   async reorderMedicineSections(medicineId, orderedSectionIds) {
     const medicine = await Medicine.findById(medicineId);
     if (!medicine) throw new Error('Medicine monograph not found');
+
+    if ((medicine.status === 'published' || medicine.status === 'ACTIVE') && !medicine.lastPublishedSnapshot) {
+      medicine.lastPublishedSnapshot = captureMedicineSnapshot(medicine);
+      medicine.status = 'in_review';
+    }
 
     if (Array.isArray(orderedSectionIds)) {
       orderedSectionIds.forEach((id, index) => {
@@ -1109,7 +1353,7 @@ class ContentService {
       SubChapter.countDocuments(),
       SubChapter.countDocuments({ status: 'in_review' }),
       Medicine.countDocuments(),
-      Medicine.countDocuments({ status: 'published' }),
+      Medicine.countDocuments({ status: { $in: ['published', 'ACTIVE'] } }),
       Medicine.countDocuments({ status: 'in_review' }),
       ContentTable.countDocuments(),
     ]);

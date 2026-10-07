@@ -318,20 +318,23 @@ export const MedicineSectionsModal = ({
       };
 
       let updatedSections = [];
+      let updatedMedicine = null;
       if (isAddingNew) {
         const res = await contentService.addMedicineSection(medicine._id, payload);
         updatedSections = res.sections || [];
-        showSuccess(`Section "${payload.title}" added successfully.`);
+        updatedMedicine = res.medicine || null;
+        showSuccess(`Section "${payload.title}" added successfully. Monograph is in review.`);
       } else if (editingSectionId) {
         const res = await contentService.updateMedicineSection(medicine._id, editingSectionId, payload);
         updatedSections = res.sections || [];
-        showSuccess(`Section "${payload.title}" updated successfully.`);
+        updatedMedicine = res.medicine || null;
+        showSuccess(`Section "${payload.title}" updated successfully. Monograph is in review.`);
       }
 
       setSections(updatedSections);
       setIsAddingNew(false);
       setEditingSectionId(null);
-      if (onSectionsUpdated) onSectionsUpdated(updatedSections);
+      if (onSectionsUpdated) onSectionsUpdated(updatedSections, updatedMedicine);
     } catch (err) {
       setApiError(err.message || 'Failed to save section');
     } finally {
@@ -347,14 +350,15 @@ export const MedicineSectionsModal = ({
     setLoading(true);
     setApiError('');
     try {
-      await contentService.deleteMedicineSection(medicine._id, targetId);
-      const remaining = sections.filter((s) => (s._id || s.key) !== targetId);
+      const res = await contentService.deleteMedicineSection(medicine._id, targetId);
+      const remaining = res?.sections || sections.filter((s) => (s._id || s.key) !== targetId);
+      const updatedMedicine = res?.medicine || null;
       setSections(remaining);
-      showSuccess(`Section "${secTitle}" deleted.`);
+      showSuccess(`Section "${secTitle}" deleted. Monograph is in review.`);
       if (editingSectionId === targetId) {
         setEditingSectionId(null);
       }
-      if (onSectionsUpdated) onSectionsUpdated(remaining);
+      if (onSectionsUpdated) onSectionsUpdated(remaining, updatedMedicine);
     } catch (err) {
       setApiError(err.message || 'Failed to delete section');
     } finally {
@@ -721,7 +725,7 @@ export const MedicineSectionsModal = ({
                     Array.isArray(sec.customTable.headers) &&
                     sec.customTable.headers.length > 0
                 );
-                const isSelected = editingSectionId === sec._id;
+                const isSelected = editingSectionId === sec._id || editingSectionId === sec.key;
 
                 return (
                   <div

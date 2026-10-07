@@ -42,12 +42,16 @@ const subChapterSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['draft', 'in_review', 'published', 'archived'],
+      enum: ['draft', 'in_review', 'published', 'archived', 'ACTIVE', 'INACTIVE'],
       default: 'published',
     },
     isActive: {
       type: Boolean,
       default: true,
+    },
+    lastPublishedSnapshot: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

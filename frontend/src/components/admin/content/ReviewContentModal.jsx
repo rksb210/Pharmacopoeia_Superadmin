@@ -4,6 +4,8 @@ import { Badge } from '../../ui/badge';
 import { CheckCircle2, XCircle, AlertTriangle, Clock, User, Calendar } from 'lucide-react';
 import contentService from '../../../services/content.service';
 
+import ContentDiffViewer from './ContentDiffViewer';
+
 export const ReviewContentModal = ({
   isOpen,
   onClose,
@@ -72,7 +74,7 @@ export const ReviewContentModal = ({
       confirmVariant={decision === 'APPROVE' ? 'default' : 'destructive'}
       isConfirming={isSubmitting}
       onConfirm={handleSubmit}
-      size="md"
+      size="xl"
     >
       <div className="space-y-4">
         {apiError && (
@@ -132,6 +134,9 @@ export const ReviewContentModal = ({
             </div>
           </div>
         </div>
+
+        {/* Visual Review Diff Viewer (Green for Additions, Red for Removals) */}
+        <ContentDiffViewer item={item} itemType={itemType} />
 
         {/* Previous Review Notes if present */}
         {item.reviewNotes && (

@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AdminModal from '../common/AdminModal';
 import { Badge } from '../../ui/badge';
-import { Pill, Table as TableIcon, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Pill, Table as TableIcon, FileText, CheckCircle2, AlertCircle, FileEdit, Eye } from 'lucide-react';
+import ContentDiffViewer from './ContentDiffViewer';
 
 export const MedicineDetailsModal = ({ isOpen, onClose, medicine = null }) => {
   if (!medicine) return null;
 
+  const [activeTab, setActiveTab] = useState(
+    medicine.status === 'in_review' && medicine.lastPublishedSnapshot ? 'diff' : 'standard'
+  );
+
   const sections = Array.isArray(medicine.sections) ? medicine.sections : [];
+  const hasSnapshot = Boolean(medicine.lastPublishedSnapshot);
 
   return (
     <AdminModal
@@ -93,20 +99,56 @@ export const MedicineDetailsModal = ({ isOpen, onClose, medicine = null }) => {
           </div>
         </div>
 
-        {/* Monograph Sections & Embedded Tables */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <FileText className="w-4 h-4 text-orange-600" />
-              Monograph Sections ({sections.length})
-            </h4>
+        {/* Navigation Tabs (Standard vs Visual Diff) */}
+        {hasSnapshot && (
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('standard')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'standard'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Standard Monograph View
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('diff')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'diff'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <FileEdit className="w-3.5 h-3.5" />
+              Review Visual Diff (+ Added / - Removed)
+              <Badge variant="outline" className="ml-1 bg-amber-100 text-amber-900 border-amber-300 text-[9px]">
+                In Review
+              </Badge>
+            </button>
           </div>
+        )}
 
-          {sections.length === 0 ? (
-            <div className="p-6 text-center text-xs text-slate-400 italic bg-slate-50 rounded-xl">
-              No clinical sections authored for this drug monograph yet.
+        {activeTab === 'diff' && hasSnapshot ? (
+          <ContentDiffViewer item={medicine} itemType="medicine" defaultShowUnchanged={false} />
+        ) : (
+          /* Monograph Sections & Embedded Tables */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <FileText className="w-4 h-4 text-orange-600" />
+                Monograph Sections ({sections.length})
+              </h4>
             </div>
-          ) : (
+
+            {sections.length === 0 ? (
+              <div className="p-6 text-center text-xs text-slate-400 italic bg-slate-50 rounded-xl">
+                No clinical sections authored for this drug monograph yet.
+              </div>
+            ) : (
             <div className="space-y-4">
               {sections.map((sec, idx) => {
                 const linkedTable =
@@ -222,6 +264,7 @@ export const MedicineDetailsModal = ({ isOpen, onClose, medicine = null }) => {
             </div>
           )}
         </div>
+      )}
       </div>
     </AdminModal>
   );
