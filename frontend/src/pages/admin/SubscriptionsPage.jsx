@@ -19,6 +19,8 @@ import {
   Download,
   ChevronDown,
   FileSpreadsheet,
+  Truck,
+  Package,
 } from 'lucide-react';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
@@ -46,6 +48,36 @@ import SubscriptionDetailsModal from '../../components/admin/subscriptions/Subsc
 import RenewSubscriptionModal from '../../components/admin/subscriptions/RenewSubscriptionModal';
 import CancelSubscriptionModal from '../../components/admin/subscriptions/CancelSubscriptionModal';
 
+// Helper to determine delivery format
+export const getSubscriptionDeliveryType = (sub) => {
+  if (sub?.deliveryType) {
+    const dt = sub.deliveryType.toUpperCase();
+    if (dt === 'PHYSICAL') return 'PHYSICAL';
+    if (dt === 'ONLINE_PHYSICAL' || dt === 'HYBRID') return 'ONLINE_PHYSICAL';
+    if (dt === 'ONLINE') return 'ONLINE';
+  }
+  const name = (sub?.planName || '').toLowerCase();
+  const code = (sub?.planCode || '').toLowerCase();
+  if (
+    name.includes('physical + online') ||
+    name.includes('online + physical') ||
+    name.includes('hybrid') ||
+    code.includes('hybrid') ||
+    code.includes('online_physical')
+  ) {
+    return 'ONLINE_PHYSICAL';
+  }
+  if (
+    name.includes('physical') ||
+    code.includes('physical') ||
+    sub?.shippingAddress?.street1 ||
+    sub?.shippingAddress?.formattedAddress
+  ) {
+    return 'PHYSICAL';
+  }
+  return 'ONLINE';
+};
+
 export const SubscriptionsPage = () => {
   const [stats, setStats] = useState({
     totalSubscriptions: 0,
@@ -56,6 +88,9 @@ export const SubscriptionsPage = () => {
     complimentarySubscriptions: 0,
     discountedSubscriptions: 0,
     expiringSoonSubscriptions: 0,
+    physicalSubscriptions: 0,
+    onlineSubscriptions: 0,
+    hybridSubscriptions: 0,
     totalRevenueINR: 0,
   });
 
@@ -70,7 +105,8 @@ export const SubscriptionsPage = () => {
   };
 
   // Filters State
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'active' | 'expiring_soon' | 'trial' | 'complimentary' | 'discounted' | 'cancelled'
+  // 'all' | 'online' | 'physical' | 'hybrid' | 'active' | 'expiring_soon' | 'trial' | 'complimentary' | 'discounted' | 'cancelled'
+  const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [userTypeFilter, setUserTypeFilter] = useState('all');
@@ -103,9 +139,10 @@ export const SubscriptionsPage = () => {
     setLoading(true);
     setError('');
 
-    // Determine status & type from tab vs dropdown
+    // Determine status, type, and delivery format from tab vs dropdown
     let computedStatus = 'all';
     let computedType = typeFilter;
+    let computedDelivery = 'all';
 
     if (activeTab === 'active') computedStatus = 'active';
     else if (activeTab === 'cancelled' || activeTab === 'expired') computedStatus = 'cancelled';
@@ -113,6 +150,9 @@ export const SubscriptionsPage = () => {
     else if (activeTab === 'trial') computedType = 'trial';
     else if (activeTab === 'complimentary') computedType = 'complimentary';
     else if (activeTab === 'discounted') computedType = 'discounted';
+    else if (activeTab === 'physical') computedDelivery = 'PHYSICAL';
+    else if (activeTab === 'online') computedDelivery = 'ONLINE';
+    else if (activeTab === 'hybrid') computedDelivery = 'ONLINE_PHYSICAL';
 
     try {
       const res = await subscriptionService.getSubscriptions({
@@ -121,6 +161,7 @@ export const SubscriptionsPage = () => {
         search: searchQuery,
         type: computedType,
         status: computedStatus,
+        deliveryType: computedDelivery !== 'all' ? computedDelivery : undefined,
         userType: userTypeFilter !== 'all' ? userTypeFilter : undefined,
         dateFrom,
         dateTo,
@@ -149,6 +190,7 @@ export const SubscriptionsPage = () => {
   const fetchAllForExport = async () => {
     let computedStatus = 'all';
     let computedType = typeFilter;
+    let computedDelivery = 'all';
 
     if (activeTab === 'active') computedStatus = 'active';
     else if (activeTab === 'cancelled' || activeTab === 'expired') computedStatus = 'cancelled';
@@ -156,6 +198,9 @@ export const SubscriptionsPage = () => {
     else if (activeTab === 'trial') computedType = 'trial';
     else if (activeTab === 'complimentary') computedType = 'complimentary';
     else if (activeTab === 'discounted') computedType = 'discounted';
+    else if (activeTab === 'physical') computedDelivery = 'PHYSICAL';
+    else if (activeTab === 'online') computedDelivery = 'ONLINE';
+    else if (activeTab === 'hybrid') computedDelivery = 'ONLINE_PHYSICAL';
 
     try {
       const res = await subscriptionService.getSubscriptions({
@@ -164,6 +209,7 @@ export const SubscriptionsPage = () => {
         search: searchQuery,
         type: computedType,
         status: computedStatus,
+        deliveryType: computedDelivery !== 'all' ? computedDelivery : undefined,
         userType: userTypeFilter !== 'all' ? userTypeFilter : undefined,
         dateFrom,
         dateTo,
@@ -179,17 +225,32 @@ export const SubscriptionsPage = () => {
     {
       header: 'Subscriber Name',
       key: 'user',
-      format: (val, item) => val?.name || item.userName || 'N/A',
+      format: (val, item) => item.shippingAddress?.fullName || val?.name || item.userName || 'N/A',
     },
     {
       header: 'Email Address',
       key: 'user',
-      format: (val, item) => val?.email || item.userEmail || 'N/A',
+      format: (val, item) => item.shippingAddress?.email || val?.email || item.userEmail || 'N/A',
     },
     {
       header: 'Phone Number',
       key: 'user',
-      format: (val) => val?.phoneNumber || 'N/A',
+      format: (val, item) => item.shippingAddress?.phoneNumber || val?.phoneNumber || 'N/A',
+    },
+    {
+      header: 'Delivery Format',
+      key: 'deliveryType',
+      format: (val, item) => {
+        const dt = getSubscriptionDeliveryType(item);
+        if (dt === 'PHYSICAL') return 'Physical Copy';
+        if (dt === 'ONLINE_PHYSICAL') return 'Physical + Online';
+        return 'Online';
+      },
+    },
+    {
+      header: 'Shipping Address',
+      key: 'shippingAddress',
+      format: (val) => val?.formattedAddress || val?.street1 || 'N/A',
     },
     {
       header: 'User Category',
@@ -232,7 +293,11 @@ export const SubscriptionsPage = () => {
     {
       header: 'Expiry Date',
       key: 'endDate',
-      format: (val) => (val ? new Date(val).toLocaleDateString('en-IN') : 'N/A'),
+      format: (val, item) => {
+        const dt = getSubscriptionDeliveryType(item);
+        if (dt === 'PHYSICAL') return 'No Expiry (Physical Copy)';
+        return val ? new Date(val).toLocaleDateString('en-IN') : 'N/A';
+      },
     },
   ];
 
@@ -262,12 +327,24 @@ export const SubscriptionsPage = () => {
     return `₹${(val || 0).toLocaleString('en-IN')}`;
   };
 
+  // Quick Filter Tabs list with Online, Physical Copy, Physical + Online
+  const filterTabs = [
+    { id: 'all', label: 'All Subscriptions', count: stats.totalSubscriptions },
+    { id: 'online', label: 'Online', count: stats.onlineSubscriptions || 0 },
+    { id: 'physical', label: 'Physical Copy', count: stats.physicalSubscriptions || 0 },
+    { id: 'hybrid', label: 'Physical + Online', count: stats.hybridSubscriptions || 0 },
+    { id: 'active', label: 'Active', count: stats.activeSubscriptions },
+    { id: 'trial', label: 'Free Trial', count: stats.trialSubscriptions },
+    { id: 'discounted', label: 'Discounted', count: stats.discountedSubscriptions },
+    { id: 'cancelled', label: 'Cancelled', count: stats.cancelledSubscriptions ?? stats.expiredSubscriptions ?? 0 },
+  ];
+
   return (
     <PageContainer>
       {/* Header */}
       <PageHeader
         title="Subscription & License Management"
-        subtitle="Manage commercial subscriber passes, promotional trials, VIP complimentary grants, and BRD fixed validity tracking."
+        subtitle="Manage commercial subscriber passes, hardcopy book shipments, promotional trials, and formulary access."
       >
         <ExportDropdown
           filename="subscriptions_register_export"
@@ -377,15 +454,9 @@ export const SubscriptionsPage = () => {
 
       {/* Filter Tabs & Advanced Search Toolbar */}
       <div className="p-4 bg-white border border-slate-200/80 rounded-2xl shadow-2xs space-y-3.5">
-        {/* Quick Filter Tabs */}
+        {/* Quick Filter Tabs (Includes Physical Copy, Online, Physical + Online) */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-b border-slate-100">
-          {[
-            { id: 'all', label: 'All Subscriptions', count: stats.totalSubscriptions },
-            { id: 'active', label: 'Active', count: stats.activeSubscriptions },
-            { id: 'trial', label: 'Free Trial', count: stats.trialSubscriptions },
-            { id: 'discounted', label: 'Discounted', count: stats.discountedSubscriptions },
-            { id: 'cancelled', label: 'Cancelled', count: stats.cancelledSubscriptions ?? stats.expiredSubscriptions ?? 0 },
-          ].map((tab) => (
+          {filterTabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -504,7 +575,7 @@ export const SubscriptionsPage = () => {
             <TableRow>
               <TableHead>Subscription &amp; Invoice</TableHead>
               <TableHead>Subscriber</TableHead>
-              <TableHead>Formulary Plan &amp; Tier</TableHead>
+              <TableHead>Formulary Plan &amp; Format</TableHead>
               <TableHead>Validity &amp; Expiry Date</TableHead>
               <TableHead>Price &amp; Concession</TableHead>
               <TableHead>Status</TableHead>
@@ -513,7 +584,12 @@ export const SubscriptionsPage = () => {
           </TableHeader>
           <TableBody>
             {subscriptions.map((sub) => {
+              const deliveryType = getSubscriptionDeliveryType(sub);
+              const isPhysical = deliveryType === 'PHYSICAL';
+              const isHybrid = deliveryType === 'ONLINE_PHYSICAL';
+
               const isExpiringSoon =
+                !isPhysical &&
                 sub.status === 'active' &&
                 new Date(sub.endDate) > new Date() &&
                 new Date(sub.endDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -537,7 +613,7 @@ export const SubscriptionsPage = () => {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-slate-900 text-xs truncate max-w-[160px]">
-                          {sub.user?.name || 'N/A'}
+                          {sub.shippingAddress?.fullName || sub.user?.name || 'N/A'}
                         </span>
                         <Badge variant="outline" className="text-[8px] uppercase font-bold px-1 py-0">
                           {sub.user?.userType === 'UNIVERSITIES_COLLEGES' || sub.user?.userType === 'UNIVERSITIES / COLLEGES'
@@ -548,45 +624,82 @@ export const SubscriptionsPage = () => {
                         </Badge>
                       </div>
                       <span className="text-[11px] text-slate-400 truncate block max-w-[170px]">
-                        {sub.user?.email}
+                        {sub.shippingAddress?.email || sub.user?.email}
                       </span>
                     </div>
                   </TableCell>
 
-                  {/* Plan & Tier */}
+                  {/* Plan, Tier & Format Badge */}
                   <TableCell>
                     <div>
-                      <span className="font-bold text-slate-800 text-xs truncate block max-w-[180px]">
+                      <span className="font-bold text-slate-800 text-xs truncate block max-w-[180px]" title={sub.planName}>
                         {sub.planName}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-semibold">{sub.tier}</span>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="text-[10px] text-slate-400 font-semibold">{sub.tier}</span>
+                        {isPhysical && (
+                          <span
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[8.5px] font-bold bg-amber-100 text-amber-900 border border-amber-300"
+                            title="Physical hardcopy book shipping"
+                          >
+                            📦 Physical Copy
+                          </span>
+                        )}
+                        {isHybrid && (
+                          <span
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[8.5px] font-bold bg-purple-100 text-purple-900 border border-purple-300"
+                            title="Physical hardcopy book + Online digital pass"
+                          >
+                            ⚡ Physical + Online
+                          </span>
+                        )}
+                        {!isPhysical && !isHybrid && (
+                          <span
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[8.5px] font-bold bg-sky-100 text-sky-900 border border-sky-300"
+                            title="Online digital pass"
+                          >
+                            🌐 Online
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
 
-                  {/* Validity & Expiry */}
+                  {/* Validity & Expiry: For Physical Copy, no validity applies! */}
                   <TableCell>
-                    <div>
-                      <span className="font-bold text-slate-800 text-xs block">
-                        {new Date(sub.endDate).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </span>
-                      {sub.type === 'paid' || sub.type === 'discounted' ? (
-                        <span className="text-[10px] font-bold text-[#284661] bg-blue-50 px-1 py-0.2 rounded inline-block mt-0.5">
-                          ● Valid until {new Date(sub.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {isPhysical ? (
+                      <div>
+                        <span className="font-semibold text-slate-700 text-xs block">
+                          No Expiry
                         </span>
-                      ) : sub.type === 'trial' ? (
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1 py-0.2 rounded inline-block mt-0.5">
-                          ● Free Trial
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                          📦 Hardcopy Dispatch
                         </span>
-                      ) : (
-                        <span className="text-[10px] text-slate-400">
-                          Started: {new Date(sub.startDate).toLocaleDateString('en-IN')}
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="font-bold text-slate-800 text-xs block">
+                          {new Date(sub.endDate).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
                         </span>
-                      )}
-                    </div>
+                        {sub.type === 'paid' || sub.type === 'discounted' ? (
+                          <span className="text-[10px] font-bold text-[#284661] bg-blue-50 px-1 py-0.2 rounded inline-block mt-0.5">
+                            ● Valid until {new Date(sub.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                        ) : sub.type === 'trial' ? (
+                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1 py-0.2 rounded inline-block mt-0.5">
+                            ● Free Trial
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400">
+                            Started: {new Date(sub.startDate).toLocaleDateString('en-IN')}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </TableCell>
 
                   {/* Price & Concession */}
@@ -612,33 +725,35 @@ export const SubscriptionsPage = () => {
                     />
                   </TableCell>
 
-                  {/* Actions */}
+                  {/* Actions: Physical Copy gets only Eye button (no Renew, no Cancel). Hybrid & Online get Renew & Cancel */}
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {/* View Details & Timeline */}
+                      {/* View Details & Shipping Address */}
                       <button
                         type="button"
                         onClick={() => setViewingSubscription(sub)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                        title="View Subscription Details & Timeline"
+                        title={isPhysical || isHybrid ? "View Subscription & Shipping Address" : "View Subscription Details & Timeline"}
                       >
                         <Eye className="w-4 h-4" />
                       </button>
 
-                      {/* Renew / Reactivate / Extend */}
-                      <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="EDIT">
-                        <button
-                          type="button"
-                          onClick={() => setRenewingSubscription(sub)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-[#284661] hover:bg-slate-100 transition-colors cursor-pointer"
-                          title={sub.status === 'cancelled' ? 'Reactivate / Renew Subscription' : 'Renew / Extend Validity'}
-                        >
-                          <RotateCw className="w-4 h-4" />
-                        </button>
-                      </PermissionGuard>
+                      {/* Renew / Reactivate / Extend (Only for Online / Hybrid; NOT for Physical Only) */}
+                      {!isPhysical && (
+                        <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="EDIT">
+                          <button
+                            type="button"
+                            onClick={() => setRenewingSubscription(sub)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#284661] hover:bg-slate-100 transition-colors cursor-pointer"
+                            title={sub.status === 'cancelled' ? 'Reactivate / Renew Subscription' : 'Renew / Extend Validity'}
+                          >
+                            <RotateCw className="w-4 h-4" />
+                          </button>
+                        </PermissionGuard>
+                      )}
 
-                      {/* Cancel / Deactivate */}
-                      {sub.status === 'active' && (
+                      {/* Cancel / Deactivate (Only for Online / Hybrid; NOT for Physical Only) */}
+                      {!isPhysical && sub.status === 'active' && (
                         <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="DELETE">
                           <button
                             type="button"

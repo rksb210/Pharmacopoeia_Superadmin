@@ -446,9 +446,16 @@ export const OrdersPage = () => {
                       <span className="font-bold text-slate-800 text-xs block truncate" title={o.planName}>
                         {o.planName}
                       </span>
-                      <Badge variant="outline" className="text-[8px] font-bold uppercase mt-0.5">
-                        {o.tier}
-                      </Badge>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Badge variant="outline" className="text-[8px] font-bold uppercase">
+                          {o.tier}
+                        </Badge>
+                        {(o.deliveryType === 'PHYSICAL' || o.deliveryType === 'ONLINE_PHYSICAL' || o.shippingAddress) && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[8.5px] font-bold bg-amber-100 text-amber-900 border border-amber-300" title="Physical book courier dispatch required">
+                            📦 {o.deliveryType === 'PHYSICAL' ? 'Physical Book' : 'Hybrid Book'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
 

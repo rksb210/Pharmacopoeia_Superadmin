@@ -63,6 +63,7 @@ export const getSubscriptions = async (req, res, next) => {
       dateTo,
       sortBy,
       sortOrder,
+      deliveryType,
     } = req.query;
 
     const result = await subscriptionService.getSubscriptionsList({
@@ -76,6 +77,7 @@ export const getSubscriptions = async (req, res, next) => {
       dateTo,
       sortBy,
       sortOrder,
+      deliveryType,
     });
 
     return res.status(200).json({
