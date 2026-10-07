@@ -204,6 +204,7 @@ export const login = async (req, res, next) => {
     // Single active session enforcement (CWE-557)
     const sessionId = crypto.randomUUID();
     user.currentSessionId = sessionId;
+    user.lastActiveAt = new Date();
 
     await user.save({ validateBeforeSave: false });
 
@@ -976,5 +977,26 @@ export const getPublicKey = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+/**
+ * @desc    Ping session to extend activity keep-alive
+ * @route   GET /api/auth/ping
+ * @access  Private
+ */
+export const pingSession = async (req, res) => {
+  try {
+    if (req.user) {
+      const userId = req.user._id || req.user.id;
+      const now = new Date();
+      await Promise.all([
+        User.findByIdAndUpdate(userId, { lastActiveAt: now }),
+        Subscriber.findByIdAndUpdate(userId, { lastActiveAt: now }),
+      ]);
+    }
+    return res.status(200).json({ success: true, message: 'Session keep-alive active' });
+  } catch (err) {
+    return res.status(200).json({ success: true });
   }
 };

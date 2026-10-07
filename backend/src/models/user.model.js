@@ -112,6 +112,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    lastActiveAt: {
+      type: Date,
+      default: Date.now,
+    },
     failedLoginAttempts: {
       type: Number,
       default: 0,

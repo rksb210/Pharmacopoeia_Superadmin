@@ -10,6 +10,7 @@ import {
   forgotPassword,
   resetPassword,
   getPublicKey,
+  pingSession,
 } from '../controllers/auth.controller.js';
 import {
   validateLogin,
@@ -36,6 +37,7 @@ router.post('/reset-password/:token', authLimiter, validateResetPassword, resetP
 
 // Protected Authentication & Profile Routes
 router.get('/me', authenticate, getMe);
+router.get('/ping', authenticate, pingSession);
 router.post('/change-password', authenticate, validateChangePassword, changePassword);
 
 export default router;

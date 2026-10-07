@@ -135,6 +135,25 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
+    // Inactivity Session Timeout Enforcement (CWE-613): 30 minutes
+    const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes (CWE-613) // 1 minute for testing
+    if (user.lastActiveAt && (Date.now() - new Date(user.lastActiveAt).getTime() > INACTIVITY_TIMEOUT_MS)) {
+      user.currentSessionId = null;
+      await user.save({ validateBeforeSave: false });
+      return res.status(401).json({
+        success: false,
+        code: 'SESSION_TIMEOUT',
+        message: 'Your session has expired due to inactivity. Please log in again.',
+      });
+    }
+
+    // Throttled update of lastActiveAt (once per 60 seconds)
+    const now = Date.now();
+    if (!user.lastActiveAt || (now - new Date(user.lastActiveAt).getTime() > 60000)) {
+      user.lastActiveAt = new Date(now);
+      await user.save({ validateBeforeSave: false });
+    }
+
     // Attach user to request
     req.user = user;
     req.user._authSource = source;

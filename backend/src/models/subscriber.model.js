@@ -212,6 +212,7 @@ const subscriberSchema = new mongoose.Schema(
       default: null,
     },
     currentSessionId: { type: String, default: null },
+    lastActiveAt: { type: Date, default: Date.now },
     lastLoginDevice: {
       type: String,
       default: null,
