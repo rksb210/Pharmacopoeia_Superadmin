@@ -12,7 +12,8 @@ import {
   isPrivilegedRole,
   VERIFICATION_STATUSES,
 } from '../constants/userTypes.js';
-import { generateToken } from '../utils/jwt.js';
+import { generateToken, verifyToken } from '../utils/jwt.js';
+import { blacklistToken } from '../utils/tokenBlacklist.js';
 import { auditService } from '../services/audit.service.js';
 import { decryptPassword, getPublicKey as getRsaPublicKey } from '../utils/cryptoAuth.js';
 import { maskPhone } from '../utils/piiMask.js';
@@ -890,6 +891,7 @@ export const logout = async (req, res) => {
       token = req.cookies.token || req.cookies.nfi_token;
     }
     if (token) {
+      blacklistToken(token, 900);
       const decoded = verifyToken(token);
       const uid = decoded?.id || decoded?.sub;
       if (uid) {

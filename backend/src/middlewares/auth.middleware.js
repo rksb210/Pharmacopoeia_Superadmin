@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { verifyToken } from '../utils/jwt.js';
+import { isTokenBlacklisted } from '../utils/tokenBlacklist.js';
 import User from '../models/user.model.js';
 import Subscriber from '../models/subscriber.model.js';
 
@@ -92,6 +93,15 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
+    // Check token blacklist (CWE-613)
+    if (isTokenBlacklisted(token)) {
+      return res.status(401).json({
+        success: false,
+        code: 'TOKEN_REVOKED',
+        message: 'Session has been logged out or expired. Please log in again.',
+      });
+    }
+
     // Verify token
     const decoded = verifyToken(token);
     if (!decoded || (!decoded.id && !decoded.sub && !decoded.email)) {
@@ -135,11 +145,17 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
-    // Inactivity Session Timeout Enforcement (CWE-613): 30 minutes
-    const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes (CWE-613) // 1 minute for testing
-    if (user.lastActiveAt && (Date.now() - new Date(user.lastActiveAt).getTime() > INACTIVITY_TIMEOUT_MS)) {
-      user.currentSessionId = null;
-      await user.save({ validateBeforeSave: false });
+    // Inactivity Session Timeout Enforcement (CWE-613): 15 minutes
+    const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
+    const lastActiveTimestamp = user.lastActiveAt
+      ? new Date(user.lastActiveAt).getTime()
+      : (decoded.iat ? decoded.iat * 1000 : null);
+
+    if (lastActiveTimestamp && (Date.now() - lastActiveTimestamp > INACTIVITY_TIMEOUT_MS)) {
+      if (typeof user.save === 'function') {
+        user.currentSessionId = null;
+        await user.save({ validateBeforeSave: false }).catch(() => {});
+      }
       return res.status(401).json({
         success: false,
         code: 'SESSION_TIMEOUT',
@@ -149,9 +165,11 @@ export const authenticate = async (req, res, next) => {
 
     // Throttled update of lastActiveAt (once per 60 seconds)
     const now = Date.now();
-    if (!user.lastActiveAt || (now - new Date(user.lastActiveAt).getTime() > 60000)) {
-      user.lastActiveAt = new Date(now);
-      await user.save({ validateBeforeSave: false });
+    if (typeof user.save === 'function') {
+      if (!user.lastActiveAt || (now - new Date(user.lastActiveAt).getTime() > 60000)) {
+        user.lastActiveAt = new Date(now);
+        await user.save({ validateBeforeSave: false }).catch(() => {});
+      }
     }
 
     // Attach user to request
