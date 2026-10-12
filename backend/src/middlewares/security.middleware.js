@@ -8,11 +8,17 @@ export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 15, // limit each IP to 15 requests per windowMs
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  message: {
-    success: false,
-    code: 'TOO_MANY_REQUESTS',
-    message: 'Too many authentication attempts from this IP. Please try again after 15 minutes.',
+  legacyHeaders: true, // Also return `X-RateLimit-*` headers for scanner compatibility
+  handler: (req, res, next, options) => {
+    const retryAfter = Math.ceil(options.windowMs / 1000);
+    res.setHeader('Retry-After', retryAfter);
+    res.status(429).json({
+      success: false,
+      error: 'Too Many Requests',
+      code: 'AUTH_RATE_LIMIT_EXCEEDED',
+      message: 'Too many authentication attempts from this IP. Please try again after 15 minutes.',
+      retryAfterSeconds: retryAfter,
+    });
   },
 });
 
@@ -24,11 +30,17 @@ export const publicSubmissionLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 20, // 20 submissions per hour
   standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    code: 'TOO_MANY_REQUESTS',
-    message: 'Feedback submission rate limit exceeded. Please try again later.',
+  legacyHeaders: true,
+  handler: (req, res, next, options) => {
+    const retryAfter = Math.ceil(options.windowMs / 1000);
+    res.setHeader('Retry-After', retryAfter);
+    res.status(429).json({
+      success: false,
+      error: 'Too Many Requests',
+      code: 'SUBMISSION_RATE_LIMIT_EXCEEDED',
+      message: 'Feedback submission rate limit exceeded. Please try again later.',
+      retryAfterSeconds: retryAfter,
+    });
   },
 });
 
@@ -40,11 +52,17 @@ export const generalApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
   standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    code: 'TOO_MANY_REQUESTS',
-    message: 'API rate limit exceeded. Please reduce request frequency.',
+  legacyHeaders: true,
+  handler: (req, res, next, options) => {
+    const retryAfter = Math.ceil(options.windowMs / 1000);
+    res.setHeader('Retry-After', retryAfter);
+    res.status(429).json({
+      success: false,
+      error: 'Too Many Requests',
+      code: 'API_RATE_LIMIT_EXCEEDED',
+      message: 'API rate limit exceeded. Please reduce request frequency.',
+      retryAfterSeconds: retryAfter,
+    });
   },
 });
 

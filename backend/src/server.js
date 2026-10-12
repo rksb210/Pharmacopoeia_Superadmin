@@ -9,6 +9,7 @@ import { connectDB } from './config/db.js';
 import apiRoutes from './routes/index.js';
 import { notFound, errorHandler } from './middlewares/error.middleware.js';
 import { sanitizeNoSql, generalApiLimiter } from './middlewares/security.middleware.js';
+import { protectedUploads } from './middlewares/protectedUploads.middleware.js';
 
 // Load environment variables
 dotenv.config();
@@ -47,8 +48,8 @@ app.use(cookieParser());
 app.use(sanitizeNoSql);
 app.use('/api', generalApiLimiter);
 
-// Mount Static Uploads Directory
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Mount Static Uploads Directory (Protected with Access Control - CWE-284 / CWE-200)
+app.use('/uploads', protectedUploads, express.static(path.join(__dirname, '../uploads')));
 
 // Mount API Routes
 app.use('/api', apiRoutes);
