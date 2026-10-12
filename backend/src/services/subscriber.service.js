@@ -923,7 +923,7 @@ export const subscriberService = {
     endDate.setMonth(endDate.getMonth() + parseInt(months, 10));
 
     subscriber.subscription = {
-      status: 'complimentary',
+      status: 'active',
       planName,
       startDate,
       endDate,

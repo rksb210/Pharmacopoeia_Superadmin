@@ -506,7 +506,7 @@ export const subscriptionService = {
       const updateData = {
         $set: {
           subscription: {
-            status: type === 'trial' ? 'trial' : type === 'complimentary' ? 'complimentary' : 'active',
+            status: type === 'trial' ? 'trial' : 'active',
             planName,
             startDate,
             endDate,
