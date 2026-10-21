@@ -483,7 +483,9 @@ export const PlansPage = () => {
 
                   <TableCell>
                     <span className="text-xs font-semibold text-slate-700">
-                      {p.validityType === 'fixed_date'
+                      {isPhysicalOnly ? (
+                        <span className="text-slate-400 italic font-normal">No Expiry (Physical Copy)</span>
+                      ) : p.validityType === 'fixed_date'
                         ? (p.fixedDate
                             ? new Date(p.fixedDate).toLocaleDateString('en-GB', {
                                 day: 'numeric',

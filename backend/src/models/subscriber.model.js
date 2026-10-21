@@ -92,6 +92,46 @@ const subscriberSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    address: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    addressLine1: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    addressLine2: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    city: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    state: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    pincode: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    postalCode: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    country: {
+      type: String,
+      trim: true,
+      default: 'India',
+    },
     password: {
       type: String,
       required: [true, 'Password is required'],

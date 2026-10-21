@@ -24,6 +24,13 @@ export const PlanCard = ({
   const { can } = usePermission();
   const canEdit = can('EDIT', 'COMMERCIAL', 'PLANS');
   const getValidThruBadge = () => {
+    if (plan.deliveryType === 'PHYSICAL') {
+      return (
+        <Badge variant="outline" className="text-[9px] font-bold text-amber-800 bg-amber-50 border-amber-200">
+          No Expiry (Physical Copy)
+        </Badge>
+      );
+    }
     if (plan.validityType === 'fixed_date') {
       const formattedDate = plan.fixedDate
         ? new Date(plan.fixedDate).toLocaleDateString('en-GB', {
@@ -122,11 +129,11 @@ export const PlanCard = ({
               ₹{plan.priceINR?.toLocaleString('en-IN')}
             </span>
             <span className="text-slate-400 text-xs font-medium">
-              Base{plan.validityType === 'duration_years'
+              Base{plan.deliveryType !== 'PHYSICAL' && (plan.validityType === 'duration_years'
                 ? '/yr'
                 : plan.validityType === 'duration_months'
                 ? `/${plan.durationValue}mo`
-                : ''}
+                : '')}
             </span>
           </div>
           <div className="text-[11px] font-bold text-emerald-700 mt-0.5">

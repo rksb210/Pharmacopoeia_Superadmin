@@ -435,8 +435,38 @@ export const initiateSignup = async (req, res, next) => {
  */
 export const signup = async (req, res, next) => {
   try {
-    const { name, email, username, password, phoneNumber, dynamicFields } = req.body;
+    const {
+      name,
+      email,
+      username,
+      password,
+      phoneNumber,
+      dynamicFields,
+      address,
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      pincode,
+      postalCode,
+      country,
+    } = req.body;
     const rawPassword = decryptPassword(password);
+
+    const resolvedCountry = (country || 'India').trim();
+    const resolvedPincode = (pincode || postalCode || '').trim();
+    const resolvedLine1 = (addressLine1 || address || '').trim();
+    const resolvedLine2 = (addressLine2 || '').trim();
+    const resolvedCity = (city || '').trim();
+    const resolvedState = (state || '').trim();
+
+    const fullAddress = address?.trim() || [
+      resolvedLine1,
+      resolvedLine2,
+      resolvedCity,
+      resolvedState ? `${resolvedState} - ${resolvedPincode}` : resolvedPincode,
+      resolvedCountry,
+    ].filter(Boolean).join(', ');
 
     const cleanEmail = email.toLowerCase().trim();
     const cleanUsername = username.toLowerCase().trim();
@@ -568,6 +598,14 @@ export const signup = async (req, res, next) => {
       email: cleanEmail,
       username: cleanUsername,
       phoneNumber: (phoneNumber || '').trim(),
+      address: fullAddress,
+      addressLine1: resolvedLine1,
+      addressLine2: resolvedLine2,
+      city: resolvedCity,
+      state: resolvedState,
+      pincode: resolvedPincode,
+      postalCode: resolvedPincode,
+      country: resolvedCountry,
       password: rawPassword,
       userType: effectiveUserType,
       userTypeRef: userTypeDoc ? userTypeDoc._id : null,
@@ -646,6 +684,14 @@ export const signup = async (req, res, next) => {
         email: newSubscriber.email,
         username: newSubscriber.username,
         phoneNumber: maskPhone(newSubscriber.phoneNumber),
+        address: newSubscriber.address || '',
+        addressLine1: newSubscriber.addressLine1 || '',
+        addressLine2: newSubscriber.addressLine2 || '',
+        city: newSubscriber.city || '',
+        state: newSubscriber.state || '',
+        pincode: newSubscriber.pincode || '',
+        postalCode: newSubscriber.postalCode || '',
+        country: newSubscriber.country || 'India',
         role: 'subscriber',
         userType: newSubscriber.userType,
         isVerified: newSubscriber.isVerified,

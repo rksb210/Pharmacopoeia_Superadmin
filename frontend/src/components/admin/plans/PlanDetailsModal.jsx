@@ -211,7 +211,9 @@ export const PlanDetailsModal = ({
                 Validity Policy
               </span>
               <p className="font-bold text-slate-900">
-                {p.validityType === 'fixed_date'
+                {p.deliveryType === 'PHYSICAL'
+                  ? 'No Expiry (Physical Copy - One-time Purchase)'
+                  : p.validityType === 'fixed_date'
                   ? `Fixed Expiry: ${p.fixedDate ? new Date(p.fixedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '31 Dec 2031'}`
                   : `${p.durationValue} ${p.validityType?.replace('duration_', '')}`}
               </p>
