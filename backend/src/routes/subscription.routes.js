@@ -10,6 +10,9 @@ import {
   cancelSubscription,
   changeSubscriptionStatus,
   getUserSubscriptionTimeline,
+  approveSubscription,
+  rejectSubscription,
+  resubmitSubscription,
 } from '../controllers/subscription.controller.js';
 import {
   validateAssignSubscription,
@@ -36,6 +39,9 @@ router.get('/user/:userId/timeline', requirePermission('COMMERCIAL', 'SUBSCRIPTI
 
 // Actions
 router.post('/assign', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'ADD'), validateAssignSubscription, assignSubscription);
+router.post('/:id/approve', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'APPROVE'), approveSubscription);
+router.post('/:id/reject', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'APPROVE'), rejectSubscription);
+router.post('/:id/resubmit', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'EDIT'), resubmitSubscription);
 router.post('/:id/renew', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'EDIT'), renewSubscription);
 router.post('/:id/cancel', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'DELETE'), validateCancelSubscription, cancelSubscription);
 router.patch('/:id/status', requirePermission('COMMERCIAL', 'SUBSCRIPTIONS', 'EDIT'), validateChangeStatus, changeSubscriptionStatus);

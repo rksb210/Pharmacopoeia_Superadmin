@@ -315,9 +315,78 @@ const bulkImportSchema = new mongoose.Schema(
         'COMPLETED',
         'PARTIAL',
         'FAILED',
+        'in_review',
+        'pending_approval',
+        'rejected',
       ],
       default: 'preview',
     },
+    approvalStatus: {
+      type: String,
+      enum: ['PENDING', 'APPROVED', 'REJECTED', 'NONE'],
+      default: 'NONE',
+    },
+    submittedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    submittedByName: {
+      type: String,
+      default: '',
+    },
+    submittedAt: {
+      type: Date,
+      default: null,
+    },
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    approvedByName: {
+      type: String,
+      default: '',
+    },
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+    approvalComments: {
+      type: String,
+      default: '',
+    },
+    rejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    rejectedByName: {
+      type: String,
+      default: '',
+    },
+    rejectedAt: {
+      type: Date,
+      default: null,
+    },
+    rejectionReason: {
+      type: String,
+      default: '',
+    },
+    submissionRemarks: {
+      type: String,
+      default: '',
+    },
+    timeline: [
+      {
+        action: { type: String, required: true },
+        statusFrom: { type: String, default: '' },
+        statusTo: { type: String, default: '' },
+        performedBy: { type: String, default: 'System' },
+        reason: { type: String, default: '' },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
     records: [bulkRecordSchema],
     consolidatedInvoice: consolidatedInvoiceSchema,
     invoice: {

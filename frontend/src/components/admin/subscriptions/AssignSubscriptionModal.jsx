@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import subscriberService from '../../../services/subscriber.service';
 import planService from '../../../services/plan.service';
+import { useAuth } from '../../../context/AuthContext';
 
 const USER_TYPE_TABS = [
   { id: 'DOCTOR', label: 'Doctors', icon: Stethoscope },
@@ -44,6 +45,7 @@ export const AssignSubscriptionModal = ({
   onClose,
   onAssignSuccess,
 }) => {
+  const { isSuperAdmin } = useAuth();
   const [activeCohortTab, setActiveCohortTab] = useState('DOCTOR');
   const [subscribers, setSubscribers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -456,6 +458,7 @@ export const AssignSubscriptionModal = ({
         planName: selectedPlan.name,
         planCode: selectedPlan.code,
         tier: selectedPlan.tier,
+        deliveryType: selectedPlan.deliveryType,
         amount: unitBasePrice,
         discountPercent: effectiveDiscountPercent,
         discountAmount: calculatedDiscount,
@@ -480,12 +483,20 @@ export const AssignSubscriptionModal = ({
     <AdminModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Offline Subscription Purchase"
-      description="Issue official digital formulary access with automatic dynamic fixed expiry enforcement."
+      title={isSuperAdmin ? "Offline Subscription Purchase" : "Request Subscription Provisioning"}
+      description={
+        isSuperAdmin
+          ? "Issue official digital formulary access with direct activation (Super Admin privilege)."
+          : "Submit an administrative subscription provisioning request for Approver review."
+      }
       confirmLabel={
-        selectedUsers.length > 1
-          ? `Activate For ${selectedUsers.length} Subscribers`
-          : 'Activate Subscription'
+        isSuperAdmin
+          ? (selectedUsers.length > 1
+              ? `Activate For ${selectedUsers.length} Subscribers`
+              : 'Activate Subscription')
+          : (selectedUsers.length > 1
+              ? `Submit ${selectedUsers.length} Requests for Approval`
+              : 'Submit for Approval')
       }
       isConfirming={isSubmitting}
       onConfirm={handleSubmit}
@@ -498,6 +509,16 @@ export const AssignSubscriptionModal = ({
             <span>{error}</span>
           </div>
         )}
+
+        {/* {!isSuperAdmin && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 rounded-xl flex items-start gap-2.5">
+            <Clock className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+            <div className="text-[11px] leading-relaxed">
+              <span className="font-bold">Approval Workflow Active: </span>
+              As an Administrator, this subscription will be placed in <span className="font-bold text-amber-700 dark:text-amber-300">"In Review"</span> status. Active access will be granted once an Approver approves the request.
+            </div>
+          </div>
+        )} */}
 
         {/* 1. Subscriber Selector with Tabs, Multi-Select & Lazy-Loading */}
         <div className="space-y-2 p-3.5 bg-slate-50/80 border border-slate-200/80 rounded-2xl">

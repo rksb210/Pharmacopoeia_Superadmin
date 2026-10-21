@@ -563,6 +563,8 @@ export const seedRBAC = async (req, res, next) => {
           'CONTENT:WORKFLOW:APPROVE',
           'CONTENT:WORKFLOW:REJECT',
           'CONTENT:WORKFLOW:PUBLISH',
+          'COMMERCIAL:SUBSCRIPTIONS:VIEW',
+          'COMMERCIAL:SUBSCRIPTIONS:APPROVE',
           'SYSTEM:REPORTS:VIEW',
           'SYSTEM:AUDIT_LOGS:VIEW',
         ],

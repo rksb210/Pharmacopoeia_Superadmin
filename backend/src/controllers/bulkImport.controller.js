@@ -144,6 +144,7 @@ export const confirmImport = async (req, res, next) => {
       paymentStatus,
       paymentReference,
       transactionId,
+      remarks,
     } = req.body;
     if (!jobId) {
       return res.status(400).json({
@@ -161,6 +162,47 @@ export const confirmImport = async (req, res, next) => {
       });
     }
 
+    const userRoleCode = (
+      typeof req.user?.role === 'string'
+        ? req.user.role
+        : req.user?.role?.code || ''
+    ).toLowerCase();
+    const isSuperAdmin = userRoleCode === 'superadmin';
+
+    if (!isSuperAdmin) {
+      // L1 / Maker: Submit for Approver review
+      const submittedJob = await bulkImportService.submitBatchForApproval(jobId, req.user, {
+        couponCode,
+        paymentMethod,
+        paymentStatus,
+        paymentReference: refId,
+        transactionId: refId,
+        remarks: remarks || 'Submitted for Approver authorization',
+      });
+
+      await auditService.log(req, {
+        action: 'BULK_BATCH_SUBMITTED_FOR_APPROVAL',
+        module: 'BULK_SUBSCRIPTIONS',
+        entity: 'BulkImportJob',
+        entityId: submittedJob._id,
+        status: 'PENDING',
+        details: `Submitted bulk import batch for "${submittedJob.institutionName}" (${submittedJob.validCount} subscribers) for Approver review.`,
+        newValues: {
+          status: submittedJob.status,
+          validCount: submittedJob.validCount,
+          approvalStatus: submittedJob.approvalStatus,
+        },
+      });
+
+      return res.status(200).json({
+        success: true,
+        isPendingApproval: true,
+        message: `Bulk batch submitted for Approver review. ${submittedJob.validCount} subscriber accounts will be provisioned once approved.`,
+        job: submittedJob,
+      });
+    }
+
+    // Super Admin: Direct Provisioning
     const completedJob = await bulkImportService.confirmAndExecuteImport(jobId, req.user, {
       couponCode,
       paymentMethod,
@@ -184,6 +226,7 @@ export const confirmImport = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
+      isPendingApproval: false,
       message: `Bulk batch imported successfully. ${completedJob.validCount} subscribers enrolled and subscriptions provisioned.`,
       job: completedJob,
     });
@@ -195,10 +238,123 @@ export const confirmImport = async (req, res, next) => {
   }
 };
 
+export const approveBatch = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comments = '' } = req.body;
+
+    const approvedJob = await bulkImportService.confirmAndExecuteImport(id, req.user, {
+      approvalComments: comments,
+    });
+
+    await auditService.log(req, {
+      action: 'BULK_BATCH_APPROVED',
+      module: 'BULK_SUBSCRIPTIONS',
+      entity: 'BulkImportJob',
+      entityId: approvedJob._id,
+      status: 'SUCCESS',
+      details: `Approved bulk batch "${approvedJob.jobId}" for "${approvedJob.institutionName}". Provisioned ${approvedJob.validCount} subscribers.`,
+      newValues: {
+        status: approvedJob.status,
+        approvalStatus: approvedJob.approvalStatus,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Bulk batch #${approvedJob.jobId} approved and ${approvedJob.validCount} subscribers provisioned successfully.`,
+      job: approvedJob,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const rejectBatch = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason = '' } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rejection reason is required.',
+      });
+    }
+
+    const rejectedJob = await bulkImportService.rejectBatch(id, req.user, { reason });
+
+    await auditService.log(req, {
+      action: 'BULK_BATCH_REJECTED',
+      module: 'BULK_SUBSCRIPTIONS',
+      entity: 'BulkImportJob',
+      entityId: rejectedJob._id,
+      status: 'REJECTED',
+      details: `Rejected bulk batch "${rejectedJob.jobId}" for "${rejectedJob.institutionName}". Reason: ${reason}`,
+      newValues: {
+        status: rejectedJob.status,
+        approvalStatus: rejectedJob.approvalStatus,
+        rejectionReason: reason,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Bulk batch #${rejectedJob.jobId} rejected.`,
+      job: rejectedJob,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const resubmitBatch = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentReference, paymentMethod, remarks } = req.body;
+
+    const resubmittedJob = await bulkImportService.resubmitBatch(id, req.user, {
+      paymentReference,
+      paymentMethod,
+      remarks,
+    });
+
+    await auditService.log(req, {
+      action: 'BULK_BATCH_RESUBMITTED',
+      module: 'BULK_SUBSCRIPTIONS',
+      entity: 'BulkImportJob',
+      entityId: resubmittedJob._id,
+      status: 'PENDING',
+      details: `Resubmitted bulk batch "${resubmittedJob.jobId}" for "${resubmittedJob.institutionName}" for Approver review.`,
+      newValues: {
+        status: resubmittedJob.status,
+        approvalStatus: resubmittedJob.approvalStatus,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Bulk batch #${resubmittedJob.jobId} resubmitted for Approver review.`,
+      job: resubmittedJob,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const getHistory = async (req, res, next) => {
   try {
-    const { page, limit, search } = req.query;
-    const history = await bulkImportService.getImportHistory({ page, limit, search });
+    const { page, limit, search, status } = req.query;
+    const history = await bulkImportService.getImportHistory({ page, limit, search, status });
     return res.status(200).json({
       success: true,
       ...history,

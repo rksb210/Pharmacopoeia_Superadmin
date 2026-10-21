@@ -96,6 +96,8 @@ export const subscriptionService = {
       physicalCount,
       onlineCount,
       hybridCount,
+      inReviewCount,
+      rejectedCount,
       revenueResult,
     ] = await Promise.all([
       Subscription.countDocuments(),
@@ -137,6 +139,8 @@ export const subscriptionService = {
           { planName: { $regex: /physical\s*\+\s*online|online\s*\+\s*physical|hybrid/i } },
         ],
       }),
+      Subscription.countDocuments({ status: { $in: ['in_review', 'pending_approval'] } }),
+      Subscription.countDocuments({ status: 'rejected' }),
       Subscription.aggregate([
         { $match: { paymentStatus: 'success' } },
         { $group: { _id: null, totalRevenue: { $sum: '$finalAmount' } } },
@@ -157,6 +161,8 @@ export const subscriptionService = {
       physicalSubscriptions: physicalCount,
       onlineSubscriptions: onlineCount,
       hybridSubscriptions: hybridCount,
+      inReviewSubscriptions: inReviewCount,
+      rejectedSubscriptions: rejectedCount,
       totalRevenueINR: totalRevenue,
     };
   },
@@ -298,6 +304,8 @@ export const subscriptionService = {
         .limit(pageSize)
         .populate('user', 'name email username phoneNumber userType dynamicFields')
         .populate('assignedBy', 'name email role')
+        .populate('requestedBy', 'name email role')
+        .populate('approvedBy', 'name email role')
         .lean(),
       Subscription.countDocuments(query),
     ]);
@@ -321,7 +329,9 @@ export const subscriptionService = {
   getSubscriptionById: async (id) => {
     const subscription = await Subscription.findById(id)
       .populate('user', 'name email username phoneNumber userType dynamicFields orderHistory')
-      .populate('assignedBy', 'name email role');
+      .populate('assignedBy', 'name email role')
+      .populate('requestedBy', 'name email role')
+      .populate('approvedBy', 'name email role');
 
     if (!subscription) {
       throw new Error('Subscription record not found');
@@ -391,16 +401,6 @@ export const subscriptionService = {
     } else if (type === 'complimentary') {
       if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
         endDate = new Date(planDoc.fixedDate);
-      } else if (planDoc && planDoc.validityType === 'duration_years') {
-        endDate = new Date(startDate);
-        endDate.setFullYear(endDate.getFullYear() + (planDoc.durationValue || 1));
-      } else if (planDoc && planDoc.validityType === 'duration_months') {
-        endDate = new Date(startDate);
-        endDate.setMonth(endDate.getMonth() + (planDoc.durationValue || 12));
-      } else if (customMonths) {
-        const months = parseInt(customMonths, 10) || 12;
-        endDate = new Date(startDate);
-        endDate.setMonth(endDate.getMonth() + months);
       } else {
         endDate = await subscriptionService.getConfiguredFixedExpiry();
       }
@@ -459,6 +459,15 @@ export const subscriptionService = {
 
     let firstSubscription = null;
 
+    const userRoleCode = (
+      typeof adminUser?.role === 'string'
+        ? adminUser.role
+        : adminUser?.role?.code || ''
+    ).toLowerCase();
+    const isSuperAdmin = userRoleCode === 'superadmin';
+    const targetStatus = isSuperAdmin ? 'active' : 'in_review';
+    const approvalStatus = isSuperAdmin ? 'APPROVED' : 'PENDING';
+
     for (const singleUserId of targetUserIds) {
       const subscriber = await Subscriber.findById(singleUserId);
       if (!subscriber) continue;
@@ -467,6 +476,26 @@ export const subscriptionService = {
       const subscriptionId = `SUB-${new Date().getFullYear()}-${String(counter + 1).padStart(5, '0')}`;
       const invoiceNumber = `INV-${new Date().getFullYear()}-${String(counter + 1).padStart(5, '0')}`;
 
+      // Resolve delivery type: PHYSICAL, ONLINE_PHYSICAL (Hybrid), or ONLINE
+      let resolvedDeliveryType = planDoc?.deliveryType || data.deliveryType || 'ONLINE';
+      if (!resolvedDeliveryType || resolvedDeliveryType === 'ONLINE') {
+        const pNameLower = String(planDoc?.name || planName || '').toLowerCase();
+        const pCodeLower = String(planDoc?.code || planCode || '').toLowerCase();
+        if (
+          pNameLower.includes('physical + online') ||
+          pNameLower.includes('online + physical') ||
+          pNameLower.includes('hybrid') ||
+          pCodeLower.includes('hybrid')
+        ) {
+          resolvedDeliveryType = 'ONLINE_PHYSICAL';
+        } else if (pNameLower.includes('physical') || pCodeLower.includes('physical')) {
+          resolvedDeliveryType = 'PHYSICAL';
+        } else {
+          resolvedDeliveryType = 'ONLINE';
+        }
+      }
+      const isPhysicalOnly = resolvedDeliveryType === 'PHYSICAL';
+
       const newSubscription = await Subscription.create({
         subscriptionId,
         user: subscriber._id,
@@ -474,7 +503,9 @@ export const subscriptionService = {
         planCode,
         tier,
         type,
-        status: 'active',
+        deliveryType: resolvedDeliveryType,
+        status: targetStatus,
+        approvalStatus,
         startDate,
         endDate,
         amount: unitBaseAmount,
@@ -485,47 +516,267 @@ export const subscriptionService = {
         gstAmount: userGstAmount,
         finalAmount: userFinalAmount,
         paymentMethod: type === 'trial' || type === 'complimentary' ? 'Admin Grant' : paymentMethod,
-        paymentStatus,
+        paymentStatus: isSuperAdmin ? paymentStatus : 'pending',
         transactionRef: transactionRef || `TXN-${Date.now().toString().slice(-8)}`,
         invoiceNumber,
         assignedBy: adminUser?._id || null,
+        requestedBy: adminUser?._id || null,
+        approvedBy: isSuperAdmin ? adminUser?._id : null,
+        approvedAt: isSuperAdmin ? new Date() : null,
         notes: notes.trim(),
         timeline: [
-          {
-            action: 'ASSIGNED',
-            statusFrom: 'NONE',
-            statusTo: 'ACTIVE',
-            performedBy: adminUser?.name || 'Super Admin',
-            reason: `Manual administrative provisioning (${type.toUpperCase()} - Valid until ${endDate.toISOString().split('T')[0]})`,
-            timestamp: new Date(),
-          },
+          isSuperAdmin
+            ? {
+                action: 'ASSIGNED',
+                statusFrom: 'NONE',
+                statusTo: 'ACTIVE',
+                performedBy: adminUser?.name || 'Super Admin',
+                reason: `Direct Super Admin Provisioning (${type.toUpperCase()} - Valid until ${endDate.toISOString().split('T')[0]})`,
+                timestamp: new Date(),
+              }
+            : {
+                action: 'SUBMITTED_FOR_APPROVAL',
+                statusFrom: 'NONE',
+                statusTo: 'IN_REVIEW',
+                performedBy: adminUser?.name || 'Admin',
+                reason: `Manual administrative provisioning submitted for Approver review (${type.toUpperCase()} - Valid until ${endDate.toISOString().split('T')[0]})`,
+                timestamp: new Date(),
+              },
         ],
       });
 
-      // Update Subscriber's top-level subscription and order history safely
-      const updateData = {
-        $set: {
-          subscription: {
-            status: type === 'trial' ? 'trial' : 'active',
-            planName,
-            startDate,
-            endDate,
-            isTrial: type === 'trial',
-            isComplimentary: type === 'complimentary',
-            discountPercent: Number(discountPercent),
-            discountNotes: notes,
+      // If SuperAdmin, activate access immediately. If regular Admin, keep access inactive pending approval.
+      if (isSuperAdmin) {
+        // Automatically close/supersede any existing active digital subscriptions for this subscriber
+        await subscriptionService.supersedePreviousActiveSubscriptions(
+          subscriber._id,
+          newSubscription,
+          adminUser
+        );
+
+        // Check if user currently has another active digital subscription
+        const existingActiveDigitalSub = await Subscription.findOne({
+          user: subscriber._id,
+          _id: { $ne: newSubscription._id },
+          status: 'active',
+          deliveryType: { $ne: 'PHYSICAL' },
+        });
+
+        const isTrial = type === 'trial';
+        const isComplimentary = type === 'complimentary';
+        let subscriberStatus = 'active';
+        if (isPhysicalOnly) {
+          subscriberStatus = 'inactive'; // Physical only book order does NOT grant digital access
+        } else if (isTrial) {
+          subscriberStatus = 'trial';
+        } else if (isComplimentary) {
+          subscriberStatus = 'complimentary';
+        }
+
+        const updateData = {
+          $push: {
+            orderHistory: {
+              orderId: subscriptionId,
+              planName,
+              amount: finalAmount,
+              date: new Date(),
+              paymentStatus: 'Success',
+            },
           },
-        },
+        };
+
+        if (!isPhysicalOnly || !existingActiveDigitalSub) {
+          updateData.$set = {
+            subscription: {
+              status: subscriberStatus,
+              deliveryType: resolvedDeliveryType,
+              hasDigitalAccess: !isPhysicalOnly,
+              planName,
+              planCode,
+              tier,
+              startDate,
+              endDate: isPhysicalOnly ? null : endDate,
+              isTrial: !isPhysicalOnly && isTrial,
+              isComplimentary: !isPhysicalOnly && isComplimentary,
+              discountPercent: Number(discountPercent) || 0,
+              discountNotes: notes,
+            },
+          };
+        }
+
+        if (!subscriber.username) {
+          updateData.$set.username = (subscriber.email?.split('@')[0] || `user_${subscriber._id.toString().slice(-6)}`)
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, '_');
+        }
+
+        await Subscriber.findByIdAndUpdate(subscriber._id, updateData);
+      } else {
+        // Ensure username is generated if missing, but do not set active subscription access
+        if (!subscriber.username) {
+          const generatedUsername = (subscriber.email?.split('@')[0] || `user_${subscriber._id.toString().slice(-6)}`)
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, '_');
+          await Subscriber.findByIdAndUpdate(subscriber._id, { $set: { username: generatedUsername } });
+        }
+      }
+
+      if (!firstSubscription) {
+        firstSubscription = newSubscription;
+      }
+    }
+
+    return firstSubscription;
+  },
+
+  /**
+   * Close/supersede any previously active subscriptions for a subscriber
+   * when a new subscription is activated (Upgrade, Downgrade, or Switch).
+   */
+  supersedePreviousActiveSubscriptions: async (userId, newSubscription, actorUser) => {
+    // If the new subscription is physical only, it should NOT cancel active digital subscriptions!
+    const newDeliveryType = String(newSubscription.deliveryType || '').toUpperCase();
+    if (newDeliveryType === 'PHYSICAL') {
+      return;
+    }
+
+    // Only supersede other digital passes (ONLINE or ONLINE_PHYSICAL)
+    const previousActiveSubs = await Subscription.find({
+      user: userId,
+      _id: { $ne: newSubscription._id },
+      status: 'active',
+      deliveryType: { $ne: 'PHYSICAL' },
+    });
+
+    for (const oldSub of previousActiveSubs) {
+      const oldType = (oldSub.type || 'subscription').toUpperCase();
+      const newType = (newSubscription.type || 'subscription').toUpperCase();
+
+      oldSub.status = 'cancelled';
+      oldSub.timeline.push({
+        action: 'SUPERSEDED',
+        statusFrom: 'ACTIVE',
+        statusTo: 'CANCELLED',
+        performedBy: actorUser?.name || 'Administrator',
+        reason: `Pass converted from ${oldType} to ${newType} (${newSubscription.subscriptionId} - ${newSubscription.planName || ''}). Previous pass closed.`,
+        timestamp: new Date(),
+      });
+      await oldSub.save();
+    }
+  },
+
+  /**
+   * Approve a Pending Subscription (Approver / Super Admin Action)
+   */
+  approveSubscription: async (id, data = {}, approverUser) => {
+    const subscription = await Subscription.findById(id);
+    if (!subscription) {
+      throw new Error('Subscription record not found');
+    }
+    if (subscription.status !== 'in_review' && subscription.status !== 'pending_approval') {
+      throw new Error(`Only subscriptions in 'in_review' status can be approved. Current status: ${subscription.status}`);
+    }
+
+    const comments = data.comments || data.reason || 'Approved by Approver';
+    const oldStatus = subscription.status;
+
+    subscription.status = 'active';
+    subscription.approvalStatus = 'APPROVED';
+    subscription.paymentStatus = 'success';
+    subscription.approvedBy = approverUser?._id || null;
+    subscription.approvedAt = new Date();
+    subscription.approvalComments = comments;
+
+    subscription.timeline.push({
+      action: 'APPROVED',
+      statusFrom: oldStatus.toUpperCase(),
+      statusTo: 'ACTIVE',
+      performedBy: approverUser?.name || 'Approver',
+      reason: comments,
+      timestamp: new Date(),
+    });
+
+    await subscription.save();
+
+    // Automatically close/supersede any existing active subscriptions for this subscriber
+    await subscriptionService.supersedePreviousActiveSubscriptions(
+      subscription.user,
+      subscription,
+      approverUser
+    );
+
+    // Determine delivery format
+    let resolvedDeliveryType = subscription.deliveryType;
+    if (!resolvedDeliveryType || resolvedDeliveryType === 'ONLINE') {
+      const pNameLower = String(subscription.planName || '').toLowerCase();
+      const pCodeLower = String(subscription.planCode || '').toLowerCase();
+      if (
+        pNameLower.includes('physical + online') ||
+        pNameLower.includes('online + physical') ||
+        pNameLower.includes('hybrid') ||
+        pCodeLower.includes('hybrid')
+      ) {
+        resolvedDeliveryType = 'ONLINE_PHYSICAL';
+      } else if (pNameLower.includes('physical') || pCodeLower.includes('physical')) {
+        resolvedDeliveryType = 'PHYSICAL';
+      } else {
+        resolvedDeliveryType = 'ONLINE';
+      }
+    }
+    const isPhysicalOnly = resolvedDeliveryType === 'PHYSICAL';
+
+    // Now grant active access to the Subscriber
+    const subscriber = await Subscriber.findById(subscription.user);
+    if (subscriber) {
+      // Check if user currently has another active digital subscription
+      const existingActiveDigitalSub = await Subscription.findOne({
+        user: subscription.user,
+        _id: { $ne: subscription._id },
+        status: 'active',
+        deliveryType: { $ne: 'PHYSICAL' },
+      });
+
+      const isTrial = subscription.type === 'trial';
+      const isComplimentary = subscription.type === 'complimentary';
+      let subscriberStatus = 'active';
+      if (isPhysicalOnly) {
+        subscriberStatus = 'inactive'; // Physical only book order does NOT grant digital access
+      } else if (isTrial) {
+        subscriberStatus = 'trial';
+      } else if (isComplimentary) {
+        subscriberStatus = 'complimentary';
+      }
+
+      const updateData = {
         $push: {
           orderHistory: {
-            orderId: subscriptionId,
-            planName,
-            amount: finalAmount,
+            orderId: subscription.subscriptionId,
+            planName: subscription.planName,
+            amount: subscription.finalAmount,
             date: new Date(),
             paymentStatus: 'Success',
           },
         },
       };
+
+      if (!isPhysicalOnly || !existingActiveDigitalSub) {
+        updateData.$set = {
+          subscription: {
+            status: subscriberStatus,
+            deliveryType: resolvedDeliveryType,
+            hasDigitalAccess: !isPhysicalOnly,
+            planName: subscription.planName,
+            planCode: subscription.planCode,
+            tier: subscription.tier,
+            startDate: subscription.startDate,
+            endDate: isPhysicalOnly ? null : subscription.endDate,
+            isTrial: !isPhysicalOnly && isTrial,
+            isComplimentary: !isPhysicalOnly && isComplimentary,
+            discountPercent: Number(subscription.discountPercent) || 0,
+            discountNotes: subscription.notes || '',
+          },
+        };
+      }
 
       if (!subscriber.username) {
         updateData.$set.username = (subscriber.email?.split('@')[0] || `user_${subscriber._id.toString().slice(-6)}`)
@@ -534,13 +785,241 @@ export const subscriptionService = {
       }
 
       await Subscriber.findByIdAndUpdate(subscriber._id, updateData);
+    }
 
-      if (!firstSubscription) {
-        firstSubscription = newSubscription;
+    return subscription;
+  },
+
+  /**
+   * Reject a Pending Subscription (Approver / Super Admin Action)
+   */
+  rejectSubscription: async (id, data = {}, approverUser) => {
+    const subscription = await Subscription.findById(id);
+    if (!subscription) {
+      throw new Error('Subscription record not found');
+    }
+    if (subscription.status !== 'in_review' && subscription.status !== 'pending_approval') {
+      throw new Error(`Only subscriptions in 'in_review' status can be rejected. Current status: ${subscription.status}`);
+    }
+
+    const reason = data.reason || data.comments || 'Rejected by Approver';
+    const oldStatus = subscription.status;
+
+    subscription.status = 'rejected';
+    subscription.approvalStatus = 'REJECTED';
+    subscription.approvedBy = approverUser?._id || null;
+    subscription.approvedAt = new Date();
+    subscription.rejectionReason = reason;
+    subscription.approvalComments = data.comments || reason;
+
+    subscription.timeline.push({
+      action: 'REJECTED',
+      statusFrom: oldStatus.toUpperCase(),
+      statusTo: 'REJECTED',
+      performedBy: approverUser?.name || 'Approver',
+      reason: reason,
+      timestamp: new Date(),
+    });
+
+    await subscription.save();
+    return subscription;
+  },
+
+  /**
+   * Resubmit a Rejected Subscription for Review
+   */
+  resubmitSubscription: async (id, data, adminUser) => {
+    const subscription = await Subscription.findById(id);
+    if (!subscription) {
+      throw new Error('Subscription not found');
+    }
+
+    if (subscription.status !== 'rejected') {
+      throw new Error('Only rejected subscriptions can be edited and resubmitted.');
+    }
+
+    const {
+      type = subscription.type,
+      planName,
+      planCode = subscription.planCode,
+      tier,
+      amount,
+      discountPercent = 0,
+      customDays,
+      notes = '',
+      deliveryType,
+    } = data;
+
+    let planDoc = null;
+    if (planCode) {
+      planDoc = await Plan.findOne({ code: planCode });
+    }
+
+    const startDate = new Date();
+    let endDate;
+    let paymentStatus = 'success';
+
+    // Business Rules for Expiry Calculation
+    if (type === 'paid') {
+      if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
+        endDate = new Date(planDoc.fixedDate);
+      } else if (planDoc && planDoc.validityType === 'duration_years') {
+        endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + (planDoc.durationValue || 1));
+      } else if (planDoc && planDoc.validityType === 'duration_months') {
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + (planDoc.durationValue || 12));
+      } else {
+        endDate = await subscriptionService.getConfiguredFixedExpiry();
+      }
+    } else if (type === 'trial') {
+      const days = parseInt(customDays, 10) || 14;
+      endDate = new Date(startDate.getTime() + days * 24 * 60 * 60 * 1000);
+      paymentStatus = 'waived';
+    } else if (type === 'complimentary') {
+      if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
+        endDate = new Date(planDoc.fixedDate);
+      } else {
+        endDate = await subscriptionService.getConfiguredFixedExpiry();
+      }
+      paymentStatus = 'waived';
+    } else if (type === 'discounted') {
+      if (planDoc && planDoc.validityType === 'fixed_date' && planDoc.fixedDate) {
+        endDate = new Date(planDoc.fixedDate);
+      } else if (planDoc && planDoc.validityType === 'duration_years') {
+        endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + (planDoc.durationValue || 1));
+      } else if (planDoc && planDoc.validityType === 'duration_months') {
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + (planDoc.durationValue || 12));
+      } else {
+        endDate = await subscriptionService.getConfiguredFixedExpiry();
       }
     }
 
-    return firstSubscription;
+    let unitBaseAmount = Number(amount) || (planDoc ? planDoc.priceINR : subscription.amount);
+    let userDiscountAmount = 0;
+    let userTaxableAmount = unitBaseAmount;
+    let userGstRate = 18;
+    let userGstAmount = 0;
+    let userFinalAmount = unitBaseAmount;
+    let effectiveDiscountPercent = 0;
+
+    if (type === 'paid' || type === 'discounted') {
+      const planForPricing = planDoc || {
+        priceINR: Number(amount) || subscription.amount,
+        isGstApplicable: true,
+        gstRatePercent: 18,
+        bulkDiscountEnabled: false,
+        bulkSlabs: [],
+      };
+      const pricingBreakdown = planService.calculatePlanPricing(planForPricing, {
+        quantity: 1,
+        concessionPercent: type === 'discounted' ? Number(discountPercent) : 0,
+      });
+
+      unitBaseAmount = pricingBreakdown.unitBasePrice;
+      effectiveDiscountPercent = pricingBreakdown.effectiveDiscountPercent;
+      userDiscountAmount = pricingBreakdown.discountAmount;
+      userTaxableAmount = pricingBreakdown.taxableBase;
+      userGstRate = pricingBreakdown.gstRatePercent;
+      userGstAmount = pricingBreakdown.taxAmount;
+      userFinalAmount = pricingBreakdown.totalAmount;
+    } else {
+      unitBaseAmount = 0;
+      userDiscountAmount = 0;
+      userTaxableAmount = 0;
+      userGstRate = 0;
+      userGstAmount = 0;
+      userFinalAmount = 0;
+      paymentStatus = 'waived';
+    }
+
+    const userRoleCode = (
+      typeof adminUser?.role === 'string'
+        ? adminUser.role
+        : adminUser?.role?.code || ''
+    ).toLowerCase();
+    const isSuperAdmin = userRoleCode === 'superadmin';
+
+    // Update Subscription properties
+    subscription.type = type;
+    if (planDoc) {
+      subscription.planName = planDoc.name;
+      subscription.planCode = planDoc.code;
+      subscription.tier = planDoc.tier;
+      subscription.deliveryType = deliveryType || planDoc.deliveryType || subscription.deliveryType;
+    } else if (planName) {
+      subscription.planName = planName;
+    }
+    if (tier) subscription.tier = tier;
+    subscription.amount = unitBaseAmount;
+    subscription.discountPercent = effectiveDiscountPercent;
+    subscription.discountAmount = userDiscountAmount;
+    subscription.taxableAmount = userTaxableAmount;
+    subscription.gstRatePercent = userGstRate;
+    subscription.gstAmount = userGstAmount;
+    subscription.finalAmount = userFinalAmount;
+    subscription.paymentStatus = paymentStatus;
+    subscription.startDate = startDate;
+    subscription.endDate = endDate;
+    if (notes) subscription.notes = notes;
+
+    const previousRejectionReason = subscription.rejectionReason;
+    subscription.rejectionReason = ''; // Clear previous rejection reason
+    subscription.approvalComments = '';
+
+    if (isSuperAdmin) {
+      subscription.status = 'active';
+      subscription.approvalStatus = 'APPROVED';
+      subscription.approvedBy = adminUser._id;
+      subscription.approvedAt = new Date();
+    } else {
+      subscription.status = 'in_review';
+      subscription.approvalStatus = 'PENDING';
+      subscription.requestedBy = adminUser._id;
+      subscription.approvedBy = null;
+      subscription.approvedAt = null;
+    }
+
+    subscription.timeline.push({
+      action: 'RESUBMITTED',
+      statusFrom: 'REJECTED',
+      statusTo: isSuperAdmin ? 'ACTIVE' : 'IN_REVIEW',
+      performedBy: adminUser?.name || 'Administrator',
+      reason: notes
+        ? `Resubmitted for review: ${notes}. (Previous rejection: "${previousRejectionReason || 'N/A'}")`
+        : `Resubmitted for review following rejection.`,
+      timestamp: new Date(),
+    });
+
+    await subscription.save();
+
+    if (isSuperAdmin) {
+      await subscriptionService.supersedePreviousActiveSubscriptions(
+        subscription.user,
+        subscription,
+        adminUser
+      );
+
+      const isTrial = subscription.type === 'trial';
+      const isComplimentary = subscription.type === 'complimentary';
+      let subscriberStatus = 'active';
+      if (isTrial) subscriberStatus = 'trial';
+      else if (isComplimentary) subscriberStatus = 'complimentary';
+
+      await Subscriber.findByIdAndUpdate(subscription.user, {
+        'subscription.status': subscriberStatus,
+        'subscription.planName': subscription.planName,
+        'subscription.tier': subscription.tier,
+        'subscription.startDate': startDate,
+        'subscription.endDate': endDate,
+        'subscription.isTrial': isTrial,
+        'subscription.isComplimentary': isComplimentary,
+      });
+    }
+
+    return subscription;
   },
 
   /**

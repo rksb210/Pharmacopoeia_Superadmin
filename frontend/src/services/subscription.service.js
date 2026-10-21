@@ -37,6 +37,18 @@ export const subscriptionService = {
     return api.patch(`/subscriptions/${id}/status`, { status, reason });
   },
 
+  approveSubscription: async (id, data = {}) => {
+    return api.post(`/subscriptions/${id}/approve`, data);
+  },
+
+  rejectSubscription: async (id, data = {}) => {
+    return api.post(`/subscriptions/${id}/reject`, data);
+  },
+
+  resubmitSubscription: async (id, data = {}) => {
+    return api.post(`/subscriptions/${id}/resubmit`, data);
+  },
+
   getUserTimeline: async (userId) => {
     return api.get(`/subscriptions/user/${userId}/timeline`);
   },

@@ -168,6 +168,15 @@ const subscriberSchema = new mongoose.Schema(
         enum: ['none', 'trial', 'active', 'expired', 'complimentary', 'revoked', 'inactive', 'pending'],
         default: 'none',
       },
+      deliveryType: {
+        type: String,
+        enum: ['ONLINE', 'PHYSICAL', 'ONLINE_PHYSICAL'],
+        default: 'ONLINE',
+      },
+      hasDigitalAccess: {
+        type: Boolean,
+        default: false,
+      },
       planName: {
         type: String,
         default: 'NFI 7th Edition Formulary - Universal Access Pass',
