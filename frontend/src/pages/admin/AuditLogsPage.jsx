@@ -58,8 +58,10 @@ const MODULES = [
   { id: 'PLANS', label: 'Plans & Pricing' },
   { id: 'COUPONS', label: 'Coupons & Concessions' },
   { id: 'CONTENT', label: 'Monographs & Content' },
+  { id: 'KAYM', label: 'KAYM (Know Your Medicine) Search & Scans' },
+  { id: 'ADIT', label: 'ADIT (Clinical Calculators & Interactions)' },
   { id: 'CRM', label: 'CRM & Marquee Alerts' },
-  { id: 'SYSTEM', label: 'System Settings & Config' },
+  { id: 'SYSTEM', label: 'System Settings & Errors' },
 ];
 
 export const AuditLogsPage = () => {

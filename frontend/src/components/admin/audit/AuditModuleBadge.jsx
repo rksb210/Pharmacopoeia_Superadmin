@@ -37,6 +37,12 @@ export const AuditModuleBadge = ({ module }) => {
         return 'bg-blue-100 text-blue-900 border-blue-300';
       case 'CONTENT':
         return 'bg-cyan-50 text-cyan-800 border-cyan-200';
+      case 'KAYM':
+        return 'bg-emerald-50 text-emerald-800 border-emerald-300';
+      case 'ADIT':
+        return 'bg-indigo-50 text-indigo-800 border-indigo-300';
+      case 'SEARCH':
+        return 'bg-sky-50 text-sky-800 border-sky-300';
       case 'SYSTEM':
       default:
         return 'bg-slate-50 text-slate-700 border-slate-200';

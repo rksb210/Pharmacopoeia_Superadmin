@@ -259,6 +259,7 @@ export const auditService = {
         { entityId: searchRegex },
         { ipAddress: searchRegex },
         { details: searchRegex },
+        { errorMessage: searchRegex },
       ];
     }
 

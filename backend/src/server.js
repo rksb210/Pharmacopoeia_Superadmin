@@ -20,6 +20,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Enable reverse proxy support (e.g. Nginx, Cloudflare, OpenResty)
+app.set('trust proxy', 1);
+
 // Security & Parsing Middlewares
 app.use(
   helmet({
@@ -45,7 +48,8 @@ const allowedOrigins = [
   "http://localhost:5173/admin-fe",
   "http://localhost:5173",
   "http://localhost:5174",
-  "http://213.136.77.55:4173"
+  "http://213.136.77.55:4173",
+  "http://localhost:4173"
 ];
 
 app.use(
