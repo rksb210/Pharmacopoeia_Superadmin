@@ -20,9 +20,11 @@ import {
   Receipt,
   CreditCard,
   Hash,
+  Clock,
 } from 'lucide-react';
 import bulkImportService from '../../../services/bulkImport.service';
 import couponService from '../../../services/coupon.service';
+import { usePermission } from '../../../context/PermissionContext';
 
 export const BulkPreviewTable = ({
   previewData,
@@ -30,6 +32,7 @@ export const BulkPreviewTable = ({
   onReset,
   isImporting,
 }) => {
+  const { isSuperAdmin } = usePermission();
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'valid' | 'invalid'
   const [isDownloadingError, setIsDownloadingError] = useState(false);
 
@@ -563,6 +566,16 @@ export const BulkPreviewTable = ({
             </div>
           </div>
 
+          {!isSuperAdmin && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-100 rounded-xl flex items-start gap-2.5 text-left mb-2">
+              <Clock className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+              <div className="text-[11px] leading-relaxed">
+                <span className="font-bold text-amber-300">Approval Workflow Active: </span>
+                As an Administrator, this bulk batch will be placed in <span className="font-bold text-[#FFD243]">"In Review"</span> status. Active subscriber accounts and subscriptions will be provisioned once an Approver authorizes the batch.
+              </div>
+            </div>
+          )}
+
           <Button
             type="button"
             variant="nfiYellow"
@@ -573,8 +586,12 @@ export const BulkPreviewTable = ({
           >
             <span>
               {isImporting
-                ? 'Provisioning Subscriptions...'
-                : `Confirm & Provision ${validCount} Passes`}
+                ? isSuperAdmin
+                  ? 'Provisioning Subscriptions...'
+                  : 'Submitting Batch for Approval...'
+                : isSuperAdmin
+                ? `Confirm & Provision ${validCount} Passes`
+                : `Submit ${validCount} Passes for Approval`}
             </span>
             <ArrowRight className="w-4 h-4 ml-1.5" />
           </Button>

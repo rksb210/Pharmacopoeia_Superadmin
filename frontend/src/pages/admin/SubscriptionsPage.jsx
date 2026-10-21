@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   Plus,
   Eye,
-  RotateCw,
   XCircle,
   RefreshCw,
   Search,
@@ -21,6 +20,8 @@ import {
   FileSpreadsheet,
   Truck,
   Package,
+  ShieldCheck,
+  RotateCcw,
 } from 'lucide-react';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
@@ -40,13 +41,16 @@ import {
 
 import subscriptionService from '../../services/subscription.service';
 import PermissionGuard from '../../components/admin/common/PermissionGuard';
+import { useAuth } from '../../context/AuthContext';
+import { usePermission } from '../../context/PermissionContext';
 
 // Components & Modals
 import SubscriptionStatusBadge from '../../components/admin/subscriptions/SubscriptionStatusBadge';
 import AssignSubscriptionModal from '../../components/admin/subscriptions/AssignSubscriptionModal';
 import SubscriptionDetailsModal from '../../components/admin/subscriptions/SubscriptionDetailsModal';
-import RenewSubscriptionModal from '../../components/admin/subscriptions/RenewSubscriptionModal';
 import CancelSubscriptionModal from '../../components/admin/subscriptions/CancelSubscriptionModal';
+import SubscriptionApprovalModal from '../../components/admin/subscriptions/SubscriptionApprovalModal';
+import SubscriptionResubmitModal from '../../components/admin/subscriptions/SubscriptionResubmitModal';
 
 // Helper to determine delivery format
 export const getSubscriptionDeliveryType = (sub) => {
@@ -79,6 +83,10 @@ export const getSubscriptionDeliveryType = (sub) => {
 };
 
 export const SubscriptionsPage = () => {
+  const { isSuperAdmin } = useAuth();
+  const { can } = usePermission();
+  const canApprove = isSuperAdmin || can('APPROVE', 'COMMERCIAL', 'SUBSCRIPTIONS');
+
   const [stats, setStats] = useState({
     totalSubscriptions: 0,
     activeSubscriptions: 0,
@@ -91,6 +99,8 @@ export const SubscriptionsPage = () => {
     physicalSubscriptions: 0,
     onlineSubscriptions: 0,
     hybridSubscriptions: 0,
+    inReviewSubscriptions: 0,
+    rejectedSubscriptions: 0,
     totalRevenueINR: 0,
   });
 
@@ -105,7 +115,7 @@ export const SubscriptionsPage = () => {
   };
 
   // Filters State
-  // 'all' | 'online' | 'physical' | 'hybrid' | 'active' | 'expiring_soon' | 'trial' | 'complimentary' | 'discounted' | 'cancelled'
+  // 'all' | 'in_review' | 'online' | 'physical' | 'hybrid' | 'active' | 'expiring_soon' | 'trial' | 'complimentary' | 'discounted' | 'cancelled'
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -121,8 +131,9 @@ export const SubscriptionsPage = () => {
   // Modals
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [viewingSubscription, setViewingSubscription] = useState(null);
-  const [renewingSubscription, setRenewingSubscription] = useState(null);
   const [cancellingSubscription, setCancellingSubscription] = useState(null);
+  const [approvingSubscription, setApprovingSubscription] = useState(null);
+  const [resubmittingSubscription, setResubmittingSubscription] = useState(null);
 
   // Fetch KPI Stats
   const fetchStats = async () => {
@@ -144,8 +155,10 @@ export const SubscriptionsPage = () => {
     let computedType = typeFilter;
     let computedDelivery = 'all';
 
-    if (activeTab === 'active') computedStatus = 'active';
+    if (activeTab === 'in_review') computedStatus = 'in_review';
+    else if (activeTab === 'active') computedStatus = 'active';
     else if (activeTab === 'cancelled' || activeTab === 'expired') computedStatus = 'cancelled';
+    else if (activeTab === 'rejected') computedStatus = 'rejected';
     else if (activeTab === 'expiring_soon') computedStatus = 'expiring_soon';
     else if (activeTab === 'trial') computedType = 'trial';
     else if (activeTab === 'complimentary') computedType = 'complimentary';
@@ -192,8 +205,10 @@ export const SubscriptionsPage = () => {
     let computedType = typeFilter;
     let computedDelivery = 'all';
 
-    if (activeTab === 'active') computedStatus = 'active';
+    if (activeTab === 'in_review') computedStatus = 'in_review';
+    else if (activeTab === 'active') computedStatus = 'active';
     else if (activeTab === 'cancelled' || activeTab === 'expired') computedStatus = 'cancelled';
+    else if (activeTab === 'rejected') computedStatus = 'rejected';
     else if (activeTab === 'expiring_soon') computedStatus = 'expiring_soon';
     else if (activeTab === 'trial') computedType = 'trial';
     else if (activeTab === 'complimentary') computedType = 'complimentary';
@@ -303,15 +318,29 @@ export const SubscriptionsPage = () => {
 
   // Handlers
   const handleAssign = async (payload) => {
-    await subscriptionService.assignSubscription(payload);
-    showFeedback('Subscription provisioned and activated successfully.');
+    const res = await subscriptionService.assignSubscription(payload);
+    showFeedback(res?.message || 'Subscription processed successfully.');
     fetchSubscriptions();
     fetchStats();
   };
 
-  const handleRenew = async (id, payload) => {
-    await subscriptionService.renewSubscription(id, payload);
-    showFeedback('Subscription pass renewed successfully.');
+  const handleApprove = async (id, payload) => {
+    const res = await subscriptionService.approveSubscription(id, payload);
+    showFeedback(res?.message || 'Subscription approved and access activated successfully.');
+    fetchSubscriptions();
+    fetchStats();
+  };
+
+  const handleReject = async (id, payload) => {
+    const res = await subscriptionService.rejectSubscription(id, payload);
+    showFeedback(res?.message || 'Subscription request rejected.', 'error');
+    fetchSubscriptions();
+    fetchStats();
+  };
+
+  const handleResubmit = async (id, payload) => {
+    const res = await subscriptionService.resubmitSubscription(id, payload);
+    showFeedback(res?.message || 'Subscription request resubmitted for approver review.');
     fetchSubscriptions();
     fetchStats();
   };
@@ -327,16 +356,18 @@ export const SubscriptionsPage = () => {
     return `₹${(val || 0).toLocaleString('en-IN')}`;
   };
 
-  // Quick Filter Tabs list with Online, Physical Copy, Physical + Online
+  // Quick Filter Tabs list with In Review tab
   const filterTabs = [
     { id: 'all', label: 'All Subscriptions', count: stats.totalSubscriptions },
+    { id: 'in_review', label: 'In Review', count: stats.inReviewSubscriptions || 0 },
     { id: 'online', label: 'Online', count: stats.onlineSubscriptions || 0 },
     { id: 'physical', label: 'Physical Copy', count: stats.physicalSubscriptions || 0 },
     { id: 'hybrid', label: 'Physical + Online', count: stats.hybridSubscriptions || 0 },
     { id: 'active', label: 'Active', count: stats.activeSubscriptions },
     { id: 'trial', label: 'Free Trial', count: stats.trialSubscriptions },
     { id: 'discounted', label: 'Discounted', count: stats.discountedSubscriptions },
-    { id: 'cancelled', label: 'Cancelled', count: stats.cancelledSubscriptions ?? stats.expiredSubscriptions ?? 0 },
+    { id: 'cancelled', label: 'Cancelled / Expired', count: stats.cancelledSubscriptions ?? stats.expiredSubscriptions ?? 0 },
+    { id: 'rejected', label: 'Rejected', count: stats.rejectedSubscriptions || 0 },
   ];
 
   return (
@@ -577,7 +608,7 @@ export const SubscriptionsPage = () => {
               <TableHead>Subscriber</TableHead>
               <TableHead>Formulary Plan &amp; Format</TableHead>
               <TableHead>Validity &amp; Expiry Date</TableHead>
-              <TableHead>Price &amp; Concession</TableHead>
+              {/* <TableHead>Price &amp; Concession</TableHead> */}
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -665,9 +696,45 @@ export const SubscriptionsPage = () => {
                     </div>
                   </TableCell>
 
-                  {/* Validity & Expiry: For Physical Copy, no validity applies! */}
+                  {/* Validity & Expiry: For Physical Copy, no validity applies; For Rejected/Cancelled/Expired, show dedicated status */}
                   <TableCell>
-                    {isPhysical ? (
+                    {sub.status === 'rejected' ? (
+                      <div>
+                        <span className="font-bold text-rose-600 text-xs block">
+                          Access Denied
+                        </span>
+                        <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                          ● Request Rejected
+                        </span>
+                      </div>
+                    ) : sub.status === 'cancelled' ? (
+                      <div>
+                        <span className="font-bold text-rose-600 text-xs block">
+                          Access Revoked
+                        </span>
+                        <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                          ● Cancelled
+                        </span>
+                      </div>
+                    ) : sub.status === 'expired' ? (
+                      <div>
+                        <span className="font-bold text-slate-500 text-xs block">
+                          Access Expired
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                          ● Term Ended
+                        </span>
+                      </div>
+                    ) : (sub.status === 'in_review' || sub.status === 'pending_approval') ? (
+                      <div>
+                        <span className="font-bold text-amber-700 text-xs block">
+                          Pending Approval
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                          ● Term: {new Date(sub.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    ) : isPhysical ? (
                       <div>
                         <span className="font-semibold text-slate-700 text-xs block">
                           No Expiry
@@ -702,8 +769,8 @@ export const SubscriptionsPage = () => {
                     )}
                   </TableCell>
 
-                  {/* Price & Concession */}
-                  <TableCell>
+                  {/* Price & Concession (Temporarily commented out) */}
+                  {/* <TableCell>
                     <div>
                       <span className="font-black text-slate-900 text-xs block">
                         ₹{sub.finalAmount?.toLocaleString('en-IN')}
@@ -714,7 +781,7 @@ export const SubscriptionsPage = () => {
                         </span>
                       )}
                     </div>
-                  </TableCell>
+                  </TableCell> */}
 
                   {/* Status Badge */}
                   <TableCell>
@@ -725,9 +792,37 @@ export const SubscriptionsPage = () => {
                     />
                   </TableCell>
 
-                  {/* Actions: Physical Copy gets only Eye button (no Renew, no Cancel). Hybrid & Online get Renew & Cancel */}
+                  {/* Actions */}
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {/* Review & Decision (for In Review subscriptions) */}
+                      {(sub.status === 'in_review' || sub.status === 'pending_approval') && canApprove && (
+                        <button
+                          type="button"
+                          onClick={() => setApprovingSubscription(sub)}
+                          className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs mr-1"
+                          title="Review & Take Decision on Subscription"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Review &amp; Decision</span>
+                        </button>
+                      )}
+
+                      {/* Edit & Resubmit (for Rejected subscriptions) */}
+                      {sub.status === 'rejected' && (
+                        <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="EDIT">
+                          <button
+                            type="button"
+                            onClick={() => setResubmittingSubscription(sub)}
+                            className="px-2 py-1 bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-300 border border-blue-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs mr-1"
+                            title="Edit & Resubmit Request for Review"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Edit &amp; Resubmit</span>
+                          </button>
+                        </PermissionGuard>
+                      )}
+
                       {/* View Details & Shipping Address */}
                       <button
                         type="button"
@@ -737,20 +832,6 @@ export const SubscriptionsPage = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-
-                      {/* Renew / Reactivate / Extend (Only for Online / Hybrid; NOT for Physical Only) */}
-                      {!isPhysical && (
-                        <PermissionGuard module="COMMERCIAL" section="SUBSCRIPTIONS" action="EDIT">
-                          <button
-                            type="button"
-                            onClick={() => setRenewingSubscription(sub)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#284661] hover:bg-slate-100 transition-colors cursor-pointer"
-                            title={sub.status === 'cancelled' ? 'Reactivate / Renew Subscription' : 'Renew / Extend Validity'}
-                          >
-                            <RotateCw className="w-4 h-4" />
-                          </button>
-                        </PermissionGuard>
-                      )}
 
                       {/* Cancel / Deactivate (Only for Online / Hybrid; NOT for Physical Only) */}
                       {!isPhysical && sub.status === 'active' && (
@@ -781,21 +862,32 @@ export const SubscriptionsPage = () => {
         onAssignSuccess={handleAssign}
       />
 
+      {/* Approval Modal */}
+      <SubscriptionApprovalModal
+        isOpen={!!approvingSubscription}
+        onClose={() => setApprovingSubscription(null)}
+        subscription={approvingSubscription}
+        onApproveSuccess={handleApprove}
+        onRejectSuccess={handleReject}
+      />
+
       {/* Details & Timeline Modal */}
       <SubscriptionDetailsModal
         isOpen={!!viewingSubscription}
         onClose={() => setViewingSubscription(null)}
         subscription={viewingSubscription}
-        onRenew={(s) => setRenewingSubscription(s)}
         onCancel={(s) => setCancellingSubscription(s)}
+        onApprove={(s) => setApprovingSubscription(s)}
+        onResubmit={(s) => setResubmittingSubscription(s)}
+        canApprove={canApprove}
       />
 
-      {/* Renew Modal */}
-      <RenewSubscriptionModal
-        isOpen={!!renewingSubscription}
-        onClose={() => setRenewingSubscription(null)}
-        subscription={renewingSubscription}
-        onRenewSuccess={handleRenew}
+      {/* Resubmit Modal */}
+      <SubscriptionResubmitModal
+        isOpen={!!resubmittingSubscription}
+        onClose={() => setResubmittingSubscription(null)}
+        subscription={resubmittingSubscription}
+        onResubmitSuccess={handleResubmit}
       />
 
       {/* Cancel Modal */}

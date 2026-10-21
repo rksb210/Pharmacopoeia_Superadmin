@@ -4,6 +4,10 @@ import {
   History,
   Eye,
   Plus,
+  Clock,
+  ShieldCheck,
+  XCircle,
+  RotateCcw,
 } from 'lucide-react';
 import PageContainer from '../../components/admin/common/PageContainer';
 import PageHeader from '../../components/admin/common/PageHeader';
@@ -28,11 +32,17 @@ import BulkUploadZone from '../../components/admin/bulk/BulkUploadZone';
 import BulkPreviewTable from '../../components/admin/bulk/BulkPreviewTable';
 import ConsolidatedInvoiceCard from '../../components/admin/bulk/ConsolidatedInvoiceCard';
 import BulkImportDetailsModal from '../../components/admin/bulk/BulkImportDetailsModal';
+import BulkApprovalModal from '../../components/admin/bulk/BulkApprovalModal';
+import BulkResubmitModal from '../../components/admin/bulk/BulkResubmitModal';
 import ExportDropdown from '../../components/admin/common/ExportDropdown';
 
 export const BulkSubscriptionsPage = () => {
   const { can, isSuperAdmin } = usePermission();
   const canAdd = isSuperAdmin || can('ADD', 'COMMERCIAL', 'BULK_SUBSCRIPTION');
+  const canApprove =
+    isSuperAdmin ||
+    can('APPROVE', 'COMMERCIAL', 'BULK_SUBSCRIPTION') ||
+    can('APPROVE', 'COMMERCIAL', 'SUBSCRIPTIONS');
 
   const [activeMainTab, setActiveMainTab] = useState(canAdd ? 'wizard' : 'history');
 
@@ -56,22 +66,37 @@ export const BulkSubscriptionsPage = () => {
   const [historyJobs, setHistoryJobs] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyStatusFilter, setHistoryStatusFilter] = useState('all');
+  const [historyCounts, setHistoryCounts] = useState({
+    total: 0,
+    inReview: 0,
+    completed: 0,
+    rejected: 0,
+  });
+
+  // Modals
   const [viewingJobId, setViewingJobId] = useState(null);
+  const [approvingJob, setApprovingJob] = useState(null);
+  const [resubmittingJob, setResubmittingJob] = useState(null);
 
   const fetchHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
-      const res = await bulkImportService.getHistory({ limit: 25 });
+      const res = await bulkImportService.getHistory({
+        limit: 50,
+        status: historyStatusFilter !== 'all' ? historyStatusFilter : undefined,
+      });
       if (res && res.jobs) {
         setHistoryJobs(res.jobs);
         setHistoryTotal(res.pagination?.total || 0);
+        if (res.counts) setHistoryCounts(res.counts);
       }
     } catch (err) {
       console.warn('Failed to load bulk history:', err.message);
     } finally {
       setHistoryLoading(false);
     }
-  }, []);
+  }, [historyStatusFilter]);
 
   useEffect(() => {
     fetchHistory();
@@ -136,13 +161,36 @@ export const BulkSubscriptionsPage = () => {
         setCompletedJob(res.job);
         setWizardStep(3);
         fetchHistory();
-        showFeedback(res.message || 'Bulk subscribers successfully imported!');
+        showFeedback(
+          res.message ||
+            (res.isPendingApproval
+              ? 'Bulk batch submitted for Approver review.'
+              : 'Bulk subscribers successfully imported!')
+        );
       }
     } catch (err) {
       setError(err.message || 'Import execution failed.');
     } finally {
       setIsImporting(false);
     }
+  };
+
+  const handleApproveBatch = async (id, payload) => {
+    const res = await bulkImportService.approveBatch(id, payload);
+    showFeedback(res?.message || 'Bulk batch approved and subscribers provisioned.');
+    fetchHistory();
+  };
+
+  const handleRejectBatch = async (id, payload) => {
+    const res = await bulkImportService.rejectBatch(id, payload);
+    showFeedback(res?.message || 'Bulk batch request rejected.', 'error');
+    fetchHistory();
+  };
+
+  const handleResubmitBatch = async (id, payload) => {
+    const res = await bulkImportService.resubmitBatch(id, payload);
+    showFeedback(res?.message || 'Bulk batch resubmitted for Approver review.');
+    fetchHistory();
   };
 
   const handleResetWizard = () => {
@@ -342,34 +390,65 @@ export const BulkSubscriptionsPage = () => {
           {/* STEP 3: SUCCESS & INVOICE */}
           {wizardStep === 3 && completedJob && (
             <div className="space-y-5 animate-in fade-in-0 duration-150">
-              {/* Success Notification Banner */}
-              <div className="p-5 bg-gradient-to-r from-emerald-700 to-teal-800 rounded-2xl text-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center">
-                    <CheckCircle2 className="w-6 h-6 text-[#FFD243]" />
+              {/* Notification Banner */}
+              {completedJob.status === 'in_review' || completedJob.approvalStatus === 'PENDING' ? (
+                <div className="p-5 bg-gradient-to-r from-amber-600 to-amber-700 rounded-2xl text-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center">
+                      <Clock className="w-6 h-6 text-[#FFD243]" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black">
+                        Batch #{completedJob.jobId} Submitted for Approval!
+                      </h3>
+                      <p className="text-amber-100 text-xs mt-0.5">
+                        Your bulk batch of {completedJob.validCount} subscriber accounts for{' '}
+                        {completedJob.institutionName} has been placed in{' '}
+                        <span className="font-bold underline text-[#FFD243]">"In Review"</span> status.
+                        Active subscriber accounts will be provisioned once an Approver approves the request.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-black">
-                      Batch #{completedJob.jobId} Successfully Enrolled!
-                    </h3>
-                    <p className="text-emerald-100 text-xs mt-0.5">
-                      {completedJob.validCount} accounts provisioned with default password{' '}
-                      <span className="font-mono font-bold text-[#FFD243]">Nfi@2026!</span> and
-                      linked to {completedJob.institutionName}.
-                    </p>
-                  </div>
-                </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResetWizard}
-                  className="rounded-xl text-xs font-bold bg-white text-emerald-900 border-none hover:bg-emerald-50 cursor-pointer self-start sm:self-auto"
-                >
-                  Import Another Batch
-                </Button>
-              </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetWizard}
+                    className="rounded-xl text-xs font-bold bg-white text-amber-900 border-none hover:bg-amber-50 cursor-pointer self-start sm:self-auto"
+                  >
+                    Submit Another Batch
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-5 bg-gradient-to-r from-emerald-700 to-teal-800 rounded-2xl text-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center">
+                      <CheckCircle2 className="w-6 h-6 text-[#FFD243]" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black">
+                        Batch #{completedJob.jobId} Successfully Enrolled!
+                      </h3>
+                      <p className="text-emerald-100 text-xs mt-0.5">
+                        {completedJob.validCount} accounts provisioned with default password{' '}
+                        <span className="font-mono font-bold text-[#FFD243]">Nfi@2026!</span> and
+                        linked to {completedJob.institutionName}.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetWizard}
+                    className="rounded-xl text-xs font-bold bg-white text-emerald-900 border-none hover:bg-emerald-50 cursor-pointer self-start sm:self-auto"
+                  >
+                    Import Another Batch
+                  </Button>
+                </div>
+              )}
 
               {/* Consolidated Institutional Invoice */}
               <ConsolidatedInvoiceCard
@@ -384,13 +463,61 @@ export const BulkSubscriptionsPage = () => {
       {/* MAIN TAB 2: IMPORT HISTORY LOG */}
       {activeMainTab === 'history' && (
         <div className="space-y-4">
+          {/* History Status Filter Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 select-none font-sans">
+            {[
+              { id: 'all', label: 'All Batches', count: historyCounts.total },
+              {
+                id: 'in_review',
+                label: 'Pending Review',
+                count: historyCounts.inReview,
+                color: 'text-amber-700 bg-amber-50 border-amber-200',
+              },
+              { id: 'completed', label: 'Provisioned', count: historyCounts.completed },
+              {
+                id: 'rejected',
+                label: 'Rejected',
+                count: historyCounts.rejected,
+                color: 'text-red-700 bg-red-50 border-red-200',
+              },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setHistoryStatusFilter(tab.id)}
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                  historyStatusFilter === tab.id
+                    ? 'bg-[#284661] text-white shadow-2xs'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-md font-bold ${
+                      historyStatusFilter === tab.id
+                        ? 'bg-white/20 text-white'
+                        : tab.color || 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden font-sans select-none text-xs">
             {historyLoading ? (
               <AdminLoader text="Loading past bulk import batches..." />
             ) : historyJobs.length === 0 ? (
               <AdminEmptyState
                 title="No bulk import history"
-                description="You have not executed any bulk subscriber imports yet."
+                description={
+                  historyStatusFilter !== 'all'
+                    ? `No bulk batches found in "${historyStatusFilter.replace('_', ' ')}" status.`
+                    : 'You have not executed any bulk subscriber imports yet.'
+                }
                 actionLabel={canAdd ? 'New Bulk Import' : undefined}
                 onAction={canAdd ? () => setActiveMainTab('wizard') : undefined}
               />
@@ -404,7 +531,7 @@ export const BulkSubscriptionsPage = () => {
                     <TableHead>Enrolled Count</TableHead>
                     <TableHead>Invoice Ref &amp; Amount</TableHead>
                     <TableHead>Execution Date</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Workflow Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -454,24 +581,61 @@ export const BulkSubscriptionsPage = () => {
                       </TableCell>
 
                       <TableCell>
-                        <Badge
-                          variant={job.status === 'completed' ? 'nfiNavy' : 'secondary'}
-                          className="text-[9px] uppercase font-bold"
-                        >
-                          {job.status}
-                        </Badge>
+                        {job.status === 'in_review' || job.status === 'pending_approval' ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            <span>IN REVIEW</span>
+                          </span>
+                        ) : job.status === 'rejected' ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-lg">
+                            <XCircle className="w-3 h-3 text-red-600" />
+                            <span>REJECTED</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>PROVISIONED</span>
+                          </span>
+                        )}
                       </TableCell>
 
                       <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setViewingJobId(job._id)}
-                          className="rounded-lg text-xs font-semibold h-8 cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5 mr-1" />
-                          <span>View Details</span>
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {canApprove &&
+                            (job.status === 'in_review' || job.status === 'pending_approval') && (
+                              <Button
+                                variant="nfiYellow"
+                                size="sm"
+                                onClick={() => setApprovingJob(job)}
+                                className="rounded-lg text-xs font-bold h-8 cursor-pointer shadow-2xs"
+                              >
+                                <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                                <span>Review &amp; Action</span>
+                              </Button>
+                            )}
+
+                          {job.status === 'rejected' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setResubmittingJob(job)}
+                              className="rounded-lg text-xs font-bold h-8 text-amber-700 border-amber-300 hover:bg-amber-50 cursor-pointer"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 mr-1 text-amber-600" />
+                              <span>Edit &amp; Resubmit</span>
+                            </Button>
+                          )}
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setViewingJobId(job._id)}
+                            className="rounded-lg text-xs font-semibold h-8 cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            <span>View Details</span>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -487,6 +651,23 @@ export const BulkSubscriptionsPage = () => {
         isOpen={!!viewingJobId}
         onClose={() => setViewingJobId(null)}
         jobId={viewingJobId}
+      />
+
+      {/* Approver Action Modal (L2) */}
+      <BulkApprovalModal
+        isOpen={!!approvingJob}
+        onClose={() => setApprovingJob(null)}
+        job={approvingJob}
+        onApproveSuccess={handleApproveBatch}
+        onRejectSuccess={handleRejectBatch}
+      />
+
+      {/* Administrator Edit & Resubmit Modal (L1) */}
+      <BulkResubmitModal
+        isOpen={!!resubmittingJob}
+        onClose={() => setResubmittingJob(null)}
+        job={resubmittingJob}
+        onResubmitSuccess={handleResubmitBatch}
       />
     </PageContainer>
   );

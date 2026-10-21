@@ -7,7 +7,6 @@ import {
   User,
   Calendar,
   Clock,
-  RotateCw,
   XCircle,
   Receipt,
   Truck,
@@ -16,6 +15,8 @@ import {
   Copy,
   Check,
   Package,
+  ShieldCheck,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 
@@ -23,8 +24,10 @@ export const SubscriptionDetailsModal = ({
   isOpen,
   onClose,
   subscription,
-  onRenew,
   onCancel,
+  onApprove,
+  onResubmit,
+  canApprove = false,
 }) => {
   const [activeTab, setActiveTab] = useState('details'); // 'details' | 'timeline'
   const [copied, setCopied] = useState(false);
@@ -79,6 +82,10 @@ export const SubscriptionDetailsModal = ({
   const hasAddressData = !!(addr.street1 || addr.formattedAddress || addr.fullName || addr.city);
   const hasShipping = isPhysical || isHybrid || hasAddressData;
 
+  const cancellationEvent = subscription.timeline?.slice().reverse().find(
+    (evt) => evt.action === 'CANCELLED' || evt.statusTo === 'CANCELLED'
+  );
+
   const handleCopyAddress = () => {
     const textToCopy = [
       `Recipient: ${addr.fullName || user.name || ''}`,
@@ -121,6 +128,36 @@ export const SubscriptionDetailsModal = ({
       size="lg"
     >
       <div className="space-y-4 text-xs select-none font-sans overflow-hidden">
+        {/* In Review Pending Approval Alert Banner */}
+        {(subscription.status === 'in_review' || subscription.status === 'pending_approval') && (
+          <div className="p-3 bg-amber-500/15 border border-amber-500/30 rounded-xl flex items-center justify-between gap-3 text-amber-900 dark:text-amber-200">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600 shrink-0 animate-pulse" />
+              <div>
+                <span className="font-bold">Pending Approver Authorization: </span>
+                <span>
+                  This subscription was requested by{' '}
+                  <strong>{subscription.requestedBy?.name || subscription.assignedBy?.name || 'Administrator'}</strong>{' '}
+                  and is awaiting formal Approver review.
+                </span>
+              </div>
+            </div>
+            {canApprove && onApprove && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onApprove(subscription);
+                }}
+                className="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 shrink-0 transition-colors shadow-xs cursor-pointer"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Review &amp; Decision</span>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Top Header Card */}
         <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div className="min-w-0 flex-1">
@@ -156,36 +193,21 @@ export const SubscriptionDetailsModal = ({
             </p>
           </div>
 
-          {/* Quick Actions (Renew & Cancel only for Online / Hybrid; NOT for Physical Only) */}
-          {!isPhysical && (
+          {/* Quick Actions (Cancel only for active Online/Hybrid) */}
+          {!isPhysical && subscription.status === 'active' && (
             <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
               <Button
-                variant="outline"
+                variant="destructive"
                 size="sm"
                 onClick={() => {
                   onClose();
-                  if (onRenew) onRenew(subscription);
+                  if (onCancel) onCancel(subscription);
                 }}
                 className="h-8 rounded-xl font-bold text-xs cursor-pointer"
               >
-                <RotateCw className="w-3.5 h-3.5 mr-1" />
-                <span>{subscription.status === 'cancelled' ? 'Reactivate' : 'Renew'}</span>
+                <XCircle className="w-3.5 h-3.5 mr-1" />
+                <span>Cancel</span>
               </Button>
-
-              {subscription.status === 'active' && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    onClose();
-                    if (onCancel) onCancel(subscription);
-                  }}
-                  className="h-8 rounded-xl font-bold text-xs cursor-pointer"
-                >
-                  <XCircle className="w-3.5 h-3.5 mr-1" />
-                  <span>Cancel</span>
-                </Button>
-              )}
             </div>
           )}
         </div>
@@ -413,6 +435,202 @@ export const SubscriptionDetailsModal = ({
                     <span className="text-slate-400 block mb-0.5">Validity Status</span>
                     <span className="font-bold text-amber-800 block truncate">
                       N/A · One-time Physical Shipment
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : subscription.status === 'rejected' ? (
+              <div className="p-3.5 bg-rose-50/80 border border-rose-200/90 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2 font-bold text-rose-900">
+                    <XCircle className="w-4 h-4 text-rose-600" />
+                    <span>Validity &amp; Access Status</span>
+                  </div>
+                  <Badge variant="destructive" className="text-[10px] font-bold bg-rose-100 text-rose-700 border-rose-300">
+                    Access Denied &bull; Not Activated
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] pt-1">
+                  <div className="bg-white p-2.5 rounded-xl border border-rose-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Activation Status</span>
+                    <span className="font-bold text-rose-600 block truncate">
+                      Never Activated (Request Rejected)
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-rose-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Decision Date</span>
+                    <span className="font-bold text-slate-800 block truncate">
+                      {subscription.approvedAt
+                        ? new Date(subscription.approvedAt).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                          })
+                        : new Date(subscription.updatedAt || subscription.createdAt).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-white/90 rounded-xl border border-rose-100 text-[11px]">
+                  <span className="text-slate-400 block text-[10px] font-semibold mb-0.5">Rejection Reason:</span>
+                  <p className="font-bold text-rose-700 break-words">
+                    "{subscription.rejectionReason || subscription.approvalComments || 'Turned down during administrative review.'}"
+                  </p>
+                  <span className="text-[10px] text-slate-500 block mt-1">
+                    Decision recorded by: <strong>{subscription.approvedBy?.name || 'Authorized Approver'}</strong>
+                  </span>
+                </div>
+
+                <div className="pt-1 flex items-center justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      onClose();
+                      if (onResubmit) onResubmit(subscription);
+                    }}
+                    className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Edit &amp; Resubmit Request</span>
+                  </Button>
+                </div>
+              </div>
+            ) : subscription.status === 'in_review' || subscription.status === 'pending_approval' ? (
+              <div className="p-3.5 bg-amber-50/80 border border-amber-200/90 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2 font-bold text-amber-900">
+                    <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
+                    <span>Validity &amp; Access Status</span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] font-bold bg-amber-100 text-amber-900 border-amber-300">
+                    Pending Approval &bull; Access On Hold
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] pt-1">
+                  <div className="bg-white p-2.5 rounded-xl border border-amber-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Proposed Activation</span>
+                    <span className="font-bold text-amber-800 block truncate">
+                      Pending Approver Authorization
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-amber-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Proposed Expiry Term</span>
+                    <span className="font-bold text-slate-800 block truncate">
+                      {new Date(subscription.endDate).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : subscription.status === 'cancelled' ? (
+              <div className="p-3.5 bg-rose-50/70 border border-rose-200/90 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2 font-bold text-rose-900">
+                    <XCircle className="w-4 h-4 text-rose-600" />
+                    <span>Access Status &amp; Termination</span>
+                  </div>
+                  <Badge variant="destructive" className="text-[10px] font-bold bg-rose-100 text-rose-700 border-rose-300">
+                    Cancelled &bull; Access Revoked
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px] pt-1">
+                  <div className="bg-white p-2.5 rounded-xl border border-rose-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Activation Date</span>
+                    <span className="font-bold text-slate-800 block truncate">
+                      {new Date(subscription.startDate).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-rose-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Cancellation Date</span>
+                    <span className="font-bold text-rose-600 block truncate">
+                      {cancellationEvent?.timestamp
+                        ? new Date(cancellationEvent.timestamp).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                        : new Date(subscription.updatedAt || subscription.createdAt).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-rose-100 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Original Expiry</span>
+                    <span className="font-medium text-slate-500 block truncate line-through">
+                      {new Date(subscription.endDate).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-white/90 rounded-xl border border-rose-100 text-[11px]">
+                  <span className="text-slate-400 block text-[10px] font-semibold mb-0.5">Cancellation Reason:</span>
+                  <p className="font-bold text-rose-800 break-words">
+                    "{cancellationEvent?.reason || subscription.cancellationReason || subscription.notes || 'Administrative cancellation'}"
+                  </p>
+                  {cancellationEvent?.performedBy && (
+                    <span className="text-[10px] text-slate-500 block mt-1">
+                      Action taken by: <strong>{cancellationEvent.performedBy}</strong>
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : subscription.status === 'expired' ? (
+              <div className="p-3.5 bg-slate-100/80 border border-slate-300/80 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold text-slate-800">
+                    <Clock className="w-4 h-4 text-slate-500" />
+                    <span>Validity &amp; Expiration</span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] font-bold bg-slate-200 text-slate-700 border-slate-300">
+                    Expired &bull; Access Ended
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] pt-1">
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Activation Date</span>
+                    <span className="font-bold text-slate-900 block truncate">
+                      {new Date(subscription.startDate).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200 min-w-0">
+                    <span className="text-slate-400 block mb-0.5">Expired On</span>
+                    <span className="font-bold text-slate-700 block truncate">
+                      {new Date(subscription.endDate).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
                     </span>
                   </div>
                 </div>

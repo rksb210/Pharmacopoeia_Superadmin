@@ -5,6 +5,9 @@ import {
   uploadAndValidate,
   validateDirectRows,
   confirmImport,
+  approveBatch,
+  rejectBatch,
+  resubmitBatch,
   getHistory,
   getJobById,
   downloadErrorReport,
@@ -61,11 +64,32 @@ router.post(
   validateDirectRows
 );
 
-// Confirm & Execute Batch
+// Confirm & Execute / Submit Batch (L1 or SuperAdmin)
 router.post(
   '/confirm',
   requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'ADD'),
   confirmImport
+);
+
+// L2 / Approver Action: Approve & Execute Batch
+router.post(
+  '/:id/approve',
+  requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'APPROVE'),
+  approveBatch
+);
+
+// L2 / Approver Action: Reject Batch
+router.post(
+  '/:id/reject',
+  requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'APPROVE'),
+  rejectBatch
+);
+
+// L1 / Maker Action: Resubmit Rejected Batch
+router.post(
+  '/:id/resubmit',
+  requirePermission('COMMERCIAL', 'BULK_SUBSCRIPTION', 'ADD'),
+  resubmitBatch
 );
 
 // History & Details

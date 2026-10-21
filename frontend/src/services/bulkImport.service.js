@@ -35,6 +35,18 @@ export const bulkImportService = {
     return api.get(`/bulk-subscriptions/${id}`);
   },
 
+  approveBatch: async (id, payload = {}) => {
+    return api.post(`/bulk-subscriptions/${id}/approve`, payload);
+  },
+
+  rejectBatch: async (id, payload = {}) => {
+    return api.post(`/bulk-subscriptions/${id}/reject`, payload);
+  },
+
+  resubmitBatch: async (id, payload = {}) => {
+    return api.post(`/bulk-subscriptions/${id}/resubmit`, payload);
+  },
+
   downloadErrorReport: async (id) => {
     const response = await api.get(`/bulk-subscriptions/${id}/error-report`, {
       responseType: 'blob',

@@ -3,7 +3,7 @@ import AdminModal from '../common/AdminModal';
 import ConsolidatedInvoiceCard from './ConsolidatedInvoiceCard';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
-import { Download } from 'lucide-react';
+import { Download, Clock, AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import bulkImportService from '../../../services/bulkImport.service';
 
 export const BulkImportDetailsModal = ({
@@ -112,6 +112,45 @@ export const BulkImportDetailsModal = ({
             <span className="text-lg font-black text-red-900">{job?.invalidCount || 0}</span>
           </div>
         </div>
+
+        {/* Approval Workflow Status Banner */}
+        {job?.status === 'in_review' || job?.status === 'pending_approval' ? (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-900 rounded-xl flex items-start gap-2.5">
+            <Clock className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+            <div className="text-[11px] leading-relaxed">
+              <span className="font-bold">Pending Approver Authorization: </span>
+              This batch was submitted by <span className="font-bold">{job.submittedByName || 'Administrator'}</span>
+              {job.submittedAt && ` on ${new Date(job.submittedAt).toLocaleDateString('en-IN')}`}.
+              Subscriber accounts will be generated and access passes activated once approved.
+              {job.submissionRemarks && (
+                <div className="mt-1 text-amber-800 italic font-mono text-[10px]">
+                  Remarks: "{job.submissionRemarks}"
+                </div>
+              )}
+            </div>
+          </div>
+        ) : job?.status === 'rejected' ? (
+          <div className="p-3 bg-red-50 border border-red-200 text-red-900 rounded-xl flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
+            <div className="text-[11px] leading-relaxed">
+              <span className="font-bold text-red-700">Batch Rejected by Approver: </span>
+              "{job.rejectionReason || 'No reason specified'}"
+              {job.rejectedByName && (
+                <span className="text-red-500 text-[10px] block mt-0.5 font-mono">
+                  Action taken by {job.rejectedByName} on {new Date(job.rejectedAt).toLocaleDateString('en-IN')}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : job?.approvedByName ? (
+          <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-2 text-[11px]">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>
+              Authorized &amp; Provisioned by <span className="font-bold">{job.approvedByName}</span> on{' '}
+              {new Date(job.approvedAt || job.updatedAt).toLocaleDateString('en-IN')}
+            </span>
+          </div>
+        ) : null}
 
         {/* Tab Switcher & Export Credentials */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">

@@ -1,8 +1,25 @@
 import React from 'react';
 import { Badge } from '../../ui/badge';
 import { Clock, CheckCircle2, AlertTriangle, XCircle, Gift, Percent } from 'lucide-react';
-
 export const SubscriptionStatusBadge = ({ status = 'active', type = 'paid', isExpiringSoon = false }) => {
+  if (status === 'in_review' || status === 'pending_approval') {
+    return (
+      <Badge variant="outline" className="text-[10px] font-bold gap-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30">
+        <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+        <span>In Review</span>
+      </Badge>
+    );
+  }
+
+  if (status === 'rejected') {
+    return (
+      <Badge variant="destructive" className="text-[10px] font-bold gap-1 bg-rose-50 text-rose-700 border-rose-200">
+        <XCircle className="w-3 h-3 text-rose-600" />
+        <span>Rejected</span>
+      </Badge>
+    );
+  }
+
   if (status === 'cancelled') {
     return (
       <Badge variant="destructive" className="text-[10px] font-bold gap-1">

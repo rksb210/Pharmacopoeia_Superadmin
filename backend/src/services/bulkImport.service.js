@@ -187,6 +187,20 @@ const normalizeJobDoc = (j) => {
     planCode,
     planName,
     status,
+    approvalStatus: doc.approvalStatus || 'NONE',
+    submittedBy: doc.submittedBy,
+    submittedByName: doc.submittedByName || doc.importedBy?.name || '',
+    submittedAt: doc.submittedAt || doc.createdAt,
+    approvedBy: doc.approvedBy,
+    approvedByName: doc.approvedByName || '',
+    approvedAt: doc.approvedAt,
+    rejectedBy: doc.rejectedBy,
+    rejectedByName: doc.rejectedByName || '',
+    rejectedAt: doc.rejectedAt,
+    rejectionReason: doc.rejectionReason || '',
+    approvalComments: doc.approvalComments || '',
+    submissionRemarks: doc.submissionRemarks || '',
+    timeline: doc.timeline || [],
     consolidatedInvoice,
     records,
   };
@@ -903,16 +917,239 @@ export const bulkImportService = {
     job.paymentMethod = paymentMethod || 'Institutional Invoice / NEFT';
     job.paymentStatus = normPaymentStatus;
     job.status = 'completed';
+    job.approvalStatus = 'APPROVED';
+    job.approvedBy = adminUser?._id || null;
+    job.approvedByName = adminUser?.name || 'Administrator';
+    job.approvedAt = new Date();
     job.completedAt = new Date();
+    if (!job.timeline) job.timeline = [];
+    job.timeline.push({
+      action: 'APPROVED',
+      statusFrom: 'IN_REVIEW',
+      statusTo: 'COMPLETED',
+      performedBy: adminUser?.name || 'Approver',
+      reason: 'Bulk batch approved and subscribers provisioned.',
+      timestamp: new Date(),
+    });
     await job.save();
 
     return normalizeJobDoc(job);
   },
 
   /**
+   * Submit Batch for Approver Review (L1 / Maker Action)
+   */
+  submitBatchForApproval: async (
+    jobIdentifier,
+    adminUser,
+    {
+      couponCode = '',
+      paymentMethod = 'Institutional Invoice / NEFT',
+      paymentStatus = 'paid',
+      paymentReference = '',
+      transactionId = '',
+      remarks = '',
+    } = {}
+  ) => {
+    const job = await findJobSafely(jobIdentifier);
+    if (!job) throw new Error('Bulk import job not found');
+    if (job.status === 'completed' || job.status === 'COMPLETED') {
+      throw new Error('This bulk batch has already been processed and imported.');
+    }
+
+    const validRecords = job.records.filter(
+      (r) => r.status === 'valid' || r.status === 'VALID'
+    );
+    if (validRecords.length === 0) {
+      throw new Error('No valid records found in this batch to submit.');
+    }
+
+    // Fetch Plan Details
+    let plan = await Plan.findOne({ code: job.planCode });
+    if (!plan && job.plan?.planId && mongoose.isValidObjectId(job.plan.planId)) {
+      plan = await Plan.findById(job.plan.planId);
+    }
+
+    // Calculate Slab Pricing
+    const basePricing = calculateBulkPricing(plan, validRecords.length, 0);
+    const afterSlabSubtotal = Math.max(0, basePricing.subtotalINR - basePricing.slabDiscountINR);
+
+    // Optional Promo Coupon Calculation
+    let couponDiscountINR = 0;
+    const cleanCoupon = cleanStr(couponCode || job.couponCode).toUpperCase();
+    if (cleanCoupon) {
+      const couponResult = await couponService.validateAndApplyCoupon({
+        code: cleanCoupon,
+        orderAmount: afterSlabSubtotal,
+        userId: job.institutionId || null,
+        userEmail: job.coordinator?.email || job.billingContact || '',
+        userType: job.userType || 'UNIVERSITIES_COLLEGES',
+        planCode: job.planCode,
+      });
+      couponDiscountINR = couponResult.discountApplied || 0;
+    }
+
+    const finalPricing = calculateBulkPricing(plan, validRecords.length, couponDiscountINR);
+    if (String(paymentStatus).toLowerCase() === 'waived') {
+      finalPricing.finalAmountINR = 0;
+    }
+
+    const invoiceNumber = `C-INV-${new Date().getFullYear()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const normPaymentStatus =
+      String(paymentStatus).toLowerCase() === 'waived' ? 'waived' : 'paid';
+
+    job.consolidatedInvoice = {
+      invoiceNumber,
+      institutionName: job.institutionName,
+      billingContact:
+        job.billingContact || job.coordinator?.email || job.coordinator?.name || '',
+      billingAddress: job.coordinator?.address || '',
+      gstin: job.coordinator?.gstin || '',
+      pan: job.coordinator?.pan || '',
+      state: job.coordinator?.state || '',
+      totalSubscribers: validRecords.length,
+      unitPriceINR: finalPricing.unitPriceINR,
+      subtotalINR: finalPricing.subtotalINR,
+      slabDiscountPercent: finalPricing.slabDiscountPercent,
+      slabDiscountINR: finalPricing.slabDiscountINR,
+      couponCode: cleanCoupon,
+      couponDiscountINR: finalPricing.couponDiscountINR,
+      discountINR: finalPricing.discountINR,
+      taxPercent: finalPricing.taxPercent,
+      taxAmountINR: finalPricing.taxAmountINR,
+      finalAmountINR: finalPricing.finalAmountINR,
+      paymentMethod: paymentMethod || 'Institutional Invoice / NEFT',
+      paymentStatus: normPaymentStatus,
+      paymentReference: paymentReference || transactionId || '',
+      transactionId: transactionId || paymentReference || '',
+      generatedAt: new Date(),
+    };
+
+    job.invoice = {
+      invoiceNumber,
+      invoiceDate: new Date(),
+      subtotal: finalPricing.subtotalINR,
+      discountAmount: finalPricing.discountINR,
+      taxRate: finalPricing.taxPercent,
+      taxAmount: finalPricing.taxAmountINR,
+      totalAmount: finalPricing.finalAmountINR,
+      paymentStatus: normPaymentStatus.toUpperCase(),
+      paymentMethod: paymentMethod || 'Institutional Invoice / NEFT',
+      paymentReference: paymentReference || transactionId || '',
+      transactionId: transactionId || paymentReference || '',
+      status: 'PENDING',
+    };
+
+    job.couponCode = cleanCoupon;
+    job.paymentMethod = paymentMethod || 'Institutional Invoice / NEFT';
+    job.paymentStatus = normPaymentStatus;
+    job.status = 'in_review';
+    job.approvalStatus = 'PENDING';
+    job.submittedBy = adminUser?._id || null;
+    job.submittedByName = adminUser?.name || 'Administrator';
+    job.submittedAt = new Date();
+    job.submissionRemarks = remarks || '';
+    if (!job.timeline) job.timeline = [];
+    job.timeline.push({
+      action: 'SUBMITTED',
+      statusFrom: 'PREVIEW',
+      statusTo: 'IN_REVIEW',
+      performedBy: adminUser?.name || 'Administrator',
+      reason: remarks || 'Batch submitted for Approver review and authorization.',
+      timestamp: new Date(),
+    });
+
+    await job.save();
+    return normalizeJobDoc(job);
+  },
+
+  /**
+   * Reject a Pending Bulk Batch (Approver / Checker Action)
+   */
+  rejectBatch: async (jobIdentifier, approverUser, { reason = '' } = {}) => {
+    const job = await findJobSafely(jobIdentifier);
+    if (!job) throw new Error('Bulk import job not found');
+    if (job.status === 'completed' || job.status === 'COMPLETED') {
+      throw new Error('Completed batches cannot be rejected.');
+    }
+    const cleanReason = String(reason || '').trim();
+    if (!cleanReason) {
+      throw new Error('A specific rejection reason is required.');
+    }
+
+    const oldStatus = (job.status || 'in_review').toUpperCase();
+    job.status = 'rejected';
+    job.approvalStatus = 'REJECTED';
+    job.rejectedBy = approverUser?._id || null;
+    job.rejectedByName = approverUser?.name || 'Approver';
+    job.rejectedAt = new Date();
+    job.rejectionReason = cleanReason;
+    if (!job.timeline) job.timeline = [];
+    job.timeline.push({
+      action: 'REJECTED',
+      statusFrom: oldStatus,
+      statusTo: 'REJECTED',
+      performedBy: approverUser?.name || 'Approver',
+      reason: cleanReason,
+      timestamp: new Date(),
+    });
+
+    await job.save();
+    return normalizeJobDoc(job);
+  },
+
+  /**
+   * Resubmit a Rejected Bulk Batch (Admin / Maker Action)
+   */
+  resubmitBatch: async (
+    jobIdentifier,
+    adminUser,
+    { paymentReference = '', paymentMethod = '', remarks = '' } = {}
+  ) => {
+    const job = await findJobSafely(jobIdentifier);
+    if (!job) throw new Error('Bulk import job not found');
+    if (job.status !== 'rejected') {
+      throw new Error('Only rejected bulk batches can be resubmitted.');
+    }
+
+    const ref = (paymentReference || '').trim();
+    if (ref) {
+      job.consolidatedInvoice.paymentReference = ref;
+      job.consolidatedInvoice.transactionId = ref;
+      if (job.invoice) {
+        job.invoice.paymentReference = ref;
+        job.invoice.transactionId = ref;
+      }
+    }
+    if (paymentMethod) {
+      job.paymentMethod = paymentMethod;
+      if (job.consolidatedInvoice) job.consolidatedInvoice.paymentMethod = paymentMethod;
+    }
+
+    job.status = 'in_review';
+    job.approvalStatus = 'PENDING';
+    job.submittedBy = adminUser?._id || null;
+    job.submittedByName = adminUser?.name || 'Administrator';
+    job.submittedAt = new Date();
+    job.submissionRemarks = remarks || `Resubmitted with modifications: ${remarks}`;
+    if (!job.timeline) job.timeline = [];
+    job.timeline.push({
+      action: 'RESUBMITTED',
+      statusFrom: 'REJECTED',
+      statusTo: 'IN_REVIEW',
+      performedBy: adminUser?.name || 'Administrator',
+      reason: remarks || 'Batch resubmitted for Approver re-evaluation.',
+      timestamp: new Date(),
+    });
+
+    await job.save();
+    return normalizeJobDoc(job);
+  },
+
+  /**
    * 4. Get Past Bulk Imports History (Unified across Admin & User Portal)
    */
-  getImportHistory: async ({ page = 1, limit = 10, search = '' }) => {
+  getImportHistory: async ({ page = 1, limit = 10, search = '', status = 'all' } = {}) => {
     const query = {};
     if (search && search.trim()) {
       const regex = new RegExp(search.trim(), 'i');
@@ -925,11 +1162,19 @@ export const bulkImportService = {
       ];
     }
 
+    if (status && status !== 'all') {
+      if (status === 'in_review' || status === 'pending_approval') {
+        query.status = { $in: ['in_review', 'pending_approval'] };
+      } else {
+        query.status = status;
+      }
+    }
+
     const pageNumber = Math.max(1, parseInt(page, 10));
     const pageSize = Math.max(1, Math.min(50, parseInt(limit, 10)));
     const skip = (pageNumber - 1) * pageSize;
 
-    const [rawJobs, total] = await Promise.all([
+    const [rawJobs, total, inReviewCount, completedCount, rejectedCount] = await Promise.all([
       BulkImport.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -937,12 +1182,21 @@ export const bulkImportService = {
         .populate('importedBy', 'name email role')
         .lean(),
       BulkImport.countDocuments(query),
+      BulkImport.countDocuments({ status: { $in: ['in_review', 'pending_approval'] } }),
+      BulkImport.countDocuments({ status: { $in: ['completed', 'COMPLETED'] } }),
+      BulkImport.countDocuments({ status: 'rejected' }),
     ]);
 
     const jobs = rawJobs.map(normalizeJobDoc);
 
     return {
       jobs,
+      counts: {
+        total,
+        inReview: inReviewCount,
+        completed: completedCount,
+        rejected: rejectedCount,
+      },
       pagination: {
         total,
         page: pageNumber,

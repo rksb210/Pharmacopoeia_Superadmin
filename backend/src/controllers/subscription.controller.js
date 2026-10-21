@@ -123,10 +123,128 @@ export const assignSubscription = async (req, res) => {
       },
     });
 
+    const userRoleCode = (
+      typeof req.user?.role === 'string'
+        ? req.user.role
+        : req.user?.role?.code || ''
+    ).toLowerCase();
+    const isSuperAdmin = userRoleCode === 'superadmin';
+    const message = isSuperAdmin
+      ? 'Subscription provisioned and activated successfully.'
+      : 'Subscription request submitted for Approver review.';
+
     return res.status(201).json({
       success: true,
-      message: 'Subscription provisioned and activated successfully.',
+      message,
       subscription: newSubscription,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const approveSubscription = async (req, res) => {
+  try {
+    const approved = await subscriptionService.approveSubscription(
+      req.params.id,
+      req.body,
+      req.user
+    );
+
+    await auditService.log(req, {
+      action: 'SUBSCRIPTION_APPROVED',
+      module: 'SUBSCRIPTIONS',
+      entity: 'Subscription',
+      entityId: approved._id,
+      status: 'SUCCESS',
+      details: `Approved subscription ${approved.subscriptionId}. Access activated until ${new Date(approved.endDate).toLocaleDateString('en-IN')}.`,
+      newValues: {
+        status: approved.status,
+        approvalStatus: approved.approvalStatus,
+        approvedBy: req.user?._id,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Subscription approved and subscriber access activated successfully.',
+      subscription: approved,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const rejectSubscription = async (req, res) => {
+  try {
+    const rejected = await subscriptionService.rejectSubscription(
+      req.params.id,
+      req.body,
+      req.user
+    );
+
+    await auditService.log(req, {
+      action: 'SUBSCRIPTION_REJECTED',
+      module: 'SUBSCRIPTIONS',
+      entity: 'Subscription',
+      entityId: rejected._id,
+      status: 'SUCCESS',
+      details: `Rejected subscription request ${rejected.subscriptionId}. Reason: ${rejected.rejectionReason}`,
+      newValues: {
+        status: rejected.status,
+        approvalStatus: rejected.approvalStatus,
+        rejectionReason: rejected.rejectionReason,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Subscription request rejected successfully.',
+      subscription: rejected,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const resubmitSubscription = async (req, res) => {
+  try {
+    const resubmitted = await subscriptionService.resubmitSubscription(
+      req.params.id,
+      req.body,
+      req.user
+    );
+
+    await auditService.log(req, {
+      action: 'SUBSCRIPTION_RESUBMITTED',
+      module: 'SUBSCRIPTIONS',
+      entity: 'Subscription',
+      entityId: resubmitted._id,
+      status: 'SUCCESS',
+      details: `Resubmitted rejected subscription ${resubmitted.subscriptionId} for review.`,
+      newValues: {
+        status: resubmitted.status,
+        approvalStatus: resubmitted.approvalStatus,
+        planName: resubmitted.planName,
+        type: resubmitted.type,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: resubmitted.status === 'active'
+        ? 'Subscription updated and activated successfully.'
+        : 'Subscription updated and resubmitted for approver review.',
+      subscription: resubmitted,
     });
   } catch (error) {
     return res.status(400).json({
